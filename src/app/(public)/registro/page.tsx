@@ -1,9 +1,10 @@
 "use client";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { Eye, EyeOff } from "lucide-react";
 import { AuthLayout } from "@/components/templates";
 import { FormField } from "@/components/molecules";
 import { Button, Checkbox, Label, buttonVariants } from "@/components/atoms";
@@ -11,33 +12,33 @@ import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 const COUNTRIES = [
-  { name: "Perú", code: "PE", dial: "+51", flag: "🇵🇪" },
-  { name: "México", code: "MX", dial: "+52", flag: "🇲🇽" },
-  { name: "Colombia", code: "CO", dial: "+57", flag: "🇨🇴" },
-  { name: "Argentina", code: "AR", dial: "+54", flag: "🇦🇷" },
-  { name: "Chile", code: "CL", dial: "+56", flag: "🇨🇱" },
-  { name: "Ecuador", code: "EC", dial: "+593", flag: "🇪🇨" },
-  { name: "Bolivia", code: "BO", dial: "+591", flag: "🇧🇴" },
-  { name: "Venezuela", code: "VE", dial: "+58", flag: "🇻🇪" },
-  { name: "Uruguay", code: "UY", dial: "+598", flag: "🇺🇾" },
-  { name: "Paraguay", code: "PY", dial: "+595", flag: "🇵🇾" },
-  { name: "Brasil", code: "BR", dial: "+55", flag: "🇧🇷" },
-  { name: "España", code: "ES", dial: "+34", flag: "🇪🇸" },
-  { name: "Estados Unidos", code: "US", dial: "+1", flag: "🇺🇸" },
-  { name: "Canadá", code: "CA", dial: "+1", flag: "🇨🇦" },
-  { name: "Reino Unido", code: "GB", dial: "+44", flag: "🇬🇧" },
-  { name: "Alemania", code: "DE", dial: "+49", flag: "🇩🇪" },
-  { name: "Francia", code: "FR", dial: "+33", flag: "🇫🇷" },
-  { name: "Italia", code: "IT", dial: "+39", flag: "🇮🇹" },
-  { name: "Portugal", code: "PT", dial: "+351", flag: "🇵🇹" },
-  { name: "Panamá", code: "PA", dial: "+507", flag: "🇵🇦" },
-  { name: "Costa Rica", code: "CR", dial: "+506", flag: "🇨🇷" },
-  { name: "Guatemala", code: "GT", dial: "+502", flag: "🇬🇹" },
-  { name: "Honduras", code: "HN", dial: "+504", flag: "🇭🇳" },
-  { name: "El Salvador", code: "SV", dial: "+503", flag: "🇸🇻" },
-  { name: "Nicaragua", code: "NI", dial: "+505", flag: "🇳🇮" },
-  { name: "Cuba", code: "CU", dial: "+53", flag: "🇨🇺" },
-  { name: "República Dominicana", code: "DO", dial: "+1809", flag: "🇩🇴" },
+  { name: "Perú",                code: "PE", dial: "+51",   flag: "🇵🇪" },
+  { name: "México",              code: "MX", dial: "+52",   flag: "🇲🇽" },
+  { name: "Colombia",            code: "CO", dial: "+57",   flag: "🇨🇴" },
+  { name: "Argentina",           code: "AR", dial: "+54",   flag: "🇦🇷" },
+  { name: "Chile",               code: "CL", dial: "+56",   flag: "🇨🇱" },
+  { name: "Ecuador",             code: "EC", dial: "+593",  flag: "🇪🇨" },
+  { name: "Bolivia",             code: "BO", dial: "+591",  flag: "🇧🇴" },
+  { name: "Venezuela",           code: "VE", dial: "+58",   flag: "🇻🇪" },
+  { name: "Uruguay",             code: "UY", dial: "+598",  flag: "🇺🇾" },
+  { name: "Paraguay",            code: "PY", dial: "+595",  flag: "🇵🇾" },
+  { name: "Brasil",              code: "BR", dial: "+55",   flag: "🇧🇷" },
+  { name: "España",              code: "ES", dial: "+34",   flag: "🇪🇸" },
+  { name: "Estados Unidos",      code: "US", dial: "+1",    flag: "🇺🇸" },
+  { name: "Canadá",              code: "CA", dial: "+1",    flag: "🇨🇦" },
+  { name: "Reino Unido",         code: "GB", dial: "+44",   flag: "🇬🇧" },
+  { name: "Alemania",            code: "DE", dial: "+49",   flag: "🇩🇪" },
+  { name: "Francia",             code: "FR", dial: "+33",   flag: "🇫🇷" },
+  { name: "Italia",              code: "IT", dial: "+39",   flag: "🇮🇹" },
+  { name: "Portugal",            code: "PT", dial: "+351",  flag: "🇵🇹" },
+  { name: "Panamá",              code: "PA", dial: "+507",  flag: "🇵🇦" },
+  { name: "Costa Rica",          code: "CR", dial: "+506",  flag: "🇨🇷" },
+  { name: "Guatemala",           code: "GT", dial: "+502",  flag: "🇬🇹" },
+  { name: "Honduras",            code: "HN", dial: "+504",  flag: "🇭🇳" },
+  { name: "El Salvador",         code: "SV", dial: "+503",  flag: "🇸🇻" },
+  { name: "Nicaragua",           code: "NI", dial: "+505",  flag: "🇳🇮" },
+  { name: "Cuba",                code: "CU", dial: "+53",   flag: "🇨🇺" },
+  { name: "República Dominicana",code: "DO", dial: "+1809", flag: "🇩🇴" },
 ];
 
 const PROFESSIONS = [
@@ -58,31 +59,36 @@ const PROFESSIONS = [
   "Otro",
 ];
 
-function getPasswordStrength(password: string): { score: number; label: string; color: string } {
+function getPasswordStrength(password: string): {
+  score: number;
+  label: string;
+  color: string;
+} {
   if (!password) return { score: 0, label: "", color: "" };
   let score = 0;
-  if (password.length >= 8) score++;
-  if (password.length >= 12) score++;
-  if (/[A-Z]/.test(password)) score++;
-  if (/[0-9]/.test(password)) score++;
+  if (password.length >= 8)          score++;
+  if (password.length >= 12)         score++;
+  if (/[A-Z]/.test(password))        score++;
+  if (/[0-9]/.test(password))        score++;
   if (/[^A-Za-z0-9]/.test(password)) score++;
-  if (score <= 1) return { score: 1, label: "Muy débil", color: "bg-red-500" };
-  if (score === 2) return { score: 2, label: "Débil", color: "bg-orange-400" };
-  if (score === 3) return { score: 3, label: "Regular", color: "bg-yellow-400" };
-  if (score === 4) return { score: 4, label: "Fuerte", color: "bg-green-500" };
-  return { score: 5, label: "Muy fuerte", color: "bg-emerald-500" };
+  if (score <= 1) return { score: 1, label: "Muy débil",  color: "bg-red-500"     };
+  if (score === 2) return { score: 2, label: "Débil",      color: "bg-orange-400"  };
+  if (score === 3) return { score: 3, label: "Regular",    color: "bg-yellow-400"  };
+  if (score === 4) return { score: 4, label: "Fuerte",     color: "bg-green-500"   };
+  return             { score: 5, label: "Muy fuerte", color: "bg-emerald-500" };
 }
 
 const registerSchema = z
   .object({
-    full_name: z.string().min(3, "Ingresa tu nombre completo (mínimo 3 caracteres)"),
-    email: z.string().email("Ingresa un correo válido"),
-    country: z.string().min(1, "Selecciona tu país"),
-    phone: z.string().min(6, "Teléfono inválido").max(15, "Teléfono inválido"),
-    profession: z.string().min(1, "Selecciona tu profesión"),
-    password: z.string().min(8, "La contraseña debe tener mínimo 8 caracteres"),
-    password_confirmation: z.string(),
-    terms: z.boolean().refine((v) => v, "Debes aceptar los términos para continuar"),
+    nombres:              z.string().min(2, "Ingresa tu(s) nombre(s) (mínimo 2 caracteres)"),
+    apellidos:            z.string().min(2, "Ingresa tus apellidos (mínimo 2 caracteres)"),
+    email:                z.string().email("Ingresa un correo válido"),
+    country:              z.string().min(1, "Selecciona tu país"),
+    phone:                z.string().min(6, "Teléfono inválido").max(15, "Teléfono inválido"),
+    profession:           z.string().min(1, "Selecciona tu profesión"),
+    password:             z.string().min(8, "La contraseña debe tener mínimo 8 caracteres"),
+    password_confirmation:z.string(),
+    terms:                z.boolean().refine((v) => v, "Debes aceptar los términos para continuar"),
   })
   .refine((d) => d.password === d.password_confirmation, {
     message: "Las contraseñas no coinciden",
@@ -91,9 +97,44 @@ const registerSchema = z
 
 type RegisterFormData = z.infer<typeof registerSchema>;
 
+// ─── PasswordInput con forwardRef para que el ojito funcione con react-hook-form
+interface PasswordInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  hasError?: boolean;
+}
+
+const PasswordInput = React.forwardRef<HTMLInputElement, PasswordInputProps>(
+  function PasswordInput({ hasError, className, ...props }, ref) {
+    const [show, setShow] = useState(false);
+    return (
+      <div className="relative">
+        <input
+          ref={ref}
+          type={show ? "text" : "password"}
+          aria-invalid={hasError}
+          className={cn(
+            "w-full border rounded-lg px-3 pr-10 h-10 text-sm outline-none transition focus:ring-2 focus:ring-brand-primary/30 focus:border-brand-primary",
+            hasError ? "border-red-400" : "border-gray-300",
+            className
+          )}
+          {...props}
+        />
+        <button
+          type="button"
+          onClick={() => setShow((p) => !p)}
+          aria-label={show ? "Ocultar contraseña" : "Mostrar contraseña"}
+          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+        >
+          {show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+        </button>
+      </div>
+    );
+  }
+);
+
+// ─── Página principal ─────────────────────────────────────────────────────────
 export default function RegisterPage() {
   const [serverError, setServerError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const [success,     setSuccess]     = useState(false);
   const [phonePrefix, setPhonePrefix] = useState("+51");
 
   const {
@@ -107,10 +148,10 @@ export default function RegisterPage() {
     defaultValues: { terms: false, country: "PE" },
   });
 
-  const terms = watch("terms");
-  const watchCountry = watch("country");
+  const terms         = watch("terms");
+  const watchCountry  = watch("country");
   const watchPassword = watch("password") ?? "";
-  const strength = getPasswordStrength(watchPassword);
+  const strength      = getPasswordStrength(watchPassword);
   const selectedCountry = COUNTRIES.find((c) => c.code === watchCountry);
 
   useEffect(() => {
@@ -120,17 +161,26 @@ export default function RegisterPage() {
   const onSubmit = async (data: RegisterFormData) => {
     setServerError(null);
     try {
-      const { terms: _terms, ...payload } = data;
-      const first_name = payload.full_name.trim().split(" ")[0];
-      const phone = `${phonePrefix}${payload.phone.replace(/\D/g, "")}`;
-      await api.post("/api/auth/register", { ...payload, phone, first_name });
+      const { terms: _terms, nombres, apellidos, ...rest } = data;
+      const phone = `${phonePrefix}${rest.phone.replace(/\D/g, "")}`;
+      const full_name  = `${nombres.trim()} ${apellidos.trim()}`;
+      const first_name = nombres.trim().split(" ")[0];
+      await api.post("/api/auth/register", {
+        ...rest,
+        full_name,
+        first_name,
+        phone,
+      });
       setSuccess(true);
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message;
       setServerError(msg ?? "Error al registrarte. Inténtalo de nuevo.");
     }
   };
 
+  // ── Estado de éxito ────────────────────────────────────────────────────────
   if (success) {
     return (
       <AuthLayout title="¡Registro exitoso!" subtitle="Revisa tu correo electrónico">
@@ -145,7 +195,10 @@ export default function RegisterPage() {
           </p>
           <Link
             href="/login"
-            className={cn(buttonVariants(), "w-full bg-brand-primary hover:bg-brand-primary/90 text-white h-11 justify-center")}
+            className={cn(
+              buttonVariants(),
+              "w-full bg-brand-primary hover:bg-brand-primary/90 text-white h-11 justify-center"
+            )}
           >
             Ir a iniciar sesión
           </Link>
@@ -154,25 +207,42 @@ export default function RegisterPage() {
     );
   }
 
+  // ── Formulario ─────────────────────────────────────────────────────────────
   return (
     <AuthLayout title="Crea tu cuenta" subtitle="Comienza tu camino hacia la especialización">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
         {serverError && (
-          <div role="alert" className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
+          <div
+            role="alert"
+            className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3"
+          >
             {serverError}
           </div>
         )}
 
+        {/* Nombre(s) */}
         <FormField
-          label="Nombre completo"
+          label="Nombre(s)"
           type="text"
-          autoComplete="name"
-          placeholder="Juan Carlos Pérez"
-          error={errors.full_name?.message}
+          autoComplete="given-name"
+          placeholder="Juan Carlos"
+          error={errors.nombres?.message}
           required
-          {...register("full_name")}
+          {...register("nombres")}
         />
 
+        {/* Apellidos */}
+        <FormField
+          label="Apellidos"
+          type="text"
+          autoComplete="family-name"
+          placeholder="Pérez García"
+          error={errors.apellidos?.message}
+          required
+          {...register("apellidos")}
+        />
+
+        {/* Email */}
         <FormField
           label="Correo electrónico"
           type="email"
@@ -204,7 +274,9 @@ export default function RegisterPage() {
             ))}
           </select>
           {errors.country && (
-            <p role="alert" className="text-xs text-red-500">{errors.country.message}</p>
+            <p role="alert" className="text-xs text-red-500">
+              {errors.country.message}
+            </p>
           )}
         </div>
 
@@ -232,7 +304,9 @@ export default function RegisterPage() {
             />
           </div>
           {errors.phone && (
-            <p role="alert" className="text-xs text-red-500">{errors.phone.message}</p>
+            <p role="alert" className="text-xs text-red-500">
+              {errors.phone.message}
+            </p>
           )}
         </div>
 
@@ -255,21 +329,29 @@ export default function RegisterPage() {
             ))}
           </select>
           {errors.profession && (
-            <p role="alert" className="text-xs text-red-500">{errors.profession.message}</p>
+            <p role="alert" className="text-xs text-red-500">
+              {errors.profession.message}
+            </p>
           )}
         </div>
 
-        {/* Contraseña con indicador de nivel */}
-        <div>
-          <FormField
-            label="Contraseña"
-            type="password"
+        {/* Contraseña */}
+        <div className="space-y-1.5">
+          <Label htmlFor="password" className="text-sm font-medium text-gray-700">
+            Contraseña <span className="text-red-500" aria-hidden>*</span>
+          </Label>
+          <PasswordInput
+            id="password"
             autoComplete="new-password"
             placeholder="Mínimo 8 caracteres"
-            error={errors.password?.message}
-            required
+            hasError={!!errors.password}
             {...register("password")}
           />
+          {errors.password && (
+            <p role="alert" className="text-xs text-red-500">
+              {errors.password.message}
+            </p>
+          )}
           {watchPassword.length > 0 && (
             <div className="mt-2 space-y-1.5">
               <div className="flex gap-1">
@@ -283,29 +365,41 @@ export default function RegisterPage() {
                   />
                 ))}
               </div>
-              <p className={cn(
-                "text-xs font-medium",
-                strength.score <= 1 && "text-red-500",
-                strength.score === 2 && "text-orange-500",
-                strength.score === 3 && "text-yellow-600",
-                strength.score >= 4 && "text-green-600"
-              )}>
+              <p
+                className={cn(
+                  "text-xs font-medium",
+                  strength.score <= 1 && "text-red-500",
+                  strength.score === 2 && "text-orange-500",
+                  strength.score === 3 && "text-yellow-600",
+                  strength.score >= 4 && "text-green-600"
+                )}
+              >
                 {strength.label}
               </p>
             </div>
           )}
         </div>
 
-        <FormField
-          label="Confirmar contraseña"
-          type="password"
-          autoComplete="new-password"
-          placeholder="Repite tu contraseña"
-          error={errors.password_confirmation?.message}
-          required
-          {...register("password_confirmation")}
-        />
+        {/* Confirmar contraseña */}
+        <div className="space-y-1.5">
+          <Label htmlFor="password_confirmation" className="text-sm font-medium text-gray-700">
+            Confirmar contraseña <span className="text-red-500" aria-hidden>*</span>
+          </Label>
+          <PasswordInput
+            id="password_confirmation"
+            autoComplete="new-password"
+            placeholder="Repite tu contraseña"
+            hasError={!!errors.password_confirmation}
+            {...register("password_confirmation")}
+          />
+          {errors.password_confirmation && (
+            <p role="alert" className="text-xs text-red-500">
+              {errors.password_confirmation.message}
+            </p>
+          )}
+        </div>
 
+        {/* Términos */}
         <div className="space-y-1 pt-1">
           <div className="flex items-start gap-2">
             <Checkbox
@@ -326,10 +420,13 @@ export default function RegisterPage() {
             </Label>
           </div>
           {errors.terms && (
-            <p role="alert" className="text-xs text-red-500 pl-6">{errors.terms.message}</p>
+            <p role="alert" className="text-xs text-red-500 pl-6">
+              {errors.terms.message}
+            </p>
           )}
         </div>
 
+        {/* Botón submit */}
         <Button
           type="submit"
           disabled={isSubmitting}
