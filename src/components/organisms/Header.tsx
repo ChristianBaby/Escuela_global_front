@@ -1,0 +1,175 @@
+"use client";
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Logo, Button, Badge, buttonVariants } from "@/components/atoms";
+import { useAuthStore } from "@/store/authStore";
+import { useCartStore } from "@/store/cartStore";
+import { ShoppingCart, Menu, X, LogOut } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+const NAV_LINKS = [
+  { label: "Cursos", href: "/cursos" },
+  { label: "Nosotros", href: "/#nosotros" },
+];
+
+export function Header() {
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const { isAuthenticated, user, clearUser } = useAuthStore();
+  const items = useCartStore((s) => s.items);
+  const router = useRouter();
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 10);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  const handleLogout = () => {
+    clearUser();
+    router.push("/login");
+  };
+
+  return (
+    <header
+      className={cn(
+        "sticky top-0 z-50 bg-white transition-shadow",
+        scrolled && "shadow-sm border-b border-gray-100"
+      )}
+    >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16">
+          <Logo variant="full" size="md" />
+
+          {/* Desktop nav */}
+          <nav className="hidden md:flex items-center gap-7">
+            {NAV_LINKS.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="text-sm font-medium text-gray-600 hover:text-brand-primary transition-colors"
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
+
+          {/* Desktop actions */}
+          <div className="hidden md:flex items-center gap-3">
+            {isAuthenticated ? (
+              <>
+                <Link
+                  href="/carrito"
+                  className="relative p-2 text-gray-600 hover:text-brand-primary transition-colors"
+                  aria-label="Carrito de compras"
+                >
+                  <ShoppingCart size={20} />
+                  {items.length > 0 && (
+                    <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[10px] bg-brand-secondary text-white border-0">
+                      {items.length}
+                    </Badge>
+                  )}
+                </Link>
+                <Link
+                  href="/dashboard"
+                  className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-brand-primary transition-colors"
+                >
+                  <div className="w-7 h-7 rounded-full bg-brand-primary/10 flex items-center justify-center text-brand-primary text-xs font-bold select-none">
+                    {user?.full_name?.charAt(0).toUpperCase() ?? "U"}
+                  </div>
+                  <span className="max-w-[100px] truncate">{user?.full_name?.split(" ")[0]}</span>
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="p-1.5 text-gray-400 hover:text-red-500 transition-colors"
+                  title="Cerrar sesión"
+                >
+                  <LogOut size={16} />
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "text-gray-700 hover:text-brand-primary")}
+                >
+                  Iniciar sesión
+                </Link>
+                <Link
+                  href="/registro"
+                  className={cn(buttonVariants({ size: "sm" }), "bg-brand-primary hover:bg-brand-primary/90 text-white")}
+                >
+                  Registrarse
+                </Link>
+              </>
+            )}
+          </div>
+
+          {/* Mobile toggle */}
+          <button
+            className="md:hidden p-2 text-gray-600 hover:text-brand-primary transition-colors"
+            onClick={() => setMobileOpen(!mobileOpen)}
+            aria-label={mobileOpen ? "Cerrar menú" : "Abrir menú"}
+          >
+            {mobileOpen ? <X size={22} /> : <Menu size={22} />}
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile menu */}
+      {mobileOpen && (
+        <div className="md:hidden border-t border-gray-100 bg-white">
+          <div className="max-w-7xl mx-auto px-4 py-4 space-y-1">
+            {NAV_LINKS.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="block py-2.5 px-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-brand-primary/5 hover:text-brand-primary transition-colors"
+                onClick={() => setMobileOpen(false)}
+              >
+                {link.label}
+              </Link>
+            ))}
+            <div className="pt-3 border-t border-gray-100 flex flex-col gap-2">
+              {isAuthenticated ? (
+                <>
+                  <Link
+                    href="/dashboard"
+                    className="block py-2.5 px-3 text-sm font-medium text-gray-700"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    Mi cuenta
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="text-left py-2.5 px-3 text-sm font-medium text-red-500"
+                  >
+                    Cerrar sesión
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    onClick={() => setMobileOpen(false)}
+                    className={cn(buttonVariants({ variant: "outline" }), "w-full border-brand-primary text-brand-primary hover:bg-brand-primary hover:text-white")}
+                  >
+                    Iniciar sesión
+                  </Link>
+                  <Link
+                    href="/registro"
+                    onClick={() => setMobileOpen(false)}
+                    className={cn(buttonVariants(), "w-full bg-brand-primary hover:bg-brand-primary/90 text-white")}
+                  >
+                    Registrarse
+                  </Link>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </header>
+  );
+}
