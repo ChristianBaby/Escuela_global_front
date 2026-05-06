@@ -161,22 +161,36 @@ export default function RegisterPage() {
   const onSubmit = async (data: RegisterFormData) => {
     setServerError(null);
     try {
-      const { terms: _terms, nombres, apellidos, ...rest } = data;
-      const phone = `${phonePrefix}${rest.phone.replace(/\D/g, "")}`;
+      const { nombres, apellidos, email, country, phone: rawPhone, password, password_confirmation } = data;
+      const phone = `${phonePrefix}${rawPhone.replace(/\D/g, "")}`;
       const full_name  = `${nombres.trim()} ${apellidos.trim()}`;
       const first_name = nombres.trim().split(" ")[0];
       await api.post("/api/auth/register", {
-        ...rest,
         full_name,
         first_name,
+        fisrt_name: first_name,
+        email,
         phone,
+        country,
+        password,
+        password_confirmation,
       });
       setSuccess(true);
     } catch (err: unknown) {
+      console.error("Register error:", err);
       const msg =
         (err as { response?: { data?: { message?: string } } })?.response?.data
           ?.message;
-      setServerError(msg ?? "Error al registrarte. Inténtalo de nuevo.");
+      const errors = (err as { response?: { data?: { errors?: Record<string, string[] | string> } } })
+        ?.response?.data?.errors;
+      const firstError = errors
+        ? Object.values(errors)
+            .flat()
+            .find(Boolean)
+        : null;
+      setServerError(
+        msg ?? firstError ?? "Error al registrarte. Revisa que el backend este activo."
+      );
     }
   };
 
