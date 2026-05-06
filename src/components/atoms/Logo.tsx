@@ -10,8 +10,8 @@ interface LogoProps {
 }
 
 export function Logo({ className, variant = "full", size = "md", theme = "light" }: LogoProps) {
-  const heights = { sm: 32, md: 40, lg: 52 };
-  const widths = { sm: 120, md: 150, lg: 195 };
+  const heights = { sm: 8, md: 10, lg: 13 };
+  const widths = { sm: 30, md: 37, lg: 48 };
 
   const height = heights[size];
   const width = variant === "icon" ? height : widths[size];

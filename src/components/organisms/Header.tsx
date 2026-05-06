@@ -39,11 +39,11 @@ export function Header() {
       )}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          <Logo variant="full" size="md" />
+        <div className="flex items-center justify-between h-12">
+          <Logo variant="full" size="sm" />
 
           {/* Desktop nav */}
-          <nav className="hidden md:flex items-center gap-7">
+          <nav className="hidden md:flex items-center gap-5">
             {NAV_LINKS.map((link) => (
               <Link
                 key={link.href}
@@ -56,15 +56,15 @@ export function Header() {
           </nav>
 
           {/* Desktop actions */}
-          <div className="hidden md:flex items-center gap-3">
+          <div className="hidden md:flex items-center gap-2">
             {isAuthenticated ? (
               <>
                 <Link
                   href="/carrito"
-                  className="relative p-2 text-gray-600 hover:text-brand-primary transition-colors"
+                  className="relative p-1.5 text-gray-600 hover:text-brand-primary transition-colors"
                   aria-label="Carrito de compras"
                 >
-                  <ShoppingCart size={20} />
+                  <ShoppingCart size={18} />
                   {items.length > 0 && (
                     <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[10px] bg-brand-secondary text-white border-0">
                       {items.length}
@@ -73,32 +73,32 @@ export function Header() {
                 </Link>
                 <Link
                   href="/dashboard"
-                  className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-brand-primary transition-colors"
+                  className="flex items-center gap-1.5 text-sm font-medium text-gray-700 hover:text-brand-primary transition-colors"
                 >
-                  <div className="w-7 h-7 rounded-full bg-brand-primary/10 flex items-center justify-center text-brand-primary text-xs font-bold select-none">
+                  <div className="w-6 h-6 rounded-full bg-brand-primary/10 flex items-center justify-center text-brand-primary text-xs font-bold select-none">
                     {user?.full_name?.charAt(0).toUpperCase() ?? "U"}
                   </div>
-                  <span className="max-w-[100px] truncate">{user?.full_name?.split(" ")[0]}</span>
+                  <span className="max-w-[90px] truncate">{user?.full_name?.split(" ")[0]}</span>
                 </Link>
                 <button
                   onClick={handleLogout}
-                  className="p-1.5 text-gray-400 hover:text-red-500 transition-colors"
+                  className="p-1 text-gray-400 hover:text-red-500 transition-colors"
                   title="Cerrar sesión"
                 >
-                  <LogOut size={16} />
+                  <LogOut size={15} />
                 </button>
               </>
             ) : (
               <>
                 <Link
                   href="/login"
-                  className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "text-gray-700 hover:text-brand-primary")}
+                  className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "text-gray-700 hover:text-brand-primary h-8 text-xs px-3")}
                 >
                   Iniciar sesión
                 </Link>
                 <Link
                   href="/registro"
-                  className={cn(buttonVariants({ size: "sm" }), "bg-brand-primary hover:bg-brand-primary/90 text-white")}
+                  className={cn(buttonVariants({ size: "sm" }), "bg-brand-primary hover:bg-brand-primary/90 text-white h-8 text-xs px-3")}
                 >
                   Registrarse
                 </Link>
@@ -108,11 +108,11 @@ export function Header() {
 
           {/* Mobile toggle */}
           <button
-            className="md:hidden p-2 text-gray-600 hover:text-brand-primary transition-colors"
+            className="md:hidden p-1.5 text-gray-600 hover:text-brand-primary transition-colors"
             onClick={() => setMobileOpen(!mobileOpen)}
             aria-label={mobileOpen ? "Cerrar menú" : "Abrir menú"}
           >
-            {mobileOpen ? <X size={22} /> : <Menu size={22} />}
+            {mobileOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
         </div>
       </div>
@@ -120,7 +120,7 @@ export function Header() {
       {/* Mobile menu */}
       {mobileOpen && (
         <div className="md:hidden border-t border-gray-100 bg-white">
-          <div className="max-w-7xl mx-auto px-4 py-4 space-y-1">
+          <div className="max-w-7xl mx-auto px-4 py-3 space-y-0.5">
             {NAV_LINKS.map((link) => (
               <Link
                 key={link.href}
