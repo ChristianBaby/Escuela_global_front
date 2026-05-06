@@ -161,7 +161,7 @@ export default function RegisterPage() {
   const onSubmit = async (data: RegisterFormData) => {
     setServerError(null);
     try {
-      const { nombres, apellidos, email, country, phone: rawPhone, password, password_confirmation } = data;
+      const { nombres, apellidos, email, country, phone: rawPhone, password } = data;
       const phone = `${phonePrefix}${rawPhone.replace(/\D/g, "")}`;
       const full_name  = `${nombres.trim()} ${apellidos.trim()}`;
       const first_name = nombres.trim().split(" ")[0];
@@ -173,7 +173,6 @@ export default function RegisterPage() {
         phone,
         country,
         password,
-        password_confirmation,
       });
       setSuccess(true);
     } catch (err: unknown) {
