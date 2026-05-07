@@ -48,10 +48,22 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginFormData) => {
     setServerError(null);
     try {
-      const res = await api.post<{ access_token: string; user: User }>("/api/auth/login", data);
+	    const dataLimpia = {email: data.email, password: data.password}
+	    const res = await fetch("api/auth/login",{
+		    method: "POST",
+		    headers: {
+			    "Content-Type":"application/json"
+		    },
+		    body: JSON.stringify(dataLimpia),
+		    credentials: "include"
+	    })
+	    const datauser = await res.json()
+	    router.push(ROLE_REDIRECTS[datauser.role]?? "/dashboard")
+	    console.log(datauser)
+      /*const res = await api.post<{ access_token: string; user: User }>("/api/auth/login", data);
       const { access_token, user } = res.data;
       setUser(user, access_token, data.remember_me);
-      router.push(ROLE_REDIRECTS[user.role] ?? "/dashboard");
+      router.push(ROLE_REDIRECTS[user.role] ?? "/dashboard"); */
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
       setServerError(msg ?? "Credenciales incorrectas. Inténtalo de nuevo.");

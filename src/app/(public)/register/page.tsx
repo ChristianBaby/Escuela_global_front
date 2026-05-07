@@ -162,10 +162,21 @@ export default function RegisterPage() {
     setServerError(null);
     try {
       const { nombres, apellidos, email, country, phone: rawPhone, password } = data;
+
       const phone = `${phonePrefix}${rawPhone.replace(/\D/g, "")}`;
       const full_name  = `${nombres.trim()} ${apellidos.trim()}`;
       const first_name = nombres.trim().split(" ")[0];
-      await api.post("/api/auth/register", {
+
+      const datosLimpios = {first_name: nombres, last_name: apellidos, email, phone, password}
+      const res = await fetch("/api/auth/register",{
+	      method: "POST",
+	      headers: {
+		      "Content-Type": "application/json"
+	      },
+	      body: JSON.stringify(datosLimpios)
+      })
+
+      /*await api.post("/api/auth/register", {
         full_name,
         first_name,
         fisrt_name: first_name,
@@ -173,7 +184,9 @@ export default function RegisterPage() {
         phone,
         country,
         password,
-      });
+      });*/
+	console.log(res)
+
       setSuccess(true);
     } catch (err: unknown) {
       console.error("Register error:", err);
