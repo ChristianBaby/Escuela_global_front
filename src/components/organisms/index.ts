@@ -1,2 +1,4 @@
-// Organisms are re-exported from their individual files as they are created.
-// Example: export { Header } from "./Header";
+export { Header } from "./Header";
+export { HeroSection } from "./HeroSection";
+export { CourseGrid } from "./CourseGrid";
+export { Footer } from "./Footer";

@@ -19,7 +19,11 @@ export const useAuthStore = create<AuthState>()(
 
       setUser: (user, token, remember = false) => {
         const expires = remember ? 30 : 1;
-        Cookies.set("access_token", token, { expires, secure: true, sameSite: "strict" });
+        Cookies.set("access_token", token, {
+          expires,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "strict",
+        });
         set({ user, isAuthenticated: true });
       },
 
