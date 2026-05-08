@@ -62,7 +62,6 @@ export default function LoginPage() {
 	    })
 	    const datauser = await res.json()
 	    router.push(ROLE_REDIRECTS[datauser.role]?? "/dashboard")
-	    console.log(datauser)
       /*const res = await api.post<{ access_token: string; user: User }>("/api/auth/login", data);
       const { access_token, user } = res.data;
       setUser(user, access_token, data.remember_me);
@@ -164,6 +163,14 @@ export default function LoginPage() {
           >
             Regístrate gratis
           </Link>
+
+          <Link
+            href="/forgot-password"
+            className="font-semibold text-brand-primary hover:text-brand-secondary transition-colors"
+          >
+        	Olvidades tu password? 
+          </Link>
+
         </p>
       </form>
     </AuthLayout>
