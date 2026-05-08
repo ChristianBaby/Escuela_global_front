@@ -9,6 +9,8 @@ import { AuthLayout } from "@/components/templates";
 import { FormField } from "@/components/molecules";
 import { Button, Checkbox, Label } from "@/components/atoms";
 import { useAuthStore } from "@/store/authStore";
+import { Eye, EyeOff } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
 import type { User } from "@/types";
 
@@ -29,6 +31,7 @@ const ROLE_REDIRECTS: Record<string, string> = {
 
 export default function LoginPage() {
   const [serverError, setServerError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false); // para el ojito
   const { setUser } = useAuthStore();
   const router = useRouter();
 
@@ -92,15 +95,39 @@ export default function LoginPage() {
           {...register("email")}
         />
 
-        <FormField
-          label="Contraseña"
-          type="password"
-          autoComplete="current-password"
-          placeholder="••••••••"
-          error={errors.password?.message}
-          required
-          {...register("password")}
-        />
+        { /* para el mostrar y ocultar del ojito -------------------------------------------*/ }
+        {/* Contraseña con ojito */}
+        <div className="space-y-1.5">
+          <label htmlFor="password" className="text-sm font-medium text-gray-700">
+            Contraseña <span className="text-red-500" aria-hidden>*</span>
+          </label>
+          <div className="relative">
+            <input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              autoComplete="current-password"
+              placeholder="••••••••"
+              aria-invalid={!!errors.password}
+              className={cn(
+                "w-full border rounded-lg px-3 pr-10 h-10 text-sm outline-none transition",
+                "focus:ring-2 focus:ring-brand-primary/30 focus:border-brand-primary",
+                errors.password ? "border-red-400" : "border-gray-300"
+              )}
+              {...register("password")}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((p) => !p)}
+              aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+            </button>
+          </div>
+          {errors.password && (
+            <p role="alert" className="text-xs text-red-500">{errors.password.message}</p>
+          )}
+        </div>
 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
