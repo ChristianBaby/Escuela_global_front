@@ -31,7 +31,7 @@ export default function ForgotPassword() {
         onSubmit={handleSubmit}
         className="bg-white p-6 rounded-lg shadow w-80 space-y-3"
       >
-        <h2 className="text-lg font-bold">Recuperar password</h2>
+        <h2 className="text-lg font-bold">Recuperar contraseña</h2>
 
         <input
           name="email"
@@ -43,7 +43,7 @@ export default function ForgotPassword() {
         />
 
         <button className="w-full bg-black text-white p-2 rounded">
-         	Enviar Verficacion 
+         	Enviar Verificación 
         </button>
       </form>
     </div>

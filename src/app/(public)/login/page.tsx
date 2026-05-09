@@ -24,9 +24,9 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 const ROLE_REDIRECTS: Record<string, string> = {
   estudiante: "/dashboard",
-  soporte: "/soporte/cursos",
-  marketing: "/marketing/publicaciones",
-  admin: "/admin/dashboard",
+  soporte:    "/panel/soporte/cursos",
+  marketing:  "/panel/marketing/publicaciones",
+  admin:      "/panel",
 };
 
 export default function LoginPage() {
@@ -51,21 +51,14 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginFormData) => {
     setServerError(null);
     try {
-	    const dataLimpia = {email: data.email, password: data.password}
-	    const res = await fetch("api/auth/login",{
-		    method: "POST",
-		    headers: {
-			    "Content-Type":"application/json"
-		    },
-		    body: JSON.stringify(dataLimpia),
-		    credentials: "include"
-	    })
-	    const datauser = await res.json()
-	    router.push(ROLE_REDIRECTS[datauser.role]?? "/dashboard")
-      /*const res = await api.post<{ access_token: string; user: User }>("/api/auth/login", data);
+      const res = await api.post<{ access_token: string; user: User }>("/auth/login", {
+        email: data.email,
+        password: data.password,
+        remember_me: data.remember_me,
+      });
       const { access_token, user } = res.data;
       setUser(user, access_token, data.remember_me);
-      router.push(ROLE_REDIRECTS[user.role] ?? "/dashboard"); */
+      router.push(ROLE_REDIRECTS[user.role] ?? "/dashboard");
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
       setServerError(msg ?? "Credenciales incorrectas. Inténtalo de nuevo.");
@@ -140,7 +133,7 @@ export default function LoginPage() {
             </Label>
           </div>
           <Link
-            href="/recuperar-contraseña"
+            href="/forgot-password"
             className="text-sm text-brand-primary hover:text-brand-secondary transition-colors"
           >
             ¿Olvidaste tu contraseña?
@@ -163,14 +156,6 @@ export default function LoginPage() {
           >
             Regístrate gratis
           </Link>
-
-          <Link
-            href="/forgot-password"
-            className="font-semibold text-brand-primary hover:text-brand-secondary transition-colors"
-          >
-        	Olvidades tu password? 
-          </Link>
-
         </p>
       </form>
     </AuthLayout>
