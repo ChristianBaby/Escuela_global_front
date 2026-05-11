@@ -62,8 +62,8 @@ const NAV_SECTIONS: NavSection[] = [
         roles: ["admin", "soporte"],
       },
       {
-        label: "Matriculaciones",
-        href: "/panel/soporte/matriculaciones",
+        label: "Matriculas",
+        href: "/panel/soporte/matriculas",
         icon: <ClipboardList size={18} />,
         roles: ["admin", "soporte"],
       },
