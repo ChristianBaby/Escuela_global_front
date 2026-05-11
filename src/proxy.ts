@@ -56,6 +56,7 @@ export function proxy(request: NextRequest) {
   // Redirigir usuarios ya autenticados que intenten ir al login
   if (pathname === "/login") {
     const token = request.cookies.get("access_token")?.value;
+    console.log(token)
     if (token) {
       try {
         const payload = decodeJwtPayload(token);
