@@ -9,6 +9,8 @@ import { AuthLayout } from "@/components/templates";
 import { FormField } from "@/components/molecules";
 import { Button, Checkbox, Label } from "@/components/atoms";
 import { useAuthStore } from "@/store/authStore";
+import { Eye, EyeOff } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
 import type { User } from "@/types";
 
@@ -22,13 +24,14 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 const ROLE_REDIRECTS: Record<string, string> = {
   estudiante: "/dashboard",
-  soporte: "/soporte/cursos",
-  marketing: "/marketing/publicaciones",
-  admin: "/admin/dashboard",
+  soporte:    "/panel/soporte/cursos",
+  marketing:  "/panel/marketing/publicaciones",
+  admin:      "/panel",
 };
 
 export default function LoginPage() {
   const [serverError, setServerError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false); // para el ojito
   const { setUser } = useAuthStore();
   const router = useRouter();
 
@@ -48,22 +51,14 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginFormData) => {
     setServerError(null);
     try {
-	    const dataLimpia = {email: data.email, password: data.password}
-	    const res = await fetch("api/auth/login",{
-		    method: "POST",
-		    headers: {
-			    "Content-Type":"application/json"
-		    },
-		    body: JSON.stringify(dataLimpia),
-		    credentials: "include"
-	    })
-	    const datauser = await res.json()
-	    router.push(ROLE_REDIRECTS[datauser.role]?? "/dashboard")
-	    console.log(datauser)
-      /*const res = await api.post<{ access_token: string; user: User }>("/api/auth/login", data);
+      const res = await api.post<{ access_token: string; user: User }>("/auth/login", {
+        email: data.email,
+        password: data.password,
+        remember_me: data.remember_me,
+      });
       const { access_token, user } = res.data;
       setUser(user, access_token, data.remember_me);
-      router.push(ROLE_REDIRECTS[user.role] ?? "/dashboard"); */
+      router.push(ROLE_REDIRECTS[user.role] ?? "/dashboard");
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
       setServerError(msg ?? "Credenciales incorrectas. Inténtalo de nuevo.");
@@ -92,15 +87,39 @@ export default function LoginPage() {
           {...register("email")}
         />
 
-        <FormField
-          label="Contraseña"
-          type="password"
-          autoComplete="current-password"
-          placeholder="••••••••"
-          error={errors.password?.message}
-          required
-          {...register("password")}
-        />
+        { /* para el mostrar y ocultar del ojito -------------------------------------------*/ }
+        {/* Contraseña con ojito */}
+        <div className="space-y-1.5">
+          <label htmlFor="password" className="text-sm font-medium text-gray-700">
+            Contraseña <span className="text-red-500" aria-hidden>*</span>
+          </label>
+          <div className="relative">
+            <input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              autoComplete="current-password"
+              placeholder="••••••••"
+              aria-invalid={!!errors.password}
+              className={cn(
+                "w-full border rounded-lg px-3 pr-10 h-10 text-sm outline-none transition",
+                "focus:ring-2 focus:ring-brand-primary/30 focus:border-brand-primary",
+                errors.password ? "border-red-400" : "border-gray-300"
+              )}
+              {...register("password")}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((p) => !p)}
+              aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+            </button>
+          </div>
+          {errors.password && (
+            <p role="alert" className="text-xs text-red-500">{errors.password.message}</p>
+          )}
+        </div>
 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -114,7 +133,7 @@ export default function LoginPage() {
             </Label>
           </div>
           <Link
-            href="/recuperar-contraseña"
+            href="/forgot-password"
             className="text-sm text-brand-primary hover:text-brand-secondary transition-colors"
           >
             ¿Olvidaste tu contraseña?
