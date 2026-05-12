@@ -126,7 +126,7 @@ export interface Enrollment {
   user_id: string;
   user?: User;
   course_id: string;
-  course?: Course;
+  course?: Pick<Course, "id" | "title" | "slug" | "thumbnail_url" | "level" | "total_duration_minutes">;
   order_id?: string;
   enrolled_at: string;
   enrollment_type: EnrollmentType;
@@ -137,6 +137,8 @@ export interface Enrollment {
   progress_percent: number;
   completed_at?: string;
   last_accessed_at?: string;
+  total_watched_seconds?: number;
+  has_review?: boolean;
 }
 
 export interface Order {
@@ -247,6 +249,33 @@ export interface Notification {
   is_read: boolean;
   redirect_url?: string;
   created_at: string;
+}
+
+// ─── Course Viewer ────────────────────────────────────────────────────────────
+
+export interface CourseContent {
+  id: string;
+  title: string;
+  modules: Array<
+    Module & {
+      sessions: Array<Session & { materials: Material[] }>;
+    }
+  >;
+}
+
+export interface CourseProgress {
+  enrollment: Pick<Enrollment, "id" | "progress_percent" | "completed_at">;
+  lesson_progress: LessonProgress[];
+  has_review: boolean;
+}
+
+export interface CertificateDetail extends Certificate {
+  student: Pick<User, "first_name" | "last_name">;
+  enrollment: {
+    enrolled_at: string;
+    completed_at: string;
+    course: Pick<Course, "title" | "total_duration_minutes">;
+  };
 }
 
 // ─── API Helpers ──────────────────────────────────────────────────────────────

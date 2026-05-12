@@ -1,6 +1,11 @@
 import { http, HttpResponse } from "msw";
 
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+function normalizeApiUrl(url: string) {
+  const cleanUrl = url.replace(/\/+$/, "");
+  return cleanUrl.endsWith("/api") ? cleanUrl : `${cleanUrl}/api`;
+}
+
+const BASE = normalizeApiUrl(process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001");
 
 function mockJwt(payload: object): string {
   const encode = (obj: object) =>
@@ -18,6 +23,112 @@ const MOCK_USERS = [
   { id: "u4", first_name: "Luis", last_name: "Mendoza", email: "luis@example.com", role: "marketing", status: "suspended", created_at: "2024-03-10", phone: "+51999777888", country: "PE" },
   { id: "u5", first_name: "Admin", last_name: "Global", email: "admin@escuelaglobal.com", role: "admin", status: "active", created_at: "2023-12-01", phone: "+51999000111", country: "PE" },
 ];
+
+// ── Contenido de cursos mock ───────────────────────────────────────────────────
+const MOCK_COURSE_CONTENT: Record<string, object> = {
+  c1: {
+    id: "c1",
+    title: "Derecho Laboral Avanzado",
+    modules: [
+      {
+        id: "m1", title: "Módulo 1: Fundamentos del Derecho Laboral", display_order: 1,
+        sessions: [
+          { id: "s1", module_id: "m1", title: "Introducción al Derecho Laboral", description: "Conceptos base, principios fundamentales y fuentes del derecho del trabajo.", youtube_video_id: "jNQXAC9IVRw", duration_minutes: 45, display_order: 1, materials: [{ id: "mat1", session_id: "s1", name: "Presentación Clase 1.pdf", drive_url: "https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs", type: "PDF", created_at: "2024-01-10" }] },
+          { id: "s2", module_id: "m1", title: "Contratos de Trabajo", description: "Tipos de contratos laborales según la legislación vigente y sus implicancias.", youtube_video_id: "dQw4w9WgXcQ", duration_minutes: 38, display_order: 2, materials: [] },
+          { id: "s3", module_id: "m1", title: "Jornada Laboral y Horas Extra", description: "Regulaciones sobre la jornada de trabajo, horas extraordinarias y descanso.", youtube_video_id: "9bZkp7q19f0", duration_minutes: 42, display_order: 3, materials: [{ id: "mat2", session_id: "s3", name: "Tabla Cálculo Horas Extra.xlsx", drive_url: "https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs", type: "Excel", created_at: "2024-01-10" }] },
+        ],
+      },
+      {
+        id: "m2", title: "Módulo 2: Relaciones Laborales", display_order: 2,
+        sessions: [
+          { id: "s4", module_id: "m2", title: "Derechos Fundamentales del Trabajador", description: "Los derechos laborales reconocidos en la constitución y legislación laboral.", youtube_video_id: "JGwWNGJdvx8", duration_minutes: 55, display_order: 1, materials: [{ id: "mat3", session_id: "s4", name: "Manual Derechos Laborales.pdf", drive_url: "https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs", type: "PDF", created_at: "2024-01-10" }] },
+          { id: "s5", module_id: "m2", title: "Sindicatos y Negociación Colectiva", description: "Rol de los sindicatos, proceso de negociación colectiva y convenios.", youtube_video_id: "QH2-TGUlwu4", duration_minutes: 48, display_order: 2, materials: [] },
+        ],
+      },
+    ],
+  },
+  c2: {
+    id: "c2",
+    title: "Finanzas Corporativas",
+    modules: [
+      {
+        id: "mc2_1", title: "Módulo 1: Fundamentos Financieros", display_order: 1,
+        sessions: [
+          { id: "sc2_1", module_id: "mc2_1", title: "Introducción a las Finanzas Corporativas", description: "Conceptos esenciales y estructura financiera empresarial.", youtube_video_id: "jNQXAC9IVRw", duration_minutes: 40, display_order: 1, materials: [] },
+          { id: "sc2_2", module_id: "mc2_1", title: "Estados Financieros", description: "Análisis e interpretación de balance, resultados y flujos.", youtube_video_id: "dQw4w9WgXcQ", duration_minutes: 50, display_order: 2, materials: [{ id: "mc2mat1", session_id: "sc2_2", name: "Plantilla Excel Financiera.xlsx", drive_url: "https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs", type: "Excel", created_at: "2024-02-05" }] },
+        ],
+      },
+    ],
+  },
+  c3: {
+    id: "c3",
+    title: "Python para Análisis de Datos",
+    modules: [
+      {
+        id: "mc3_1", title: "Módulo 1: Python Básico", display_order: 1,
+        sessions: [
+          { id: "sc3_1", module_id: "mc3_1", title: "Instalación y Entorno", description: "Configuración de Python, Anaconda y Jupyter Notebook.", youtube_video_id: "jNQXAC9IVRw", duration_minutes: 30, display_order: 1, materials: [] },
+          { id: "sc3_2", module_id: "mc3_1", title: "Variables y Tipos de Datos", description: "Tipos primitivos, colecciones y operaciones básicas en Python.", youtube_video_id: "9bZkp7q19f0", duration_minutes: 45, display_order: 2, materials: [{ id: "mc3mat1", session_id: "sc3_2", name: "Ejercicios Python.pdf", drive_url: "https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs", type: "PDF", created_at: "2024-03-01" }] },
+        ],
+      },
+      {
+        id: "mc3_2", title: "Módulo 2: Análisis con Pandas", display_order: 2,
+        sessions: [
+          { id: "sc3_3", module_id: "mc3_2", title: "Introducción a Pandas", description: "DataFrames, Series y operaciones de análisis de datos.", youtube_video_id: "QH2-TGUlwu4", duration_minutes: 60, display_order: 1, materials: [] },
+          { id: "sc3_4", module_id: "mc3_2", title: "Visualización con Matplotlib", description: "Gráficos básicos, avanzados y visualización de datos.", youtube_video_id: "JGwWNGJdvx8", duration_minutes: 55, display_order: 2, materials: [] },
+        ],
+      },
+    ],
+  },
+};
+
+// ── Progreso de lecciones mock ─────────────────────────────────────────────────
+const MOCK_PROGRESS_BY_COURSE: Record<string, { enrollment: object; lesson_progress: object[]; has_review: boolean }> = {
+  c1: {
+    enrollment: { id: "enr1", progress_percent: 65, completed_at: null },
+    has_review: false,
+    lesson_progress: [
+      { id: "lp1", enrollment_id: "enr1", session_id: "s1", watched_seconds: 2700, completed: true, completed_at: "2024-03-10T10:00:00Z", last_watched_at: "2024-03-10T10:45:00Z" },
+      { id: "lp2", enrollment_id: "enr1", session_id: "s2", watched_seconds: 2200, completed: true, completed_at: "2024-03-12T11:00:00Z", last_watched_at: "2024-03-12T11:38:00Z" },
+      { id: "lp3", enrollment_id: "enr1", session_id: "s3", watched_seconds: 900, completed: false, completed_at: null, last_watched_at: "2024-03-14T09:30:00Z" },
+    ],
+  },
+  c2: {
+    enrollment: { id: "enr2", progress_percent: 30, completed_at: null },
+    has_review: false,
+    lesson_progress: [
+      { id: "lp4", enrollment_id: "enr2", session_id: "sc2_1", watched_seconds: 2400, completed: true, completed_at: "2024-03-05T10:00:00Z", last_watched_at: "2024-03-05T10:40:00Z" },
+    ],
+  },
+  c3: {
+    enrollment: { id: "enr3", progress_percent: 100, completed_at: "2024-02-28T12:00:00Z" },
+    has_review: false,
+    lesson_progress: [
+      { id: "lp5", enrollment_id: "enr3", session_id: "sc3_1", watched_seconds: 1800, completed: true, completed_at: "2024-02-20T10:00:00Z", last_watched_at: "2024-02-20T10:30:00Z" },
+      { id: "lp6", enrollment_id: "enr3", session_id: "sc3_2", watched_seconds: 2700, completed: true, completed_at: "2024-02-22T11:00:00Z", last_watched_at: "2024-02-22T11:45:00Z" },
+      { id: "lp7", enrollment_id: "enr3", session_id: "sc3_3", watched_seconds: 3600, completed: true, completed_at: "2024-02-25T09:00:00Z", last_watched_at: "2024-02-25T10:00:00Z" },
+      { id: "lp8", enrollment_id: "enr3", session_id: "sc3_4", watched_seconds: 3300, completed: true, completed_at: "2024-02-28T11:00:00Z", last_watched_at: "2024-02-28T12:00:00Z" },
+    ],
+  },
+};
+
+// ── Certificados mock ──────────────────────────────────────────────────────────
+const MOCK_CERTIFICATES: Record<string, object> = {
+  enr3: {
+    id: "cert1",
+    enrollment_id: "enr3",
+    template_id: "tmpl1",
+    verification_code: "CERT-2024-EG-PYTHON-001",
+    pdf_url: "",
+    issued_at: "2024-02-28T12:05:00Z",
+    student: { first_name: "María", last_name: "García" },
+    enrollment: {
+      enrolled_at: "2023-12-01T08:00:00Z",
+      completed_at: "2024-02-28T12:00:00Z",
+      course: { title: "Python para Análisis de Datos", total_duration_minutes: 300 },
+    },
+  },
+};
 
 // ── Cursos mock ───────────────────────────────────────────────────────────────
 const MOCK_CURSOS = [
@@ -181,6 +292,8 @@ export const handlers = [
         completed_at: null,
         last_accessed_at: "2024-03-14T10:00:00Z",
         enrolled_at: "2024-01-10T08:00:00Z",
+        total_watched_seconds: 5800,
+        has_review: false,
         course: {
           id: "c1", title: "Derecho Laboral Avanzado", slug: "derecho-laboral-avanzado",
           thumbnail_url: "", level: "avanzado", total_duration_minutes: 480,
@@ -195,6 +308,8 @@ export const handlers = [
         completed_at: null,
         last_accessed_at: "2024-03-10T15:00:00Z",
         enrolled_at: "2024-02-01T08:00:00Z",
+        total_watched_seconds: 2400,
+        has_review: false,
         course: {
           id: "c2", title: "Finanzas Corporativas", slug: "finanzas-corporativas",
           thumbnail_url: "", level: "intermedio", total_duration_minutes: 360,
@@ -209,6 +324,8 @@ export const handlers = [
         completed_at: "2024-02-28T12:00:00Z",
         last_accessed_at: "2024-02-28T12:00:00Z",
         enrolled_at: "2023-12-01T08:00:00Z",
+        total_watched_seconds: 11400,
+        has_review: false,
         course: {
           id: "c3", title: "Python para Análisis de Datos", slug: "python-analisis-datos",
           thumbnail_url: "", level: "principiante", total_duration_minutes: 300,
@@ -302,6 +419,68 @@ export const handlers = [
       },
       tasa_finalizacion: 68,
     });
+  }),
+
+  // ── VISOR DE CURSO ───────────────────────────────────────────────────────────
+
+  http.get(`${BASE}/cursos/:id/contenido`, ({ params }) => {
+    console.log("[MSW] GET /cursos/:id/contenido →", params.id);
+    const content = MOCK_COURSE_CONTENT[params.id as string] ?? MOCK_COURSE_CONTENT["c1"];
+    return HttpResponse.json(content);
+  }),
+
+  http.get(`${BASE}/mi-progreso/cursos/:courseId`, ({ params }) => {
+    console.log("[MSW] GET /mi-progreso/cursos/:courseId →", params.courseId);
+    const progress = MOCK_PROGRESS_BY_COURSE[params.courseId as string] ?? {
+      enrollment: { id: "enr_unknown", progress_percent: 0, completed_at: null },
+      lesson_progress: [],
+      has_review: false,
+    };
+    return HttpResponse.json(progress);
+  }),
+
+  http.put(`${BASE}/mi-progreso/sesiones/:sessionId`, async ({ params, request }) => {
+    const body = await request.json() as { watched_seconds: number };
+    console.log("[MSW] PUT /mi-progreso/sesiones/:sessionId →", params.sessionId, body);
+
+    // Busca en todos los cursos la sesión para calcular si se completó
+    let durationMinutes = 45;
+    for (const courseData of Object.values(MOCK_COURSE_CONTENT)) {
+      const c = courseData as { modules: Array<{ sessions: Array<{ id: string; duration_minutes: number }> }> };
+      for (const mod of c.modules) {
+        const sess = mod.sessions.find((s) => s.id === params.sessionId);
+        if (sess) { durationMinutes = sess.duration_minutes; break; }
+      }
+    }
+    const completed = body.watched_seconds >= durationMinutes * 60 * 0.9;
+    // Simula progreso recalculado
+    return HttpResponse.json({ completed, progress_percent: completed ? 80 : 65 });
+  }),
+
+  // ── RESEÑAS ──────────────────────────────────────────────────────────────────
+
+  http.post(`${BASE}/reviews`, async ({ request }) => {
+    const body = await request.json() as { enrollment_id: string; rating: number; comment: string };
+    console.log("[MSW] POST /reviews →", body);
+    // Al crear reseña, se genera certificado
+    return HttpResponse.json({
+      id: "rev_" + Date.now(),
+      ...body,
+      status: "approved",
+      created_at: new Date().toISOString(),
+      certificate_available: true,
+    }, { status: 201 });
+  }),
+
+  // ── CERTIFICADOS ─────────────────────────────────────────────────────────────
+
+  http.get(`${BASE}/certificados/mi-certificado/:enrollmentId`, ({ params }) => {
+    console.log("[MSW] GET /certificados/mi-certificado/:enrollmentId →", params.enrollmentId);
+    const cert = MOCK_CERTIFICATES[params.enrollmentId as string];
+    if (!cert) {
+      return HttpResponse.json({ message: "Certificado no disponible" }, { status: 404 });
+    }
+    return HttpResponse.json(cert);
   }),
 
   http.get(`${BASE}/admin/auditoria`, ({ request }) => {
