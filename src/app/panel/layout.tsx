@@ -112,7 +112,7 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
 
   const handleLogout = () => {
     clearUser();
-    router.push("/login");
+    router.push("/auth/login");
   };
 
   const isActive = (href: string) => {

@@ -2,8 +2,8 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { matriculasService, type CreateMatriculasDto } from "@/lib/services/matriculas";
-import { cursosService } from "@/lib/services/cursos";
+import { matriculasService, type CreateMatriculasDto } from "@/lib/services/enrollments";
+import { cursosService } from "@/lib/services/courses";
 import { toast } from "sonner";
 import {
   Search, X, BookOpen, CheckCircle2, UserCheck, Users,

@@ -28,7 +28,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
 
   const handleLogout = () => {
     clearUser();
-    router.push("/login");
+    router.push("/auth/login");
   };
 
   const initials = user?.full_name

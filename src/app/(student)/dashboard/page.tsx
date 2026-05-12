@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/authStore";
-import { api } from "@/lib/api";
+import { studentService } from "@/lib/services/student";
 import { BookOpen, Clock, Award, ChevronRight, PlayCircle } from "lucide-react";
 import Link from "next/link";
 import type { Enrollment } from "@/types";
@@ -10,7 +10,7 @@ import type { Enrollment } from "@/types";
 function useMyEnrollments() {
   return useQuery({
     queryKey: ["mis-inscripciones"],
-    queryFn: () => api.get<Enrollment[]>("/estudiantes/mis-inscripciones").then((r) => r.data),
+    queryFn: studentService.getMyEnrollments,
   });
 }
 

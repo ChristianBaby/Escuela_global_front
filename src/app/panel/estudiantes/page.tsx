@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { usuariosService, type CreateUsuarioDto } from "@/lib/services/usuarios";
+import { usuariosService, type CreateUsuarioDto } from "@/lib/services/users";
 import { useAuthStore } from "@/store/authStore";
 import { toast } from "sonner";
 import type { UserRole } from "@/types";
@@ -265,7 +265,13 @@ export default function EstudiantesPage() {
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactElement }) {
+function Field({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactElement<{ className?: string }>;
+}) {
   return (
     <div className="space-y-1">
       <label className="text-sm font-medium text-gray-700">{label}</label>
@@ -275,6 +281,3 @@ function Field({ label, children }: { label: string; children: React.ReactElemen
     </div>
   );
 }
-
-// Necesario para cloneElement
-import React from "react";

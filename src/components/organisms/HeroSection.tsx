@@ -57,7 +57,7 @@ export function HeroSection() {
               Ver todos los cursos
             </Link>
             <Link
-              href="/registro"
+              href="/auth/register"
               className={cn(buttonVariants({ variant: "outline", size: "lg" }), "border-white/50 text-white hover:bg-white/10 px-8")}
             >
               Crear cuenta gratis

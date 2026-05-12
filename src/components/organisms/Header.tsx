@@ -28,7 +28,7 @@ export function Header() {
 
   const handleLogout = () => {
     clearUser();
-    router.push("/login");
+    router.push("/auth/login");
   };
 
   return (
@@ -91,13 +91,13 @@ export function Header() {
             ) : (
               <>
                 <Link
-                  href="/login"
+                  href="/auth/login"
                   className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "text-gray-700 hover:text-brand-primary h-8 text-xs px-3")}
                 >
                   Iniciar sesión
                 </Link>
                 <Link
-                  href="/registro"
+                  href="/auth/register"
                   className={cn(buttonVariants({ size: "sm" }), "bg-brand-primary hover:bg-brand-primary/90 text-white h-8 text-xs px-3")}
                 >
                   Registrarse
@@ -151,14 +151,14 @@ export function Header() {
               ) : (
                 <>
                   <Link
-                    href="/login"
+                    href="/auth/login"
                     onClick={() => setMobileOpen(false)}
                     className={cn(buttonVariants({ variant: "outline" }), "w-full border-brand-primary text-brand-primary hover:bg-brand-primary hover:text-white")}
                   >
                     Iniciar sesión
                   </Link>
                   <Link
-                    href="/registro"
+                    href="/auth/register"
                     onClick={() => setMobileOpen(false)}
                     className={cn(buttonVariants(), "w-full bg-brand-primary hover:bg-brand-primary/90 text-white")}
                   >

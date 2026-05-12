@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { cursosService } from "@/lib/services/cursos";
-import { categoriasService } from "@/lib/services/categorias";
+import { cursosService } from "@/lib/services/courses";
+import { categoriasService } from "@/lib/services/categories";
 import { toast } from "sonner";
 import Link from "next/link";
 

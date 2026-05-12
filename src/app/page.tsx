@@ -1,17 +1,12 @@
 import { PublicLayout } from "@/components/templates";
 import { HeroSection, CourseGrid } from "@/components/organisms";
+import { coursesServerService } from "@/lib/services/courses/courses.server-service";
 import { BookOpen, Globe, TrendingUp, Award } from "lucide-react";
 import type { Course } from "@/types";
 
 async function getFeaturedCourses(): Promise<Course[]> {
   try {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/api/courses?limit=8&sort=popular&status=published`,
-      { next: { revalidate: 3600 } }
-    );
-    if (!res.ok) return [];
-    const data = await res.json();
-    return data.data ?? [];
+    return await coursesServerService.getFeatured();
   } catch {
     return [];
   }
@@ -114,7 +109,7 @@ export default async function HomePage() {
             Únete a más de 5,000 estudiantes que ya están avanzando en sus carreras.
           </p>
           <a
-            href="/registro"
+            href="/auth/register"
             className="inline-flex items-center justify-center bg-white text-brand-primary font-semibold px-8 py-3 rounded-lg hover:bg-white/90 transition-colors"
           >
             Crear cuenta gratis
