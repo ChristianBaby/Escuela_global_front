@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import {
@@ -15,6 +16,8 @@ import {
   ShieldCheck,
   LogOut,
   ChevronRight,
+  User,
+  TrendingUp,
 } from "lucide-react";
 
 interface NavItem {
@@ -79,6 +82,12 @@ const NAV_SECTIONS: NavSection[] = [
     title: "Marketing",
     items: [
       {
+        label: "Resumen",
+        href: "/panel/marketing",
+        icon: <TrendingUp size={18} />,
+        roles: ["admin", "marketing"],
+      },
+      {
         label: "Publicaciones",
         href: "/panel/marketing/publicaciones",
         icon: <Megaphone size={18} />,
@@ -95,6 +104,12 @@ const NAV_SECTIONS: NavSection[] = [
   {
     title: "Sistema",
     items: [
+      {
+        label: "Mi perfil",
+        href: "/panel/perfil",
+        icon: <User size={18} />,
+        roles: ["admin", "soporte", "marketing"],
+      },
       {
         label: "Auditoría",
         href: "/panel/auditoria",
@@ -125,9 +140,18 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
       {/* Sidebar */}
       <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
         {/* Logo */}
-        <div className="h-16 flex items-center px-6 border-b border-gray-200">
-          <span className="text-lg font-bold text-[#2B55A3]">Escuela Global</span>
-          <span className="ml-2 text-xs bg-[#2B55A3] text-white px-2 py-0.5 rounded-full capitalize">
+        <div className="h-16 flex items-center gap-2 px-6 border-b border-gray-200">
+          <Link href="/panel">
+            <Image
+              src="/Logo_escuela_global.png"
+              alt="Escuela Global"
+              width={140}
+              height={40}
+              className="h-9 w-auto object-contain"
+              priority
+            />
+          </Link>
+          <span className="text-xs bg-[#2B55A3] text-white px-2 py-0.5 rounded-full capitalize shrink-0">
             {user?.role}
           </span>
         </div>

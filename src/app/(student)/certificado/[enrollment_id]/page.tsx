@@ -14,12 +14,6 @@ function formatDate(iso: string) {
   });
 }
 
-function formatHours(minutes: number) {
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  return m > 0 ? `${h}h ${m}min` : `${h} horas`;
-}
-
 export default function CertificadoPage() {
   const { enrollment_id } = useParams<{ enrollment_id: string }>();
 
@@ -47,21 +41,16 @@ export default function CertificadoPage() {
           El certificado aún no está generado. Asegúrate de haber completado el curso y dejado tu reseña.
         </p>
         <Link
-          href="/mis-cursos"
+          href="/mis-certificados"
           className="inline-block bg-[#2B55A3] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#2B55A3]/90 transition-colors"
         >
-          Volver a mis cursos
+          Volver a mis certificados
         </Link>
       </div>
     );
   }
 
-  const studentName = `${cert.student.first_name} ${cert.student.last_name}`;
-  const courseName = cert.enrollment.course.title;
   const issuedDate = formatDate(cert.issued_at);
-  const enrolledDate = formatDate(cert.enrollment.enrolled_at);
-  const completedDate = formatDate(cert.enrollment.completed_at);
-  const duration = formatHours(cert.enrollment.course.total_duration_minutes);
   const verifyUrl = `/verificar/${cert.verification_code}`;
 
   return (
@@ -84,23 +73,19 @@ export default function CertificadoPage() {
         {/* Cuerpo */}
         <div className="px-8 py-8 text-center">
           <p className="text-gray-500 text-sm mb-2">Este certificado acredita que</p>
-          <p className="text-3xl font-bold text-gray-900 mb-4">{studentName}</p>
+          <p className="text-3xl font-bold text-gray-900 mb-4">{cert.student_name}</p>
           <p className="text-gray-500 text-sm mb-2">completó satisfactoriamente el curso</p>
-          <p className="text-xl font-semibold text-[#2B55A3] mb-6">{courseName}</p>
+          <p className="text-xl font-semibold text-[#2B55A3] mb-6">{cert.course_title}</p>
 
-          {/* Datos del curso */}
-          <div className="grid grid-cols-3 gap-4 py-6 border-t border-b border-gray-100">
-            <div>
-              <p className="text-xs text-gray-400 uppercase tracking-wide">Inicio</p>
-              <p className="text-sm font-medium text-gray-700 mt-1">{enrolledDate}</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-400 uppercase tracking-wide">Finalización</p>
-              <p className="text-sm font-medium text-gray-700 mt-1">{completedDate}</p>
-            </div>
+          {/* Datos */}
+          <div className="grid grid-cols-2 gap-4 py-6 border-t border-b border-gray-100">
             <div>
               <p className="text-xs text-gray-400 uppercase tracking-wide">Duración</p>
-              <p className="text-sm font-medium text-gray-700 mt-1">{duration}</p>
+              <p className="text-sm font-medium text-gray-700 mt-1">{cert.total_hours} horas</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-400 uppercase tracking-wide">Emitido</p>
+              <p className="text-sm font-medium text-gray-700 mt-1">{issuedDate}</p>
             </div>
           </div>
 
@@ -124,11 +109,6 @@ export default function CertificadoPage() {
               <ExternalLink size={11} />
             </Link>
           </div>
-        </div>
-
-        {/* Emitido */}
-        <div className="px-8 pb-6 text-center">
-          <p className="text-xs text-gray-400">Emitido el {issuedDate}</p>
         </div>
       </div>
 
@@ -158,8 +138,8 @@ export default function CertificadoPage() {
           onClick={() => {
             if (navigator.share) {
               navigator.share({
-                title: `Certificado — ${courseName}`,
-                text: `Completé el curso "${courseName}" en Escuela Global.`,
+                title: `Certificado — ${cert.course_title}`,
+                text: `Completé el curso "${cert.course_title}" en Escuela Global.`,
                 url: `${window.location.origin}${verifyUrl}`,
               });
             } else {
@@ -175,7 +155,7 @@ export default function CertificadoPage() {
       </div>
 
       <Link
-        href="/mis-cursos?tab=completados"
+        href="/mis-certificados"
         className="block text-center text-sm text-gray-400 hover:text-gray-600 transition-colors"
       >
         ← Ver todos mis certificados

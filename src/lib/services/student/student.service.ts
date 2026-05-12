@@ -1,5 +1,5 @@
 import { api } from "@/lib/http/api";
-import type { Enrollment, CourseContent, CourseProgress, CertificateDetail } from "@/types";
+import type { Enrollment, CourseContent, CourseProgress, CertificateDetail, CertificateSummary } from "@/types";
 
 export interface SubmitReviewDto {
   course_id: string;
@@ -29,6 +29,9 @@ export const studentService = {
   submitReview: (data: SubmitReviewDto) =>
     api.post<{ id: string; certificate_available: boolean }>("/reviews", data).then((r) => r.data),
 
+  getMyCertificates: () =>
+    api.get<{ data: CertificateSummary[] }>("/student/certificates").then((r) => r.data.data),
+
   getMyCertificate: (enrollmentId: string) =>
-    api.get<CertificateDetail>(`/certificados/mi-certificado/${enrollmentId}`).then((r) => r.data),
+    api.get<CertificateDetail>(`/student/certificates/${enrollmentId}`).then((r) => r.data),
 };

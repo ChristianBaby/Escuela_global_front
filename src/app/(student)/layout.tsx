@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import {
@@ -10,15 +11,16 @@ import {
   User,
   ShoppingCart,
   LogOut,
-  GraduationCap,
+  Award,
 } from "lucide-react";
 
 const NAV = [
-  { label: "Inicio",         href: "/dashboard",       icon: LayoutDashboard },
-  { label: "Mis cursos",     href: "/mis-cursos",      icon: BookOpen },
-  { label: "Carrito",        href: "/carrito",          icon: ShoppingCart },
-  { label: "Notificaciones", href: "/notificaciones",   icon: Bell },
-  { label: "Mi perfil",      href: "/perfil",           icon: User },
+  { label: "Inicio",            href: "/dashboard",          icon: LayoutDashboard },
+  { label: "Mis cursos",        href: "/mis-cursos",         icon: BookOpen },
+  { label: "Mis certificados",  href: "/mis-certificados",   icon: Award },
+  { label: "Carrito",           href: "/carrito",             icon: ShoppingCart },
+  { label: "Notificaciones",    href: "/notificaciones",      icon: Bell },
+  { label: "Mi perfil",         href: "/perfil",              icon: User },
 ];
 
 export default function StudentLayout({ children }: { children: React.ReactNode }) {
@@ -40,15 +42,16 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
       {/* Sidebar */}
       <aside className="w-64 bg-white border-r border-gray-200 flex flex-col fixed h-full z-10">
         {/* Logo */}
-        <div className="px-6 py-5 border-b border-gray-100">
-          <Link href="/dashboard" className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#2B55A3] flex items-center justify-center">
-              <GraduationCap size={18} className="text-white" />
-            </div>
-            <span className="font-bold text-gray-900 text-sm leading-tight">
-              Escuela<br />
-              <span className="text-[#2B55A3]">Global</span>
-            </span>
+        <div className="px-6 py-4 border-b border-gray-100 flex items-center">
+          <Link href="/dashboard">
+            <Image
+              src="/Logo_escuela_global.png"
+              alt="Escuela Global"
+              width={160}
+              height={48}
+              className="h-10 w-auto object-contain"
+              priority
+            />
           </Link>
         </div>
 

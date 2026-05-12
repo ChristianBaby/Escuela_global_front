@@ -212,6 +212,26 @@ export interface Certificate {
   issued_at: string;
 }
 
+export interface CertificateSummary {
+  id: string;
+  enrollment_id: string;
+  course_title: string;
+  verification_code: string;
+  pdf_url: string;
+  issued_at: string;
+}
+
+export interface CertificateDetail {
+  id: string;
+  verification_code: string;
+  pdf_url: string;
+  course_title: string;
+  student_name: string;
+  issued_at: string;
+  total_hours: number;
+  instructors?: string[];
+}
+
 // ─── Marketing ────────────────────────────────────────────────────────────────
 
 export interface Promotion {
@@ -267,15 +287,6 @@ export interface CourseProgress {
   enrollment: Pick<Enrollment, "id" | "progress_percent" | "completed_at">;
   lesson_progress: LessonProgress[];
   has_review: boolean;
-}
-
-export interface CertificateDetail extends Certificate {
-  student: Pick<User, "first_name" | "last_name">;
-  enrollment: {
-    enrolled_at: string;
-    completed_at: string;
-    course: Pick<Course, "title" | "total_duration_minutes">;
-  };
 }
 
 // ─── API Helpers ──────────────────────────────────────────────────────────────

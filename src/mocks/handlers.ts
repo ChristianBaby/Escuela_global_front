@@ -113,20 +113,27 @@ const MOCK_PROGRESS_BY_COURSE: Record<string, { enrollment: object; lesson_progr
 };
 
 // ── Certificados mock ──────────────────────────────────────────────────────────
-const MOCK_CERTIFICATES: Record<string, object> = {
-  enr3: {
+const MOCK_CERTIFICATES_SUMMARY = [
+  {
     id: "cert1",
     enrollment_id: "enr3",
-    template_id: "tmpl1",
+    course_title: "Python para Análisis de Datos",
     verification_code: "CERT-2024-EG-PYTHON-001",
     pdf_url: "",
     issued_at: "2024-02-28T12:05:00Z",
-    student: { first_name: "María", last_name: "García" },
-    enrollment: {
-      enrolled_at: "2023-12-01T08:00:00Z",
-      completed_at: "2024-02-28T12:00:00Z",
-      course: { title: "Python para Análisis de Datos", total_duration_minutes: 300 },
-    },
+  },
+];
+
+const MOCK_CERTIFICATES_DETAIL: Record<string, object> = {
+  enr3: {
+    id: "cert1",
+    verification_code: "CERT-2024-EG-PYTHON-001",
+    pdf_url: "",
+    course_title: "Python para Análisis de Datos",
+    student_name: "María García",
+    issued_at: "2024-02-28T12:05:00Z",
+    total_hours: 5,
+    instructors: [],
   },
 };
 
@@ -135,6 +142,21 @@ const MOCK_CURSOS = [
   { id: "c1", title: "Derecho Laboral Avanzado", slug: "derecho-laboral-avanzado", category: { id: "cat1", name: "Derecho" }, price: 299, currency: "USD", status: "published", enrolled_count: 42, thumbnail_url: "", created_at: "2024-01-10" },
   { id: "c2", title: "Finanzas Corporativas", slug: "finanzas-corporativas", category: { id: "cat2", name: "Finanzas" }, price: 249, currency: "USD", status: "published", enrolled_count: 28, thumbnail_url: "", created_at: "2024-02-05" },
   { id: "c3", title: "Python para Análisis de Datos", slug: "python-analisis-datos", category: { id: "cat3", name: "Tecnología" }, price: 199, currency: "USD", status: "draft", enrolled_count: 0, thumbnail_url: "", created_at: "2024-03-01" },
+];
+
+// ── Promociones mock ──────────────────────────────────────────────────────────
+const MOCK_PROMOCIONES = [
+  { id: "p1", title: "Banner Verano 2024", image_url: "", destination_url: "https://example.com", display_order: 1, status: "active", starts_at: "2024-01-01T00:00:00Z", ends_at: "2024-12-31T23:59:59Z", created_at: "2024-01-01T00:00:00Z" },
+  { id: "p2", title: "Promo Derecho Laboral", image_url: "", destination_url: "https://example.com/derecho", display_order: 2, status: "active", starts_at: "2024-03-01T00:00:00Z", ends_at: "2024-05-15T23:59:59Z", created_at: "2024-03-01T00:00:00Z" },
+  { id: "p3", title: "Descuento Fin de Año", image_url: "", destination_url: null, display_order: 3, status: "inactive", starts_at: "2024-12-15T00:00:00Z", ends_at: "2024-12-31T23:59:59Z", created_at: "2024-11-01T00:00:00Z" },
+  { id: "p4", title: "Campaña Python Data Science", image_url: "", destination_url: "https://example.com/python", display_order: 4, status: "inactive", starts_at: null, ends_at: null, created_at: "2024-02-10T00:00:00Z" },
+];
+
+// ── Sliders mock ──────────────────────────────────────────────────────────────
+const MOCK_SLIDERS = [
+  { id: "sl1", title: "Cursos Destacados", type: "courses", image_url: null, destination_url: null, position_on_page: "top", display_order: 1, status: "active", courses: [], created_at: "2024-01-01T00:00:00Z" },
+  { id: "sl2", title: "Banner Principal", type: "banner", image_url: "", destination_url: "https://example.com", position_on_page: "top", display_order: 2, status: "active", courses: [], created_at: "2024-02-01T00:00:00Z" },
+  { id: "sl3", title: "Nuevos Cursos", type: "courses", image_url: null, destination_url: null, position_on_page: "middle", display_order: 3, status: "inactive", courses: [], created_at: "2024-03-01T00:00:00Z" },
 ];
 
 // ── Categorías mock ───────────────────────────────────────────────────────────
@@ -346,12 +368,7 @@ export const handlers = [
 
   http.get(`${BASE}/promociones`, () => {
     console.log("[MSW] GET /promociones");
-    return HttpResponse.json({
-      data: [
-        { id: "p1", title: "Banner Verano 2024", image_url: "", destination_url: "https://example.com", status: "active", starts_at: "2024-01-01", ends_at: "2024-12-31" },
-      ],
-      total: 1,
-    });
+    return HttpResponse.json(MOCK_PROMOCIONES);
   }),
 
   http.post(`${BASE}/promociones`, async ({ request }) => {
@@ -373,12 +390,7 @@ export const handlers = [
 
   http.get(`${BASE}/sliders`, () => {
     console.log("[MSW] GET /sliders");
-    return HttpResponse.json({
-      data: [
-        { id: "s1", title: "Cursos Destacados", type: "courses", position_on_page: "top", status: "active", courses: [] },
-      ],
-      total: 1,
-    });
+    return HttpResponse.json(MOCK_SLIDERS);
   }),
 
   http.post(`${BASE}/sliders`, async ({ request }) => {
@@ -474,13 +486,61 @@ export const handlers = [
 
   // ── CERTIFICADOS ─────────────────────────────────────────────────────────────
 
-  http.get(`${BASE}/certificados/mi-certificado/:enrollmentId`, ({ params }) => {
-    console.log("[MSW] GET /certificados/mi-certificado/:enrollmentId →", params.enrollmentId);
-    const cert = MOCK_CERTIFICATES[params.enrollmentId as string];
+  http.get(`${BASE}/student/certificates`, () => {
+    console.log("[MSW] GET /student/certificates");
+    return HttpResponse.json({ data: MOCK_CERTIFICATES_SUMMARY });
+  }),
+
+  http.get(`${BASE}/student/certificates/:enrollmentId`, ({ params }) => {
+    console.log("[MSW] GET /student/certificates/:enrollmentId →", params.enrollmentId);
+    const cert = MOCK_CERTIFICATES_DETAIL[params.enrollmentId as string];
     if (!cert) {
       return HttpResponse.json({ message: "Certificado no disponible" }, { status: 404 });
     }
     return HttpResponse.json(cert);
+  }),
+
+  // ── PERFIL ───────────────────────────────────────────────────────────────────
+
+  http.get(`${BASE}/usuarios/me`, ({ request }) => {
+    console.log("[MSW] GET /usuarios/me");
+    // Lee el email del JWT mock para devolver el usuario correcto
+    const auth = request.headers.get("Authorization") ?? "";
+    const token = auth.replace("Bearer ", "");
+    const parts = token.split(".");
+    let currentUser = MOCK_USERS[0];
+    if (parts.length >= 2) {
+      try {
+        const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
+        currentUser = MOCK_USERS.find((u) => u.email === payload.email) ?? MOCK_USERS[0];
+      } catch { /* usa el default */ }
+    }
+    return HttpResponse.json(currentUser);
+  }),
+
+  http.patch(`${BASE}/usuarios/me`, async ({ request }) => {
+    const body = await request.json() as Record<string, string>;
+    console.log("[MSW] PATCH /usuarios/me →", body);
+    const auth = request.headers.get("Authorization") ?? "";
+    const token = auth.replace("Bearer ", "");
+    const parts = token.split(".");
+    let currentUser = MOCK_USERS[0];
+    if (parts.length >= 2) {
+      try {
+        const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
+        currentUser = MOCK_USERS.find((u) => u.email === payload.email) ?? MOCK_USERS[0];
+      } catch { /* usa el default */ }
+    }
+    return HttpResponse.json({ ...currentUser, ...body });
+  }),
+
+  http.patch(`${BASE}/usuarios/me/password`, async ({ request }) => {
+    const body = await request.json() as { current_password: string };
+    console.log("[MSW] PATCH /usuarios/me/password");
+    if (body.current_password === "wrong") {
+      return HttpResponse.json({ message: "Contraseña actual incorrecta" }, { status: 400 });
+    }
+    return HttpResponse.json({ message: "Contraseña actualizada correctamente" });
   }),
 
   http.get(`${BASE}/admin/auditoria`, ({ request }) => {

@@ -6,12 +6,10 @@ import { categoriasService, type CreateCategoriaDto } from "@/lib/services/categ
 import { toast } from "sonner";
 import type { Category } from "@/types";
 
-const ICONS = ["📚", "💼", "🏗️", "💻", "📐", "🔬", "📊", "🎨", "⚙️", "🌍"];
-
 const empty: CreateCategoriaDto = {
   name: "",
   slug: "",
-  icon: "📚",
+  icon: "",
   color: "#2B55A3",
   description: "",
 };
@@ -77,7 +75,7 @@ export default function CategoriasPage() {
 
   const openEdit = (cat: Category) => {
     setEditing(cat);
-    setForm({ name: cat.name, slug: cat.slug, icon: cat.icon, color: cat.color, description: cat.description });
+    setForm({ name: cat.name, slug: cat.slug, icon: cat.icon ?? "", color: cat.color, description: cat.description });
     setShowModal(true);
   };
 
@@ -148,10 +146,7 @@ export default function CategoriasPage() {
                 categorias?.map((cat) => (
                   <tr key={cat.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg">{cat.icon}</span>
-                        <span className="font-medium text-gray-900">{cat.name}</span>
-                      </div>
+                      <span className="font-medium text-gray-900">{cat.name}</span>
                     </td>
                     <td className="px-4 py-3 text-gray-500 font-mono text-xs">{cat.slug}</td>
                     <td className="px-4 py-3">
@@ -200,21 +195,6 @@ export default function CategoriasPage() {
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
                 />
                 <p className="text-xs text-gray-400">Debe ser único, sin espacios ni caracteres especiales</p>
-              </div>
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-700">Ícono</label>
-                <div className="flex flex-wrap gap-2">
-                  {ICONS.map((icon) => (
-                    <button
-                      key={icon}
-                      type="button"
-                      onClick={() => setForm({ ...form, icon })}
-                      className={`text-xl p-2 rounded-lg border transition-colors ${form.icon === icon ? "border-[#2B55A3] bg-blue-50" : "border-gray-200 hover:bg-gray-50"}`}
-                    >
-                      {icon}
-                    </button>
-                  ))}
-                </div>
               </div>
               <div className="space-y-1">
                 <label className="text-sm font-medium text-gray-700">Color</label>
