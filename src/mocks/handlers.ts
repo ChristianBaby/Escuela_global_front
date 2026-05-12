@@ -1,6 +1,6 @@
 import { http, HttpResponse } from "msw";
 
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
+const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 
 function mockJwt(payload: object): string {
   const encode = (obj: object) =>
