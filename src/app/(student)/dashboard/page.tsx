@@ -18,7 +18,7 @@ export default function DashboardPage() {
   const { user } = useAuthStore();
   const { data: enrollments = [], isLoading } = useMyEnrollments();
 
-  const firstName = user?.full_name?.split(" ")[0] ?? "Estudiante";
+  const firstName = user?.first_name ?? "Estudiante";
   const cursosActivos  = enrollments.filter((e) => !e.completed_at).length;
   const completados    = enrollments.filter((e) => e.completed_at).length;
   const progresoPromedio = enrollments.length

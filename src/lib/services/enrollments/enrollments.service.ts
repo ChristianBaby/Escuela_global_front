@@ -24,7 +24,7 @@ export const matriculasService = {
     api.post<Enrollment[]>("/matriculas", data).then((r) => r.data),
 
   buscarEstudiante: (query: string) =>
-    api.get<{ id: string; full_name: string; email: string }[]>(
+    api.get<{ id: string; first_name: string; last_name: string; email: string }[]>(
       "/usuarios/buscar",
       { params: { q: query, role: "estudiante" } }
     ).then((r) => r.data),

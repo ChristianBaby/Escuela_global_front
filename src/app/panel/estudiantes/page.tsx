@@ -21,7 +21,8 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const empty: CreateUsuarioDto = {
-  full_name: "",
+  first_name: "",
+  last_name: "",
   email: "",
   phone: "",
   country: "",
@@ -150,7 +151,7 @@ export default function EstudiantesPage() {
               ) : (
                 data?.data.map((u) => (
                   <tr key={u.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 font-medium text-gray-900">{u.full_name}</td>
+                    <td className="px-4 py-3 font-medium text-gray-900">{u.first_name} {u.last_name}</td>
                     <td className="px-4 py-3 text-gray-600">{u.email}</td>
                     <td className="px-4 py-3">
                       <span className="bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded-full capitalize">
@@ -226,8 +227,11 @@ export default function EstudiantesPage() {
               <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              <Field label="Nombre completo *">
-                <input required value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} />
+              <Field label="Nombre(s) *">
+                <input required value={form.first_name} onChange={(e) => setForm({ ...form, first_name: e.target.value })} />
+              </Field>
+              <Field label="Apellidos *">
+                <input required value={form.last_name} onChange={(e) => setForm({ ...form, last_name: e.target.value })} />
               </Field>
               <Field label="Email *">
                 <input required type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />

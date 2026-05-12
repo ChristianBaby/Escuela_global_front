@@ -22,7 +22,8 @@ export type AuditAction = "create" | "update" | "delete";
 
 export interface User {
   id: string;
-  full_name: string;
+  first_name: string;
+  last_name: string;
   email: string;
   phone: string;
   country?: string;
@@ -49,7 +50,8 @@ export interface Category {
 export interface Instructor {
   id: string;
   course_id: string;
-  full_name: string;
+  first_name: string;
+  last_name: string;
   title: string;
   description?: string;
   photo_url?: string;
@@ -189,7 +191,7 @@ export interface LessonProgress {
 export interface Review {
   id: string;
   user_id: string;
-  user?: Pick<User, "id" | "full_name" | "profile_photo_url">;
+  user?: Pick<User, "id" | "first_name" | "last_name" | "profile_photo_url">;
   course_id: string;
   enrollment_id: string;
   rating: number;

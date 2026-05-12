@@ -174,10 +174,10 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
         <div className="border-t border-gray-200 p-4">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-8 h-8 rounded-full bg-[#2B55A3] flex items-center justify-center text-white text-sm font-semibold">
-              {user?.full_name?.charAt(0).toUpperCase()}
+              {user?.first_name?.charAt(0).toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">{user?.full_name}</p>
+              <p className="text-sm font-medium text-gray-900 truncate">{user?.first_name} {user?.last_name}</p>
               <p className="text-xs text-gray-500 truncate">{user?.email}</p>
             </div>
           </div>

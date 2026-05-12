@@ -12,11 +12,11 @@ function mockJwt(payload: object): string {
 
 // ── Usuarios mock ─────────────────────────────────────────────────────────────
 const MOCK_USERS = [
-  { id: "u1", full_name: "María García", email: "maria@example.com", role: "estudiante", status: "active", created_at: "2024-01-15", phone: "+51999111222", country: "PE" },
-  { id: "u2", full_name: "Carlos López", email: "carlos@example.com", role: "estudiante", status: "active", created_at: "2024-02-20", phone: "+51999333444", country: "PE" },
-  { id: "u3", full_name: "Ana Torres", email: "ana@example.com", role: "soporte", status: "active", created_at: "2024-01-05", phone: "+51999555666", country: "PE" },
-  { id: "u4", full_name: "Luis Mendoza", email: "luis@example.com", role: "marketing", status: "suspended", created_at: "2024-03-10", phone: "+51999777888", country: "PE" },
-  { id: "u5", full_name: "Admin Global", email: "admin@escuelaglobal.com", role: "admin", status: "active", created_at: "2023-12-01", phone: "+51999000111", country: "PE" },
+  { id: "u1", first_name: "María", last_name: "García", email: "maria@example.com", role: "estudiante", status: "active", created_at: "2024-01-15", phone: "+51999111222", country: "PE" },
+  { id: "u2", first_name: "Carlos", last_name: "López", email: "carlos@example.com", role: "estudiante", status: "active", created_at: "2024-02-20", phone: "+51999333444", country: "PE" },
+  { id: "u3", first_name: "Ana", last_name: "Torres", email: "ana@example.com", role: "soporte", status: "active", created_at: "2024-01-05", phone: "+51999555666", country: "PE" },
+  { id: "u4", first_name: "Luis", last_name: "Mendoza", email: "luis@example.com", role: "marketing", status: "suspended", created_at: "2024-03-10", phone: "+51999777888", country: "PE" },
+  { id: "u5", first_name: "Admin", last_name: "Global", email: "admin@escuelaglobal.com", role: "admin", status: "active", created_at: "2023-12-01", phone: "+51999000111", country: "PE" },
 ];
 
 // ── Cursos mock ───────────────────────────────────────────────────────────────
@@ -145,7 +145,7 @@ export const handlers = [
     const q = url.searchParams.get("q") ?? "";
     console.log("[MSW] GET /usuarios/buscar →", q);
     const results = MOCK_USERS.filter((u) =>
-      u.full_name.toLowerCase().includes(q.toLowerCase()) ||
+      `${u.first_name} ${u.last_name}`.toLowerCase().includes(q.toLowerCase()) ||
       u.email.toLowerCase().includes(q.toLowerCase())
     );
     return HttpResponse.json(results);
@@ -309,8 +309,8 @@ export const handlers = [
     console.log("[MSW] GET /admin/auditoria →", Object.fromEntries(url.searchParams));
     return HttpResponse.json({
       data: [
-        { id: "a1", created_at: "2024-03-15 09:32", user: { full_name: "Ana Torres", email: "ana@example.com" }, action: "update", entity_type: "Course", changes: { title: { before: "Derecho Básico", after: "Derecho Laboral Avanzado" } } },
-        { id: "a2", created_at: "2024-03-14 14:15", user: { full_name: "Ana Torres", email: "ana@example.com" }, action: "create", entity_type: "Category", changes: { name: "Tecnología" } },
+        { id: "a1", created_at: "2024-03-15 09:32", user: { first_name: "Ana", last_name: "Torres", email: "ana@example.com" }, action: "update", entity_type: "Course", changes: { title: { before: "Derecho Básico", after: "Derecho Laboral Avanzado" } } },
+        { id: "a2", created_at: "2024-03-14 14:15", user: { first_name: "Ana", last_name: "Torres", email: "ana@example.com" }, action: "create", entity_type: "Category", changes: { name: "Tecnología" } },
       ],
       total: 2,
     });

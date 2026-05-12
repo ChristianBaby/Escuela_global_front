@@ -164,15 +164,12 @@ export default function RegisterPage() {
       const { nombres, apellidos, email, country, phone: rawPhone, password } = data;
 
       const phone = `${phonePrefix}${rawPhone.replace(/\D/g, "")}`;
-      const full_name = `${nombres.trim()} ${apellidos.trim()}`;
 
 	const res = await authService.register({
-        //full_name,
         first_name: nombres.trim(),
         last_name: apellidos.trim(),
         email,
         phone,
-        //country,
         password,
       });
       console.log(res)

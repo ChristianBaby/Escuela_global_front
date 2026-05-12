@@ -31,8 +31,8 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
     router.push("/auth/login");
   };
 
-  const initials = user?.full_name
-    ? user.full_name.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase()
+  const initials = user?.first_name
+    ? (user.first_name[0] + (user.last_name?.[0] ?? "")).toUpperCase() || "?"
     : "?";
 
   return (
@@ -80,7 +80,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
               {initials}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">{user?.full_name ?? "Estudiante"}</p>
+              <p className="text-sm font-medium text-gray-900 truncate">{user ? `${user.first_name} ${user.last_name}` : "Estudiante"}</p>
               <p className="text-xs text-gray-400 truncate">{user?.email}</p>
             </div>
           </div>
@@ -99,7 +99,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
         {/* Header top bar */}
         <header className="bg-white border-b border-gray-200 px-8 py-4 flex items-center justify-between sticky top-0 z-10">
           <div className="text-sm text-gray-500">
-            Bienvenido de vuelta, <span className="font-medium text-gray-900">{user?.full_name?.split(" ")[0] ?? "Estudiante"}</span>
+            Bienvenido de vuelta, <span className="font-medium text-gray-900">{user?.first_name ?? "Estudiante"}</span>
           </div>
           <Link href="/cursos" className="text-sm font-medium text-[#2B55A3] hover:text-[#3FB1E5] transition-colors">
             Explorar cursos →

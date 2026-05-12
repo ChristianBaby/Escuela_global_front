@@ -28,7 +28,8 @@ export interface CreateCursoDto {
 }
 
 export interface CreateInstructorDto {
-  full_name: string;
+  first_name: string;
+  last_name: string;
   title: string;
   description?: string;
   photo_url?: string;

@@ -76,9 +76,9 @@ export function Header() {
                   className="flex items-center gap-1.5 text-sm font-medium text-gray-700 hover:text-brand-primary transition-colors"
                 >
                   <div className="w-6 h-6 rounded-full bg-brand-primary/10 flex items-center justify-center text-brand-primary text-xs font-bold select-none">
-                    {user?.full_name?.charAt(0).toUpperCase() ?? "U"}
+                    {user?.first_name?.charAt(0).toUpperCase() ?? "U"}
                   </div>
-                  <span className="max-w-[90px] truncate">{user?.full_name?.split(" ")[0]}</span>
+                  <span className="max-w-[90px] truncate">{user?.first_name}</span>
                 </Link>
                 <button
                   onClick={handleLogout}

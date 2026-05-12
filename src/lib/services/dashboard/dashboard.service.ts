@@ -22,7 +22,7 @@ export interface DashboardStats {
 export interface AuditLog {
   id: string;
   user_id: string;
-  user?: { full_name: string; email: string };
+  user?: { first_name: string; last_name: string; email: string };
   entity_type: string;
   entity_id: string;
   action: "create" | "update" | "delete";
