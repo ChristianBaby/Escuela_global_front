@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { slidersService, type CreateSliderDto } from "@/lib/services/marketing";
-import { cursosService } from "@/lib/services/cursos";
+import { cursosService } from "@/lib/services/courses";
 import { toast } from "sonner";
 import type { Slider } from "@/types";
 

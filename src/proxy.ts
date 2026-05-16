@@ -3,6 +3,7 @@ import type { NextRequest } from "next/server";
 
 const ROLE_ROUTES: Record<string, string[]> = {
   "/dashboard":           ["estudiante"],
+  "/mis-cursos":          ["estudiante"],
   "/curso":               ["estudiante"],
   "/carrito":             ["estudiante"],
   "/checkout":            ["estudiante"],
@@ -14,6 +15,7 @@ const ROLE_ROUTES: Record<string, string[]> = {
   "/panel/marketing":     ["marketing", "admin"],
   "/panel/estudiantes":   ["admin"],
   "/panel/auditoria":     ["admin"],
+  "/panel/cursos":        ["admin"],
   "/panel":               ["admin", "soporte", "marketing"],
 };
 
@@ -23,8 +25,10 @@ const ROUTE_PREFIXES = [
   "/panel/marketing",
   "/panel/estudiantes",
   "/panel/auditoria",
+  "/panel/cursos",
   "/panel",
   "/dashboard",
+  "/mis-cursos",
   "/curso",
   "/carrito",
   "/checkout",
@@ -54,13 +58,13 @@ export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Redirigir usuarios ya autenticados que intenten ir al login
-  if (pathname === "/login") {
+  if (pathname === "/auth/login") {
     const token = request.cookies.get("access_token")?.value;
     console.log(token)
     if (token) {
       try {
         const payload = decodeJwtPayload(token);
-        const home = ROLE_HOME[payload.role as string] ?? "/login";
+        const home = ROLE_HOME[payload.role as string] ?? "/auth/login";
         return NextResponse.redirect(new URL(home, request.url));
       } catch {
         // Token corrupto — dejar pasar al login
@@ -78,7 +82,7 @@ export function proxy(request: NextRequest) {
   const token = request.cookies.get("access_token")?.value;
 
   if (!token) {
-    const loginUrl = new URL("/login", request.url);
+    const loginUrl = new URL("/auth/login", request.url);
     loginUrl.searchParams.set("redirect", pathname);
     return NextResponse.redirect(loginUrl);
   }
@@ -95,7 +99,7 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   } catch {
     // Token inválido o expirado
-    const response = NextResponse.redirect(new URL("/login", request.url));
+    const response = NextResponse.redirect(new URL("/auth/login", request.url));
     response.cookies.delete("access_token");
     return response;
   }
@@ -103,11 +107,13 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/login",
+    "/auth/login",
     "/panel",
     "/panel/:path*",
     "/dashboard",
     "/dashboard/:path*",
+    "/mis-cursos",
+    "/mis-cursos/:path*",
     "/curso/:path*",
     "/carrito/:path*",
     "/checkout/:path*",

@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { cursosService } from "@/lib/services/cursos";
-import { categoriasService } from "@/lib/services/categorias";
+import { cursosService } from "@/lib/services/courses";
+import { categoriasService } from "@/lib/services/categories";
+import { useAuthStore } from "@/store/authStore";
 import { toast } from "sonner";
 import Link from "next/link";
 
@@ -21,6 +22,8 @@ const STATUS_STYLES = {
 
 export default function SoporteCursosPage() {
   const queryClient = useQueryClient();
+  const { user } = useAuthStore();
+  const isAdmin = user?.role === "admin";
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -155,6 +158,14 @@ export default function SoporteCursosPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-right space-x-2 whitespace-nowrap">
+                      {isAdmin && (
+                        <Link
+                          href={`/panel/cursos/${curso.id}/matriculados`}
+                          className="text-purple-600 hover:underline text-xs"
+                        >
+                          Matriculados
+                        </Link>
+                      )}
                       <Link
                         href={`/panel/soporte/cursos/${curso.id}/contenido`}
                         className="text-[#2B55A3] hover:underline text-xs"

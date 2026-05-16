@@ -10,9 +10,9 @@ const LINKS = {
     { label: "Ingeniería", href: "/cursos?category=ingenieria" },
   ],
   plataforma: [
-    { label: "Iniciar sesión", href: "/login" },
-    { label: "Registrarse", href: "/registro" },
-    { label: "Recuperar contraseña", href: "/recuperar-contraseña" },
+    { label: "Iniciar sesión", href: "/auth/login" },
+    { label: "Registrarse", href: "/auth/register" },
+    { label: "Recuperar contraseña", href: "/auth/forgot-password" },
   ],
   soporte: [
     { label: "Preguntas frecuentes", href: "/#faq" },

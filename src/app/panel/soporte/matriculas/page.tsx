@@ -2,8 +2,8 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { matriculasService, type CreateMatriculasDto } from "@/lib/services/matriculas";
-import { cursosService } from "@/lib/services/cursos";
+import { matriculasService, type CreateMatriculasDto } from "@/lib/services/enrollments";
+import { cursosService } from "@/lib/services/courses";
 import { toast } from "sonner";
 import {
   Search, X, BookOpen, CheckCircle2, UserCheck, Users,
@@ -14,23 +14,24 @@ import {
 /* ─── tipos ──────────────────────────────────────────────────────────── */
 interface Estudiante {
   id: string;
-  full_name: string;
+  first_name: string;
+  last_name: string;
   email: string;
   matriculado: boolean;
 }
 
 /* ─── mock data ──────────────────────────────────────────────────────── */
 const MOCK_ESTUDIANTES: Estudiante[] = [
-  { id: "u1",  full_name: "María García Quispe",   email: "maria@example.com",  matriculado: false },
-  { id: "u2",  full_name: "Carlos López Mendoza",  email: "carlos@example.com", matriculado: false },
-  { id: "u3",  full_name: "Ana Torres Huanca",     email: "ana@example.com",    matriculado: true  },
-  { id: "u4",  full_name: "Luis Mendoza Vargas",   email: "luis@example.com",   matriculado: false },
-  { id: "u5",  full_name: "Rosa Fernández Castro", email: "rosa@example.com",   matriculado: true  },
-  { id: "u6",  full_name: "Pedro Vargas Soto",     email: "pedro@example.com",  matriculado: false },
-  { id: "u7",  full_name: "Carmen Huanca Flores",  email: "carmen@example.com", matriculado: false },
-  { id: "u8",  full_name: "Diego Quispe Mamani",   email: "diego@example.com",  matriculado: true  },
-  { id: "u9",  full_name: "Sofía Ramos Paredes",   email: "sofia@example.com",  matriculado: false },
-  { id: "u10", full_name: "Jorge Apaza Condori",   email: "jorge@example.com",  matriculado: false },
+  { id: "u1",  first_name: "María",   last_name: "García Quispe",   email: "maria@example.com",  matriculado: false },
+  { id: "u2",  first_name: "Carlos",  last_name: "López Mendoza",  email: "carlos@example.com", matriculado: false },
+  { id: "u3",  first_name: "Ana",     last_name: "Torres Huanca",  email: "ana@example.com",    matriculado: true  },
+  { id: "u4",  first_name: "Luis",    last_name: "Mendoza Vargas",  email: "luis@example.com",   matriculado: false },
+  { id: "u5",  first_name: "Rosa",    last_name: "Fernández Castro", email: "rosa@example.com",  matriculado: true  },
+  { id: "u6",  first_name: "Pedro",   last_name: "Vargas Soto",    email: "pedro@example.com",  matriculado: false },
+  { id: "u7",  first_name: "Carmen",  last_name: "Huanca Flores",  email: "carmen@example.com", matriculado: false },
+  { id: "u8",  first_name: "Diego",   last_name: "Quispe Mamani",  email: "diego@example.com",  matriculado: true  },
+  { id: "u9",  first_name: "Sofía",   last_name: "Ramos Paredes",  email: "sofia@example.com",  matriculado: false },
+  { id: "u10", first_name: "Jorge",   last_name: "Apaza Condori",  email: "jorge@example.com",  matriculado: false },
 ];
 
 const METODOS: { value: CreateMatriculasDto["offline_payment_method"]; label: string }[] = [
@@ -46,9 +47,9 @@ const AVATAR_COLORS = [
   "bg-amber-500", "bg-rose-500",   "bg-cyan-500",
 ];
 
-function Avatar({ name }: { name: string }) {
-  const initials = name.split(" ").slice(0, 2).map((n) => n[0]).join("").toUpperCase();
-  const color    = AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.length];
+function Avatar({ first_name, last_name }: { first_name: string; last_name: string }) {
+  const initials = (first_name[0] + (last_name?.[0] ?? "")).toUpperCase();
+  const color    = AVATAR_COLORS[first_name.charCodeAt(0) % AVATAR_COLORS.length];
   return (
     <div
       className={`${color} text-white rounded-full flex items-center justify-center font-semibold shrink-0`}
@@ -143,7 +144,7 @@ export default function MatriculasPage() {
   );
 
   const estudiantesFiltrados = MOCK_ESTUDIANTES.filter((e) =>
-    normalize(e.full_name).includes(normalize(busqueda)) ||
+    normalize(`${e.first_name} ${e.last_name}`).includes(normalize(busqueda)) ||
     normalize(e.email).includes(normalize(busqueda))
   );
 
@@ -418,9 +419,9 @@ export default function MatriculasPage() {
                           disabled={e.matriculado}
                           className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 border-b border-gray-50 last:border-0 disabled:opacity-50 disabled:cursor-not-allowed text-left"
                         >
-                          <Avatar name={e.full_name} />
+                          <Avatar first_name={e.first_name} last_name={e.last_name} />
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-900 truncate">{e.full_name}</p>
+                            <p className="text-sm font-medium text-gray-900 truncate">{e.first_name} {e.last_name}</p>
                             <p className="text-xs text-gray-400 truncate">{e.email}</p>
                           </div>
                           {e.matriculado
@@ -498,9 +499,9 @@ export default function MatriculasPage() {
                         </td>
                         <td className="px-3 py-3">
                           <div className="flex items-center gap-3">
-                            <Avatar name={estudiante.full_name} />
+                            <Avatar first_name={estudiante.first_name} last_name={estudiante.last_name} />
                             <div>
-                              <p className="font-medium text-gray-900">{estudiante.full_name}</p>
+                              <p className="font-medium text-gray-900">{estudiante.first_name} {estudiante.last_name}</p>
                               <p className="text-xs text-gray-400 sm:hidden">{estudiante.email}</p>
                             </div>
                           </div>

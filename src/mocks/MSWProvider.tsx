@@ -3,14 +3,18 @@
 import { useEffect, useState } from "react";
 
 export function MSWProvider({ children }: { children: React.ReactNode }) {
-  const [ready, setReady] = useState(process.env.NODE_ENV !== "development");
+  const shouldEnableMsw =
+    process.env.NODE_ENV === "development" &&
+    process.env.NEXT_PUBLIC_ENABLE_MSW === "true";
+
+  const [ready, setReady] = useState(!shouldEnableMsw);
 
   useEffect(() => {
-    if (process.env.NODE_ENV !== "development") return;
+    if (!shouldEnableMsw) return;
     import("./browser").then(({ worker }) =>
       worker.start({ onUnhandledRequest: "bypass" })
     ).then(() => setReady(true));
-  }, []);
+  }, [shouldEnableMsw]);
 
   if (!ready) {
     return (

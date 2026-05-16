@@ -45,7 +45,7 @@ export function CourseCard({ course }: CourseCardProps) {
           </h3>
 
           {course.instructors?.[0] && (
-            <p className="text-xs text-gray-500 truncate">{course.instructors[0].full_name}</p>
+            <p className="text-xs text-gray-500 truncate">{course.instructors[0].first_name} {course.instructors[0].last_name}</p>
           )}
 
           <div className="flex items-center gap-2">

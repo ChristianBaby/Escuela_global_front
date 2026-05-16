@@ -53,7 +53,7 @@ export default function AuditoriaPage() {
                       <span className="text-xs">{new Date(log.created_at).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}</span>
                     </td>
                     <td className="px-4 py-3">
-                      <p className="text-gray-900">{log.user?.full_name ?? "—"}</p>
+                      <p className="text-gray-900">{log.user ? `${log.user.first_name} ${log.user.last_name}` : "—"}</p>
                       <p className="text-xs text-gray-400">{log.user?.email}</p>
                     </td>
                     <td className="px-4 py-3">

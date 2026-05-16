@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import {
@@ -10,15 +11,16 @@ import {
   User,
   ShoppingCart,
   LogOut,
-  GraduationCap,
+  Award,
 } from "lucide-react";
 
 const NAV = [
-  { label: "Inicio",         href: "/dashboard",       icon: LayoutDashboard },
-  { label: "Mis cursos",     href: "/mis-cursos",      icon: BookOpen },
-  { label: "Carrito",        href: "/carrito",          icon: ShoppingCart },
-  { label: "Notificaciones", href: "/notificaciones",   icon: Bell },
-  { label: "Mi perfil",      href: "/perfil",           icon: User },
+  { label: "Inicio",            href: "/dashboard",          icon: LayoutDashboard },
+  { label: "Mis cursos",        href: "/mis-cursos",         icon: BookOpen },
+  { label: "Mis certificados",  href: "/mis-certificados",   icon: Award },
+  { label: "Carrito",           href: "/carrito",             icon: ShoppingCart },
+  { label: "Notificaciones",    href: "/notificaciones",      icon: Bell },
+  { label: "Mi perfil",         href: "/perfil",              icon: User },
 ];
 
 export default function StudentLayout({ children }: { children: React.ReactNode }) {
@@ -28,11 +30,11 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
 
   const handleLogout = () => {
     clearUser();
-    router.push("/login");
+    router.push("/auth/login");
   };
 
-  const initials = user?.full_name
-    ? user.full_name.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase()
+  const initials = user?.first_name
+    ? (user.first_name[0] + (user.last_name?.[0] ?? "")).toUpperCase() || "?"
     : "?";
 
   return (
@@ -40,15 +42,16 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
       {/* Sidebar */}
       <aside className="w-64 bg-white border-r border-gray-200 flex flex-col fixed h-full z-10">
         {/* Logo */}
-        <div className="px-6 py-5 border-b border-gray-100">
-          <Link href="/dashboard" className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#2B55A3] flex items-center justify-center">
-              <GraduationCap size={18} className="text-white" />
-            </div>
-            <span className="font-bold text-gray-900 text-sm leading-tight">
-              Escuela<br />
-              <span className="text-[#2B55A3]">Global</span>
-            </span>
+        <div className="px-6 py-4 border-b border-gray-100 flex items-center">
+          <Link href="/dashboard">
+            <Image
+              src="/Logo_escuela_global.png"
+              alt="Escuela Global"
+              width={160}
+              height={48}
+              className="h-10 w-auto object-contain"
+              priority
+            />
           </Link>
         </div>
 
@@ -80,7 +83,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
               {initials}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">{user?.full_name ?? "Estudiante"}</p>
+              <p className="text-sm font-medium text-gray-900 truncate">{user ? `${user.first_name} ${user.last_name}` : "Estudiante"}</p>
               <p className="text-xs text-gray-400 truncate">{user?.email}</p>
             </div>
           </div>
@@ -99,7 +102,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
         {/* Header top bar */}
         <header className="bg-white border-b border-gray-200 px-8 py-4 flex items-center justify-between sticky top-0 z-10">
           <div className="text-sm text-gray-500">
-            Bienvenido de vuelta, <span className="font-medium text-gray-900">{user?.full_name?.split(" ")[0] ?? "Estudiante"}</span>
+            Bienvenido de vuelta, <span className="font-medium text-gray-900">{user?.first_name ?? "Estudiante"}</span>
           </div>
           <Link href="/cursos" className="text-sm font-medium text-[#2B55A3] hover:text-[#3FB1E5] transition-colors">
             Explorar cursos →

@@ -7,6 +7,7 @@ interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   setUser: (user: User, token: string, remember?: boolean) => void;
+  updateUser: (updated: Partial<User>) => void;
   clearUser: () => void;
   hasRole: (roles: UserRole | UserRole[]) => boolean;
 }
@@ -25,6 +26,12 @@ export const useAuthStore = create<AuthState>()(
           sameSite: "strict",
         });
         set({ user, isAuthenticated: true });
+      },
+
+      updateUser: (updated) => {
+        set((state) => ({
+          user: state.user ? { ...state.user, ...updated } : null,
+        }));
       },
 
       clearUser: () => {

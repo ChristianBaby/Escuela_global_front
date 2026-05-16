@@ -22,7 +22,8 @@ export type AuditAction = "create" | "update" | "delete";
 
 export interface User {
   id: string;
-  full_name: string;
+  first_name: string;
+  last_name: string;
   email: string;
   phone: string;
   country?: string;
@@ -49,7 +50,8 @@ export interface Category {
 export interface Instructor {
   id: string;
   course_id: string;
-  full_name: string;
+  first_name: string;
+  last_name: string;
   title: string;
   description?: string;
   photo_url?: string;
@@ -124,7 +126,7 @@ export interface Enrollment {
   user_id: string;
   user?: User;
   course_id: string;
-  course?: Course;
+  course?: Pick<Course, "id" | "title" | "slug" | "thumbnail_url" | "level" | "total_duration_minutes">;
   order_id?: string;
   enrolled_at: string;
   enrollment_type: EnrollmentType;
@@ -135,6 +137,8 @@ export interface Enrollment {
   progress_percent: number;
   completed_at?: string;
   last_accessed_at?: string;
+  total_watched_seconds?: number;
+  has_review?: boolean;
 }
 
 export interface Order {
@@ -189,7 +193,7 @@ export interface LessonProgress {
 export interface Review {
   id: string;
   user_id: string;
-  user?: Pick<User, "id" | "full_name" | "profile_photo_url">;
+  user?: Pick<User, "id" | "first_name" | "last_name" | "profile_photo_url">;
   course_id: string;
   enrollment_id: string;
   rating: number;
@@ -206,6 +210,26 @@ export interface Certificate {
   verification_code: string;
   pdf_url: string;
   issued_at: string;
+}
+
+export interface CertificateSummary {
+  id: string;
+  enrollment_id: string;
+  course_title: string;
+  verification_code: string;
+  pdf_url: string;
+  issued_at: string;
+}
+
+export interface CertificateDetail {
+  id: string;
+  verification_code: string;
+  pdf_url: string;
+  course_title: string;
+  student_name: string;
+  issued_at: string;
+  total_hours: number;
+  instructors?: string[];
 }
 
 // ─── Marketing ────────────────────────────────────────────────────────────────
@@ -245,6 +269,24 @@ export interface Notification {
   is_read: boolean;
   redirect_url?: string;
   created_at: string;
+}
+
+// ─── Course Viewer ────────────────────────────────────────────────────────────
+
+export interface CourseContent {
+  id: string;
+  title: string;
+  modules: Array<
+    Module & {
+      sessions: Array<Session & { materials: Material[] }>;
+    }
+  >;
+}
+
+export interface CourseProgress {
+  enrollment: Pick<Enrollment, "id" | "progress_percent" | "completed_at">;
+  lesson_progress: LessonProgress[];
+  has_review: boolean;
 }
 
 // ─── API Helpers ──────────────────────────────────────────────────────────────
