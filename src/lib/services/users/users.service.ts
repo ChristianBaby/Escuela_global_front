@@ -21,7 +21,7 @@ export interface CreateUsuarioDto {
 
 export const usuariosService = {
   list: (params?: UsuarioParams) =>
-    api.get<PaginatedResponse<User>>("/usuarios", { params }).then((r) => r.data),
+    api.get<PaginatedResponse<User>>("/administracion/usuarios", { params }).then((r) => r.data),
 
   get: (id: string) =>
     api.get<User>(`/usuarios/${id}`).then((r) => r.data),
