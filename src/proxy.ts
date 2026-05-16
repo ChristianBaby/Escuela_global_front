@@ -15,6 +15,7 @@ const ROLE_ROUTES: Record<string, string[]> = {
   "/panel/marketing":     ["marketing", "admin"],
   "/panel/estudiantes":   ["admin"],
   "/panel/auditoria":     ["admin"],
+  "/panel/cursos":        ["admin"],
   "/panel":               ["admin", "soporte", "marketing"],
 };
 
@@ -24,6 +25,7 @@ const ROUTE_PREFIXES = [
   "/panel/marketing",
   "/panel/estudiantes",
   "/panel/auditoria",
+  "/panel/cursos",
   "/panel",
   "/dashboard",
   "/mis-cursos",
