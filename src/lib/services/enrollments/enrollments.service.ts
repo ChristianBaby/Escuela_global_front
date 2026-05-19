@@ -18,14 +18,14 @@ export interface CreateMatriculasDto {
 
 export const matriculasService = {
   list: (params?: MatriculasParams) =>
-    api.get<PaginatedResponse<Enrollment>>("/matriculas", { params }).then((r) => r.data),
+    api.get<PaginatedResponse<Enrollment>>("/enrollments", { params }).then((r) => r.data),
 
   create: (data: CreateMatriculasDto) =>
-    api.post<Enrollment[]>("/matriculas", data).then((r) => r.data),
+    api.post<Enrollment[]>("/enrollments", data).then((r) => r.data),
 
   buscarEstudiante: (query: string) =>
     api.get<{ id: string; first_name: string; last_name: string; email: string }[]>(
-      "/usuarios/buscar",
+      "/users/buscar",
       { params: { q: query, role: "estudiante" } }
     ).then((r) => r.data),
 };

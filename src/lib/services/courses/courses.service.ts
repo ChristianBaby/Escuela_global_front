@@ -57,26 +57,26 @@ export interface CreateInstructorDto {
 
 export const cursosService = {
   list: (params?: CursoParams) =>
-    api.get<PaginatedResponse<Course>>("/cursos", { params }).then((r) => r.data),
+    api.get<PaginatedResponse<Course>>("/courses", { params }).then((r) => r.data),
 
   get: (id: string) =>
-    api.get<Course>(`/cursos/${id}`).then((r) => r.data),
+    api.get<Course>(`/courses/${id}`).then((r) => r.data),
 
   create: (data: CreateCursoDto) =>
-    api.post<CreateCursoResponse>("/cursos", data).then((r) => r.data),
+    api.post<CreateCursoResponse>("/courses", data).then((r) => r.data),
 
   update: (id: string, data: Partial<CreateCursoDto>) =>
-    api.patch<Course>(`/cursos/${id}`, data).then((r) => r.data),
+    api.patch<Course>(`/courses/${id}`, data).then((r) => r.data),
 
   delete: (id: string) =>
-    api.delete(`/cursos/${id}`).then((r) => r.data),
+    api.delete(`/courses/${id}`).then((r) => r.data),
 
   uploadThumbnail: (id: string, file: File) => {
     const formData = new FormData();
     formData.append("thumbnail", file);
     return api
       .post<{ success: boolean; thumbnail_url: string }>(
-        `/cursos/${id}/thumbnail`,
+        `/courses/${id}/thumbnail`,
         formData,
         { headers: { "Content-Type": "multipart/form-data" } }
       )
@@ -84,11 +84,11 @@ export const cursosService = {
   },
 
   addInstructor: (cursoId: string, data: CreateInstructorDto) =>
-    api.post(`/cursos/${cursoId}/instructores`, data).then((r) => r.data),
+    api.post(`/courses/${cursoId}/instructors`, data).then((r) => r.data),
 
   removeInstructor: (cursoId: string, instructorId: string) =>
-    api.delete(`/cursos/${cursoId}/instructores/${instructorId}`).then((r) => r.data),
+    api.delete(`/courses/${cursoId}/instructors/${instructorId}`).then((r) => r.data),
 
   getMatriculados: (id: string, params?: { page?: number; limit?: number; search?: string }) =>
-    api.get<PaginatedResponse<Record<string, unknown>>>(`/cursos/${id}/matriculados`, { params }).then((r) => r.data),
+    api.get<PaginatedResponse<Record<string, unknown>>>(`/courses/${id}/matriculados`, { params }).then((r) => r.data),
 };

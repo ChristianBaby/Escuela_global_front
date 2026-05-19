@@ -21,23 +21,23 @@ export interface CreateUsuarioDto {
 
 export const usuariosService = {
   list: (params?: UsuarioParams) =>
-    api.get<PaginatedResponse<User>>("/administracion/usuarios", { params }).then((r) => r.data),
+    api.get<PaginatedResponse<User>>("/admin/usuarios", { params }).then((r) => r.data),
 
   get: (id: string) =>
-    api.get<User>(`/usuarios/${id}`).then((r) => r.data),
+    api.get<User>(`/users/${id}`).then((r) => r.data),
 
   create: (data: CreateUsuarioDto) =>
-    api.post<User>("/usuarios", data).then((r) => r.data),
+    api.post<User>("/users", data).then((r) => r.data),
 
   update: (id: string, data: Partial<CreateUsuarioDto>) =>
-    api.patch<User>(`/usuarios/${id}`, data).then((r) => r.data),
+    api.patch<User>(`/users/${id}`, data).then((r) => r.data),
 
   suspend: (id: string) =>
-    api.patch(`/usuarios/${id}/suspender`).then((r) => r.data),
+    api.patch(`/users/${id}/suspender`).then((r) => r.data),
 
   activate: (id: string) =>
-    api.patch(`/usuarios/${id}/activar`).then((r) => r.data),
+    api.patch(`/users/${id}/activar`).then((r) => r.data),
 
   delete: (id: string) =>
-    api.delete(`/usuarios/${id}`).then((r) => r.data),
+    api.delete(`/users/${id}`).then((r) => r.data),
 };
