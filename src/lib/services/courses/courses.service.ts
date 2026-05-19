@@ -9,9 +9,16 @@ export interface CursoParams {
   categoria_id?: string;
 }
 
+export interface InstructorInput {
+  full_name: string;
+  title: string;
+  description?: string;
+  photo_url?: string;
+}
+
 export interface CreateCursoDto {
   title: string;
-  slug: string;
+  slug?: string;
   tagline: string;
   description: string;
   category_id: string;
@@ -23,8 +30,20 @@ export interface CreateCursoDto {
   status: "draft" | "published" | "archived";
   thumbnail_url?: string;
   software_tools: string[];
+  instructors: InstructorInput[];
   prerequisites: string[];
   outcomes: string[];
+}
+
+export interface CreateCursoResponse {
+  success: boolean;
+  course: {
+    id: string;
+    title: string;
+    slug: string;
+    status: string;
+    created_at: string;
+  };
 }
 
 export interface CreateInstructorDto {
@@ -44,13 +63,25 @@ export const cursosService = {
     api.get<Course>(`/cursos/${id}`).then((r) => r.data),
 
   create: (data: CreateCursoDto) =>
-    api.post<Course>("/cursos", data).then((r) => r.data),
+    api.post<CreateCursoResponse>("/cursos", data).then((r) => r.data),
 
   update: (id: string, data: Partial<CreateCursoDto>) =>
     api.patch<Course>(`/cursos/${id}`, data).then((r) => r.data),
 
   delete: (id: string) =>
     api.delete(`/cursos/${id}`).then((r) => r.data),
+
+  uploadThumbnail: (id: string, file: File) => {
+    const formData = new FormData();
+    formData.append("thumbnail", file);
+    return api
+      .post<{ success: boolean; thumbnail_url: string }>(
+        `/cursos/${id}/thumbnail`,
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      )
+      .then((r) => r.data);
+  },
 
   addInstructor: (cursoId: string, data: CreateInstructorDto) =>
     api.post(`/cursos/${cursoId}/instructores`, data).then((r) => r.data),
