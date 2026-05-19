@@ -14,11 +14,15 @@ export interface ChangePasswordDto {
 }
 
 export const profileService = {
-  getMe: () =>
-    api.get<User>("/usuarios/me").then((r) => r.data),
+  getMe: async (id: string) => {
+    const { data } = await api.get(`/users/profile/${id}`); // Coincide con @Get('profile/:id') de tu NestJS
+    return data;
+  },
 
-  update: (data: UpdateProfileDto) =>
-    api.patch<User>("/usuarios/me", data).then((r) => r.data),
+  update: async (id: string, formData: FormData) => {
+    const { data } = await api.patch(`/users/profile/${id}`, formData);
+    return data;
+  },
 
   changePassword: (data: ChangePasswordDto) =>
     api.patch<{ message: string }>("/usuarios/me/password", data).then((r) => r.data),

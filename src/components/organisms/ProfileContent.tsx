@@ -1,14 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react"; // 1. Agregamos useRef
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { profileService, type UpdateProfileDto, type ChangePasswordDto } from "@/lib/services/profile";
+import { profileService, type ChangePasswordDto } from "@/lib/services/profile";
 import { useAuthStore } from "@/store/authStore";
 import { toast } from "sonner";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Camera } from "lucide-react"; // Agregamos icono de cámara opcional
 
 const ROLE_LABELS: Record<string, string> = {
   admin: "Administrador",
@@ -51,20 +51,39 @@ export function ProfileContent() {
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
+  // --- ESTADOS PARA EL AVATAR LOCAL ---
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+
   const { user, updateUser } = useAuthStore();
 
-  const { data: profile } = useQuery({
-    queryKey: ["profile-me"],
-    queryFn: profileService.getMe,
-  });
+const { data: profile, refetch: refetchProfile } = useQuery({
+  queryKey: ["profile-me", user?.id],
+  // Cambiamos aquí: React Query por defecto pasa un objeto de contexto a queryFn.
+  // Al escribirlo así () => profileService.getMe(user.id), nos aseguramos de pasar solo el string limpio.
+  queryFn: () => {
+    if (!user?.id) throw new Error("No hay usuario autenticado");
+    return profileService.getMe(user.id);
+  },
+  enabled: !!user?.id, 
+});
 
   const currentUser = profile ?? user;
+
+  // Manejo de las iniciales o la imagen de fondo
   const initials = currentUser
     ? `${currentUser.first_name?.[0] ?? ""}${currentUser.last_name?.[0] ?? ""}`.toUpperCase()
     : "?";
 
+  // Determinar qué imagen mostrar en el círculo (Prioridad: Preview local > BD del Backend > Iniciales)
+  const backendPhotoUrl = currentUser?.profile_photo_url 
+  ? `http://localhost:4000${currentUser.profile_photo_url}?t=${new Date().getTime()}` 
+  : null;
+  const currentAvatarSrc = avatarPreview ?? backendPhotoUrl;
+
   const {
-    register: registerProfile,
+    register: registerProfile,            
     handleSubmit: handleProfileSubmit,
     formState: { errors: profileErrors },
   } = useForm<ProfileFormValues>({
@@ -86,12 +105,16 @@ export function ProfileContent() {
     resolver: zodResolver(passwordSchema),
   });
 
+  // Modificado para recibir un objeto FormData
   const updateMutation = useMutation({
-    mutationFn: (data: UpdateProfileDto) => profileService.update(data),
-    onSuccess: (updated) => {
-      updateUser(updated);
-      toast.success("Perfil actualizado correctamente");
-    },
+  mutationFn: ({ id, formData }: { id: string; formData: FormData }) => 
+    profileService.update(id, formData),
+  onSuccess: (updated) => {
+    updateUser(updated);
+    refetchProfile();
+    setSelectedFile(null);
+    toast.success("Perfil actualizado correctamente");
+  },
     onError: (err: unknown) =>
       toast.error(
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
@@ -112,7 +135,40 @@ export function ProfileContent() {
       ),
   });
 
-  const onProfileSubmit = (data: ProfileFormValues) => updateMutation.mutate(data);
+  // --- MANEJADORES DEL AVATAR ---
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      const previewUrl = URL.createObjectURL(file);
+      setAvatarPreview(previewUrl);
+    }
+  };
+
+  // 2. Modificamos el envío del formulario para inyectar el ID real
+const onProfileSubmit = (values: ProfileFormValues) => {
+  if (!currentUser?.id) {
+    toast.error("No se pudo encontrar el ID del usuario");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("first_name", values.first_name);
+  formData.append("last_name", values.last_name);
+  if (values.phone) formData.append("phone", values.phone);
+  if (values.country) formData.append("country", values.country);
+
+  if (selectedFile) {
+    formData.append("photo", selectedFile);
+  }
+
+  // Enviamos ambos parámetros agrupados en un objeto
+  updateMutation.mutate({ id: currentUser.id, formData });
+};
 
   const onPasswordSubmit = (data: PasswordFormValues) =>
     passwordMutation.mutate({
@@ -127,11 +183,35 @@ export function ProfileContent() {
         <p className="text-sm text-gray-500">Administra tu información personal y seguridad de cuenta</p>
       </div>
 
-      {/* Card superior: avatar + info */}
+      {/* Card superior: avatar interactivo + info */}
       <div className="bg-white rounded-xl border border-gray-200 p-6 flex items-center gap-5 mb-6">
-        <div className="w-16 h-16 rounded-full bg-[#2B55A3] flex items-center justify-center text-white text-xl font-bold shrink-0">
-          {initials}
+        
+        {/* AVATAR INTERACTIVO */}
+        <div 
+          onClick={handleAvatarClick}
+          className="relative w-16 h-16 rounded-full bg-[#2B55A3] flex items-center justify-center text-white text-xl font-bold shrink-0 cursor-pointer overflow-hidden group transition-all duration-200 hover:ring-4 hover:ring-blue-100"
+        >
+          {currentAvatarSrc ? (
+            <img src={currentAvatarSrc} alt="Avatar" className="w-full h-full object-cover" />
+          ) : (
+            <span>{initials}</span>
+          )}
+          
+          {/* Overlay oscuro decorativo en Hover */}
+          <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+            <Camera size={18} className="text-white" />
+          </div>
         </div>
+
+        {/* Input File oculto */}
+        <input 
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileChange}
+          accept="image/*"
+          className="hidden"
+        />
+
         <div className="flex-1 min-w-0">
           <p className="text-lg font-semibold text-gray-900">
             {currentUser?.first_name} {currentUser?.last_name}
@@ -266,7 +346,6 @@ export function ProfileContent() {
             </p>
           </div>
           <form onSubmit={handlePasswordSubmit(onPasswordSubmit)} className="space-y-4">
-            {/* Contraseña actual */}
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-gray-700">Contraseña actual</label>
               <div className="relative">
@@ -288,7 +367,6 @@ export function ProfileContent() {
               )}
             </div>
 
-            {/* Nueva contraseña */}
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-gray-700">Nueva contraseña</label>
               <div className="relative">
@@ -310,7 +388,6 @@ export function ProfileContent() {
               )}
             </div>
 
-            {/* Confirmar contraseña */}
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-gray-700">Confirmar contraseña</label>
               <div className="relative">
