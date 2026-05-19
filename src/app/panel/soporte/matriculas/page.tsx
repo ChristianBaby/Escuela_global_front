@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { matriculasService, type CreateMatriculasDto } from "@/lib/services/enrollments";
 import { cursosService } from "@/lib/services/courses";
+import { usuariosService } from "@/lib/services/users";
 import { toast } from "sonner";
 import {
   Search, X, BookOpen, CheckCircle2, UserCheck, Users,
@@ -18,21 +19,7 @@ interface Estudiante {
   last_name: string;
   email: string;
   matriculado: boolean;
-}
-
-/* ─── mock data ──────────────────────────────────────────────────────── */
-const MOCK_ESTUDIANTES: Estudiante[] = [
-  { id: "u1",  first_name: "María",   last_name: "García Quispe",   email: "maria@example.com",  matriculado: false },
-  { id: "u2",  first_name: "Carlos",  last_name: "López Mendoza",  email: "carlos@example.com", matriculado: false },
-  { id: "u3",  first_name: "Ana",     last_name: "Torres Huanca",  email: "ana@example.com",    matriculado: true  },
-  { id: "u4",  first_name: "Luis",    last_name: "Mendoza Vargas",  email: "luis@example.com",   matriculado: false },
-  { id: "u5",  first_name: "Rosa",    last_name: "Fernández Castro", email: "rosa@example.com",  matriculado: true  },
-  { id: "u6",  first_name: "Pedro",   last_name: "Vargas Soto",    email: "pedro@example.com",  matriculado: false },
-  { id: "u7",  first_name: "Carmen",  last_name: "Huanca Flores",  email: "carmen@example.com", matriculado: false },
-  { id: "u8",  first_name: "Diego",   last_name: "Quispe Mamani",  email: "diego@example.com",  matriculado: true  },
-  { id: "u9",  first_name: "Sofía",   last_name: "Ramos Paredes",  email: "sofia@example.com",  matriculado: false },
-  { id: "u10", first_name: "Jorge",   last_name: "Apaza Condori",  email: "jorge@example.com",  matriculado: false },
-];
+};
 
 const METODOS: { value: CreateMatriculasDto["offline_payment_method"]; label: string }[] = [
   { value: "transferencia", label: "Transferencia bancaria" },
@@ -124,6 +111,22 @@ export default function MatriculasPage() {
     queryFn:  () => cursosService.list({ status: "published", limit: 100 }),
   });
 
+  const { data: todosEstudiantes } = useQuery({
+    queryKey: ["estudiantes-todos"],
+    queryFn: () => usuariosService.list({ role: "estudiante", limit: 500 }),
+  });
+
+  const { data: enrollmentsPorCurso } = useQuery({
+    queryKey: ["enrollments-por-cursos", cursosSeleccionados],
+    queryFn: () =>
+      Promise.all(
+        cursosSeleccionados.map((id) =>
+          matriculasService.list({ curso_id: id, limit: 10000 })
+        )
+      ),
+    enabled: step === 2 && cursosSeleccionados.length > 0,
+  });
+
   const matricularMutation = useMutation({
     mutationFn: matriculasService.create,
     onSuccess: () => {
@@ -131,6 +134,7 @@ export default function MatriculasPage() {
       toast.success(`${total} matrícula(s) creadas correctamente`);
       setSeleccionados([]);
       queryClient.invalidateQueries({ queryKey: ["matriculas"] });
+      queryClient.invalidateQueries({ queryKey: ["enrollments-por-cursos"] });
     },
     onError: (err: unknown) => {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
@@ -138,12 +142,26 @@ export default function MatriculasPage() {
     },
   });
 
+  /* ── estudiantes con estado de matrícula derivado ── */
+  const estudiantesConMatriculado = useMemo<Estudiante[]>(() => {
+    const matriculados = new Set(
+      (enrollmentsPorCurso ?? []).flatMap((r) => r.data.map((e) => e.user_id))
+    );
+    return (todosEstudiantes?.data ?? []).map((u) => ({
+      id: u.id,
+      first_name: u.first_name,
+      last_name: u.last_name,
+      email: u.email,
+      matriculado: matriculados.has(u.id),
+    }));
+  }, [todosEstudiantes, enrollmentsPorCurso]);
+
   /* ── filtros ── */
   const cursosFiltrados = (cursosData?.data ?? []).filter((c) =>
     normalize(c.title).includes(normalize(cursosBusqueda))
   );
 
-  const estudiantesFiltrados = MOCK_ESTUDIANTES.filter((e) =>
+  const estudiantesFiltrados = estudiantesConMatriculado.filter((e) =>
     normalize(`${e.first_name} ${e.last_name}`).includes(normalize(busqueda)) ||
     normalize(e.email).includes(normalize(busqueda))
   );
@@ -158,7 +176,7 @@ export default function MatriculasPage() {
     );
 
   const toggleEstudiante = (id: string) => {
-    const est = MOCK_ESTUDIANTES.find((e) => e.id === id);
+    const est = estudiantesConMatriculado.find((e) => e.id === id);
     if (est?.matriculado) return;
     setSeleccionados((prev) =>
       prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]
@@ -218,13 +236,13 @@ export default function MatriculasPage() {
         </div>
         <div className="hidden sm:flex items-center gap-4">
           <div className="text-center">
-            <p className="text-2xl font-bold text-[#2B55A3]">{MOCK_ESTUDIANTES.length}</p>
+            <p className="text-2xl font-bold text-[#2B55A3]">{estudiantesConMatriculado.length}</p>
             <p className="text-xs text-gray-400">Estudiantes</p>
           </div>
           <div className="w-px h-8 bg-gray-200" />
           <div className="text-center">
             <p className="text-2xl font-bold text-emerald-500">
-              {MOCK_ESTUDIANTES.filter((e) => e.matriculado).length}
+              {estudiantesConMatriculado.filter((e) => e.matriculado).length}
             </p>
             <p className="text-xs text-gray-400">Matriculados</p>
           </div>
