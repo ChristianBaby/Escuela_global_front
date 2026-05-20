@@ -7,6 +7,13 @@ export interface CursoParams {
   search?: string;
   status?: string;
   categoria_id?: string;
+  categoria_ids?: string;   // IDs separados por coma (multi-selección)
+  sort?: string;             // popular | best_rated | recent | price_asc | price_desc
+  min_rating?: number;
+  softwares?: string;        // nombres separados por coma
+  min_price?: number;
+  max_price?: number;
+  duration?: string;         // '<10' | '10-30' | '>30'
 }
 
 export interface InstructorInput {
@@ -61,6 +68,12 @@ export const cursosService = {
 
   get: (id: string) =>
     api.get<Course>(`/courses/${id}`).then((r) => r.data),
+
+  getBySlug: (slug: string) =>
+    api.get<Course>(`/courses/slug/${slug}`).then((r) => r.data),
+
+  getSoftwares: () =>
+    api.get<string[]>("/courses/softwares").then((r) => r.data),
 
   create: (data: CreateCursoDto) =>
     api.post<CreateCursoResponse>("/courses", data).then((r) => r.data),

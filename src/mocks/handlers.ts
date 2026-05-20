@@ -139,10 +139,53 @@ const MOCK_CERTIFICATES_DETAIL: Record<string, object> = {
 
 // ── Cursos mock ───────────────────────────────────────────────────────────────
 const MOCK_CURSOS = [
-  { id: "c1", title: "Derecho Laboral Avanzado", slug: "derecho-laboral-avanzado", category: { id: "cat1", name: "Derecho" }, price: 299, currency: "USD", status: "published", enrolled_count: 42, thumbnail_url: "", created_at: "2024-01-10" },
-  { id: "c2", title: "Finanzas Corporativas", slug: "finanzas-corporativas", category: { id: "cat2", name: "Finanzas" }, price: 249, currency: "USD", status: "published", enrolled_count: 28, thumbnail_url: "", created_at: "2024-02-05" },
-  { id: "c3", title: "Python para Análisis de Datos", slug: "python-analisis-datos", category: { id: "cat3", name: "Tecnología" }, price: 199, currency: "USD", status: "draft", enrolled_count: 0, thumbnail_url: "", created_at: "2024-03-01" },
+  {
+    id: "c1", title: "Derecho Laboral Avanzado", slug: "derecho-laboral-avanzado",
+    category: { id: "cat1", name: "Derecho", slug: "derecho", icon: "⚖️", color: "#2B55A3", display_order: 1, created_at: "2024-01-01" },
+    category_id: "cat1", tagline: "Domina el derecho laboral con casos reales", description: "Curso completo sobre legislación laboral peruana e internacional.",
+    price: 299, discount_price: undefined, currency: "USD", level: "avanzado", status: "published",
+    enrolled_count: 42, avg_rating: 4.7, review_count: 18, total_duration_minutes: 720,
+    software_tools: ["Microsoft Word", "Excel"], access_duration: "lifetime",
+    prerequisites: [], outcomes: [], thumbnail_url: "",
+    instructors: [{ id: "i1", course_id: "c1", first_name: "Roberto", last_name: "Sánchez", title: "Abogado Laboralista", display_order: 1 }],
+    created_by: "u5", created_at: "2024-01-10T00:00:00Z", updated_at: "2024-01-10T00:00:00Z",
+  },
+  {
+    id: "c2", title: "Finanzas Corporativas", slug: "finanzas-corporativas",
+    category: { id: "cat2", name: "Finanzas", slug: "finanzas", icon: "💰", color: "#3FB1E5", display_order: 2, created_at: "2024-01-01" },
+    category_id: "cat2", tagline: "Finanzas avanzadas para directivos y gerentes", description: "Domina los estados financieros y análisis de inversión.",
+    price: 249, discount_price: 199, currency: "USD", level: "intermedio", status: "published",
+    enrolled_count: 28, avg_rating: 4.5, review_count: 11, total_duration_minutes: 540,
+    software_tools: ["Excel", "Power BI"], access_duration: "1_year",
+    prerequisites: [], outcomes: [], thumbnail_url: "",
+    instructors: [{ id: "i2", course_id: "c2", first_name: "Lucía", last_name: "Ramos", title: "CFO & Consultora Financiera", display_order: 1 }],
+    created_by: "u5", created_at: "2024-02-05T00:00:00Z", updated_at: "2024-02-05T00:00:00Z",
+  },
+  {
+    id: "c3", title: "Python para Análisis de Datos", slug: "python-analisis-datos",
+    category: { id: "cat3", name: "Tecnología", slug: "tecnologia", icon: "💻", color: "#10B981", display_order: 3, created_at: "2024-01-01" },
+    category_id: "cat3", tagline: "Aprende Python desde cero para ciencia de datos", description: "Pandas, NumPy, Matplotlib y más.",
+    price: 199, discount_price: undefined, currency: "USD", level: "principiante", status: "published",
+    enrolled_count: 95, avg_rating: 4.9, review_count: 34, total_duration_minutes: 360,
+    software_tools: ["Python", "Jupyter Notebook", "Excel"], access_duration: "lifetime",
+    prerequisites: [], outcomes: [], thumbnail_url: "",
+    instructors: [{ id: "i3", course_id: "c3", first_name: "Diego", last_name: "Torres", title: "Data Scientist Senior", display_order: 1 }],
+    created_by: "u5", created_at: "2024-03-01T00:00:00Z", updated_at: "2024-03-01T00:00:00Z",
+  },
+  {
+    id: "c4", title: "Marketing Digital Avanzado", slug: "marketing-digital-avanzado",
+    category: { id: "cat4", name: "Marketing", slug: "marketing", icon: "📣", color: "#F59E0B", display_order: 4, created_at: "2024-01-01" },
+    category_id: "cat4", tagline: "Estrategias digitales para hacer crecer tu negocio", description: "SEO, SEM, redes sociales y analítica digital.",
+    price: 179, discount_price: undefined, currency: "USD", level: "intermedio", status: "published",
+    enrolled_count: 67, avg_rating: 4.6, review_count: 22, total_duration_minutes: 480,
+    software_tools: ["Google Analytics", "Meta Ads", "Canva"], access_duration: "lifetime",
+    prerequisites: [], outcomes: [], thumbnail_url: "",
+    instructors: [{ id: "i4", course_id: "c4", first_name: "Ana", last_name: "Vega", title: "Digital Marketing Manager", display_order: 1 }],
+    created_by: "u5", created_at: "2024-03-10T00:00:00Z", updated_at: "2024-03-10T00:00:00Z",
+  },
 ];
+
+const MOCK_SOFTWARES = ["Canva", "Excel", "Google Analytics", "Jupyter Notebook", "Meta Ads", "Microsoft Word", "Power BI", "Python"];
 
 // ── Promociones mock ──────────────────────────────────────────────────────────
 const MOCK_PROMOCIONES = [
@@ -204,7 +247,107 @@ export const handlers = [
     return HttpResponse.json({ message: "Usuario creado. Revisa tu correo." }, { status: 201 });
   }),
 
-  // ── CURSOS ──────────────────────────────────────────────────────────────────
+  // ── COURSES (rutas en inglés — API real) ────────────────────────────────────
+
+  http.get(`${BASE}/courses/softwares`, () => {
+    console.log("[MSW] GET /courses/softwares");
+    return HttpResponse.json(MOCK_SOFTWARES);
+  }),
+
+  http.get(`${BASE}/courses/featured`, ({ request }) => {
+    const url = new URL(request.url);
+    const limit = Number(url.searchParams.get("limit")) || 8;
+    console.log("[MSW] GET /courses/featured →", { limit });
+    const published = MOCK_CURSOS.filter((c) => c.status === "published");
+    return HttpResponse.json({ data: published.slice(0, limit) });
+  }),
+
+  http.get(`${BASE}/courses`, ({ request }) => {
+    const url = new URL(request.url);
+    const params = Object.fromEntries(url.searchParams);
+    console.log("[MSW] GET /courses →", params);
+
+    let results = [...MOCK_CURSOS];
+
+    // Filtro por status
+    if (params.status) {
+      results = results.filter((c) => c.status === params.status);
+    } else {
+      results = results.filter((c) => c.status === "published");
+    }
+
+    // Filtro por categorías
+    if (params.categoria_ids) {
+      const ids = params.categoria_ids.split(",").filter(Boolean);
+      if (ids.length > 0) results = results.filter((c) => ids.includes(c.category_id));
+    } else if (params.categoria_id) {
+      results = results.filter((c) => c.category_id === params.categoria_id);
+    }
+
+    // Filtro por rating
+    if (params.min_rating) {
+      results = results.filter((c) => c.avg_rating >= Number(params.min_rating));
+    }
+
+    // Filtro por precio
+    if (params.min_price) results = results.filter((c) => c.price >= Number(params.min_price));
+    if (params.max_price) results = results.filter((c) => c.price <= Number(params.max_price));
+
+    // Filtro por duración
+    if (params.duration) {
+      if (params.duration === "<10") results = results.filter((c) => c.total_duration_minutes < 600);
+      else if (params.duration === "10-30") results = results.filter((c) => c.total_duration_minutes >= 600 && c.total_duration_minutes <= 1800);
+      else if (params.duration === ">30") results = results.filter((c) => c.total_duration_minutes > 1800);
+    }
+
+    // Filtro por software
+    if (params.softwares) {
+      const sw = params.softwares.split(",").map((s: string) => s.trim()).filter(Boolean);
+      if (sw.length > 0) results = results.filter((c) => sw.some((s: string) => c.software_tools.includes(s)));
+    }
+
+    // Búsqueda
+    if (params.search) {
+      const q = params.search.toLowerCase();
+      results = results.filter(
+        (c) => c.title.toLowerCase().includes(q) || c.tagline.toLowerCase().includes(q),
+      );
+    }
+
+    // Ordenamiento
+    if (params.sort === "popular") results.sort((a, b) => b.enrolled_count - a.enrolled_count);
+    else if (params.sort === "best_rated") results.sort((a, b) => b.avg_rating - a.avg_rating);
+    else if (params.sort === "price_asc") results.sort((a, b) => a.price - b.price);
+    else if (params.sort === "price_desc") results.sort((a, b) => b.price - a.price);
+
+    const page = Number(params.page) || 1;
+    const limit = Number(params.limit) || 12;
+    const total = results.length;
+    const data = results.slice((page - 1) * limit, page * limit);
+
+    return HttpResponse.json({ data, total, page, limit, total_pages: Math.ceil(total / limit) });
+  }),
+
+  http.get(`${BASE}/courses/:id`, ({ params }) => {
+    console.log("[MSW] GET /courses/:id →", params.id);
+    const curso = MOCK_CURSOS.find((c) => c.id === params.id) ?? MOCK_CURSOS[0];
+    return HttpResponse.json(curso);
+  }),
+
+  http.get(`${BASE}/courses/slug/:slug`, ({ params }) => {
+    console.log("[MSW] GET /courses/slug/:slug →", params.slug);
+    const curso = MOCK_CURSOS.find((c) => c.slug === params.slug) ?? MOCK_CURSOS[0];
+    return HttpResponse.json(curso);
+  }),
+
+  // ── CATEGORIES (rutas en inglés — API real) ──────────────────────────────────
+
+  http.get(`${BASE}/categories`, () => {
+    console.log("[MSW] GET /categories");
+    return HttpResponse.json(MOCK_CATEGORIAS);
+  }),
+
+  // ── CURSOS (rutas en español — legacy) ──────────────────────────────────────
 
   http.get(`${BASE}/cursos`, ({ request }) => {
     const url = new URL(request.url);
