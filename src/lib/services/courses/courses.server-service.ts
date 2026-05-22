@@ -3,7 +3,7 @@ import type { Course } from "@/types";
 
 export const coursesServerService = {
   getFeatured: async (): Promise<Course[]> => {
-    const { data, status } = await serverApi.get("/courses", {
+    const { data, status } = await serverApi.get("/courses/featured", {
       params: { limit: 8, sort: "popular", status: "published" },
     });
 
