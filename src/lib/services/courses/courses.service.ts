@@ -63,8 +63,13 @@ export interface CreateInstructorDto {
 }
 
 export const cursosService = {
-  list: (params?: CursoParams) =>
-    api.get<PaginatedResponse<Course>>("/courses", { params }).then((r) => r.data),
+  list: (params?: CursoParams) => {
+    return api.get<PaginatedResponse<Course>>("/courses", { params }).then((r) => r.data)
+  },
+
+  // PARA MEJORAR FILTRADO DE LISTA DE CATALOGO
+  listCatalog: (params?: CursoParams) =>
+    api.get<PaginatedResponse<Course>>("/courses/catalog", { params }).then((r) => r.data),
 
   get: (id: string) =>
     api.get<Course>(`/courses/${id}`).then((r) => r.data),
