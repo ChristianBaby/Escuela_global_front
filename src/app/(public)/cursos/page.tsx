@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, Suspense } from "react";
+import { useState, useCallback, Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { SlidersHorizontal, Search, X, ChevronLeft, ChevronRight, ArrowUpDown } from "lucide-react";
@@ -73,12 +73,17 @@ function CursosContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const parsed = parseFiltersFromUrl(searchParams);
-  const [filters, setFilters] = useState<FiltersState>(parsed.filters);
-  const [sort, setSort] = useState(parsed.sort);
-  const [search, setSearch] = useState(parsed.search);
-  const [page, setPage] = useState(parsed.page);
+  // 1. Derive all filtering states directly from searchParams (Single Source of Truth)
+  const { filters, sort, search, page } = parseFiltersFromUrl(searchParams);
+
+  // 2. Keep only searchInput as a local state for the interactive typing
+  const [searchInput, setSearchInput] = useState(search);
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Sync search input when the URL search parameter changes
+  useEffect(() => {
+    setSearchInput(search);
+  }, [search]);
 
   const pushUrl = useCallback(
     (f: FiltersState, s: string, q: string, pg: number) => {
@@ -89,38 +94,31 @@ function CursosContent() {
   );
 
   function handleFiltersChange(f: FiltersState) {
-    setFilters(f);
-    setPage(1);
     pushUrl(f, sort, search, 1);
     setMobileOpen(false);
   }
 
   function handleSortChange(value: string | null) {
     if (!value) return;
-    setSort(value);
-    setPage(1);
     pushUrl(filters, value, search, 1);
   }
 
   function handleSearchSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setPage(1);
-    pushUrl(filters, sort, search, 1);
+    pushUrl(filters, sort, searchInput, 1);
   }
 
   function handlePageChange(p: number) {
-    setPage(p);
     pushUrl(filters, sort, search, p);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function clearSearch() {
-    setSearch("");
-    setPage(1);
+    setSearchInput("");
     pushUrl(filters, sort, "", 1);
   }
 
-  // Build API params from state
+  // Build API params from derived params
   const apiParams = {
     status: "published",
     page,
@@ -137,7 +135,7 @@ function CursosContent() {
 
   const { data: coursesData, isLoading: coursesLoading } = useQuery({
     queryKey: ["cursos-catalogo", apiParams],
-    queryFn: () => cursosService.list(apiParams),
+    queryFn: () => cursosService.listCatalog(apiParams),
     staleTime: 30_000,
   });
 
@@ -228,12 +226,12 @@ function CursosContent() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
               <input
                 type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
                 placeholder="Buscar cursos, docentes, software..."
                 className="w-full pl-9 pr-10 py-2.5 rounded-lg text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-secondary border-0"
               />
-              {search && (
+              {searchInput && (
                 <button
                   type="button"
                   onClick={clearSearch}
