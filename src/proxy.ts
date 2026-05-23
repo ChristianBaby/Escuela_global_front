@@ -57,19 +57,9 @@ function decodeJwtPayload(token: string): Record<string, unknown> {
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Redirigir usuarios ya autenticados que intenten ir al login
+  // ✅ Después — no redirigir si viene de logout
   if (pathname === "/auth/login") {
-    const token = request.cookies.get("access_token")?.value;
-    console.log(token)
-    if (token) {
-      try {
-        const payload = decodeJwtPayload(token);
-        const home = ROLE_HOME[payload.role as string] ?? "/auth/login";
-        return NextResponse.redirect(new URL(home, request.url));
-      } catch {
-        // Token corrupto — dejar pasar al login
-      }
-    }
+
     return NextResponse.next();
   }
 
