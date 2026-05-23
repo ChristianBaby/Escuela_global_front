@@ -30,7 +30,9 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
 
   const handleLogout = () => {
     clearUser();
-    router.push("/auth/login");
+    document.cookie = "access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    document.cookie = "access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=localhost;";
+    window.location.href = "/auth/login";
   };
 
   const initials = user?.first_name
