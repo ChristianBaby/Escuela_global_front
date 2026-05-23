@@ -22,7 +22,7 @@ export function CourseCard({ course }: CourseCardProps) {
   return (
     <Link href={`/cursos/${course.slug}`} className="group block h-full">
       <article className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md hover:border-brand-secondary/50 transition-all duration-200 h-full flex flex-col">
-        <div className="relative aspect-video bg-gradient-to-br from-brand-primary to-brand-secondary flex-shrink-0">
+        <div className="relative w-full h-48 bg-gradient-to-br from-brand-primary to-brand-secondary flex-shrink-0">
           {course.thumbnail_url ? (
             <img src={course.thumbnail_url} alt={course.title} className="w-full h-full object-cover" />
           ) : (
@@ -90,7 +90,7 @@ export function CourseCard({ course }: CourseCardProps) {
 export function CourseCardSkeleton() {
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-      <Skeleton className="aspect-video w-full" />
+      <Skeleton className="w-full h-48" />
       <div className="p-4 space-y-3">
         <Skeleton className="h-4 w-full" />
         <Skeleton className="h-4 w-3/4" />
