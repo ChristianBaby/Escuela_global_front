@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Star, RotateCcw } from "lucide-react";
 import { Checkbox } from "@/components/atoms";
 import { Slider } from "@/components/ui/slider";
@@ -39,6 +40,18 @@ interface CourseFiltersProps {
 }
 
 export function CourseFilters({ filters, onChange, categories, softwares }: CourseFiltersProps) {
+  const [localPrice, setLocalPrice] = useState<[number, number]>([
+    filters.min_price,
+    filters.max_price > 0 ? filters.max_price : MAX_PRICE,
+  ]);
+
+  useEffect(() => {
+    setLocalPrice([
+      filters.min_price,
+      filters.max_price > 0 ? filters.max_price : MAX_PRICE,
+    ]);
+  }, [filters.min_price, filters.max_price]);
+
   const hasActiveFilters =
     filters.categoria_ids.length > 0 ||
     filters.min_rating > 0 ||
@@ -68,15 +81,6 @@ export function CourseFilters({ filters, onChange, categories, softwares }: Cour
   function setDuration(value: string) {
     onChange({ ...filters, duration: filters.duration === value ? "" : value });
   }
-
-  function handlePriceChange(values: number | readonly number[]) {
-    if (!Array.isArray(values)) return;
-    const arr = values as number[];
-    onChange({ ...filters, min_price: arr[0], max_price: arr[1] });
-  }
-
-  const priceMin = filters.min_price;
-  const priceMax = filters.max_price > 0 ? filters.max_price : MAX_PRICE;
 
   return (
     <aside className="space-y-6">
@@ -169,13 +173,18 @@ export function CourseFilters({ filters, onChange, categories, softwares }: Cour
             min={0}
             max={MAX_PRICE}
             step={10}
-            value={[priceMin, priceMax]}
-            onValueChange={handlePriceChange}
+            value={localPrice}
+            onValueChange={(values) => setLocalPrice(values as [number, number])}
+            onValueCommitted={(values) => {
+              if (Array.isArray(values)) {
+                onChange({ ...filters, min_price: values[0], max_price: values[1] });
+              }
+            }}
             className="my-4"
           />
           <div className="flex items-center justify-between text-xs text-gray-500">
-            <span>${priceMin}</span>
-            <span>{priceMax >= MAX_PRICE ? "Cualquier precio" : `$${priceMax}`}</span>
+            <span>${localPrice[0]}</span>
+            <span>{localPrice[1] >= MAX_PRICE ? "Cualquier precio" : `$${localPrice[1]}`}</span>
           </div>
         </div>
       </FilterSection>
