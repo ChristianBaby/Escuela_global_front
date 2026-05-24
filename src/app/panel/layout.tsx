@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { authService } from "@/lib/services/auth";
@@ -19,6 +20,8 @@ import {
   ChevronRight,
   User,
   TrendingUp,
+  Menu,
+  X,
 } from "lucide-react";
 
 interface NavItem {
@@ -125,7 +128,9 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname();
   const router = useRouter();
   const { user, clearUser } = useAuthStore();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
+<<<<<<< HEAD
   const handleLogout = async () => {
     try {
       await authService.logout();
@@ -135,6 +140,15 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
     clearUser();
     router.push("/");
   };
+=======
+const handleLogout = () => {
+  clearUser();
+  // Eliminar cookie con todas las variantes posibles
+  document.cookie = "access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+  document.cookie = "access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=localhost;";
+  window.location.href = "/auth/login";
+};
+>>>>>>> 29b8b29c7622531babc38d7f3be370338c8802a1
 
   const isActive = (href: string) => {
     if (href === "/panel") return pathname === "/panel";
@@ -142,12 +156,24 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-50 overflow-hidden">
+      {/* Overlay móvil */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-20 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
+      <aside
+        className={`fixed lg:relative inset-y-0 left-0 z-30 w-64 bg-white border-r border-gray-200 flex flex-col transition-transform duration-300 ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        }`}
+      >
         {/* Logo */}
-        <div className="h-16 flex items-center gap-2 px-6 border-b border-gray-200">
-          <Link href="/panel">
+        <div className="h-16 flex items-center gap-2 px-4 border-b border-gray-200">
+          <Link href="/panel" className="flex items-center gap-2 flex-1 min-w-0">
             <Image
               src="/Logo_escuela_global.png"
               alt="Escuela Global"
@@ -156,10 +182,16 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
               className="h-9 w-auto object-contain"
               priority
             />
+            <span className="text-xs bg-[#2B55A3] text-white px-2 py-0.5 rounded-full capitalize shrink-0">
+              {user?.role}
+            </span>
           </Link>
-          <span className="text-xs bg-[#2B55A3] text-white px-2 py-0.5 rounded-full capitalize shrink-0">
-            {user?.role}
-          </span>
+          <button
+            className="lg:hidden text-gray-500 hover:text-gray-700 p-1"
+            onClick={() => setSidebarOpen(false)}
+          >
+            <X size={18} />
+          </button>
         </div>
 
         {/* Nav */}
@@ -222,9 +254,30 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 overflow-y-auto">
-        <div className="p-8">{children}</div>
-      </main>
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Header móvil */}
+        <header className="lg:hidden h-14 bg-white border-b border-gray-200 flex items-center px-4 gap-3 shrink-0">
+          <button
+            className="text-gray-600 hover:text-gray-800"
+            onClick={() => setSidebarOpen(true)}
+          >
+            <Menu size={22} />
+          </button>
+          <Link href="/panel">
+            <Image
+              src="/Logo_escuela_global.png"
+              alt="Escuela Global"
+              width={120}
+              height={36}
+              className="h-8 w-auto object-contain"
+            />
+          </Link>
+        </header>
+
+        <main className="flex-1 overflow-y-auto">
+          <div className="p-4 lg:p-8">{children}</div>
+        </main>
+      </div>
     </div>
   );
 }
