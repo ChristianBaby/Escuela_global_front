@@ -7,7 +7,7 @@ export interface LoginDto {
 }
 
 export interface LoginResponse {
-  access_token: string;
+  mensaje: string;
   user: User;
 }
 

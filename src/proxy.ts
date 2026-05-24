@@ -51,7 +51,11 @@ function decodeJwtPayload(token: string): Record<string, unknown> {
   if (!base64Url) throw new Error("Token inválido");
   const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
   const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), "=");
-  return JSON.parse(atob(padded));
+  const payload = JSON.parse(atob(padded));
+  if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
+    throw new Error("Token expirado");
+  }
+  return payload;
 }
 
 export function proxy(request: NextRequest) {
@@ -60,14 +64,16 @@ export function proxy(request: NextRequest) {
   // Redirigir usuarios ya autenticados que intenten ir al login
   if (pathname === "/auth/login") {
     const token = request.cookies.get("access_token")?.value;
-    console.log(token)
     if (token) {
       try {
         const payload = decodeJwtPayload(token);
         const home = ROLE_HOME[payload.role as string] ?? "/auth/login";
         return NextResponse.redirect(new URL(home, request.url));
       } catch {
-        // Token corrupto — dejar pasar al login
+        // Token expirado o corrupto — limpiar cookie y mostrar login
+        const response = NextResponse.next();
+        response.cookies.delete("access_token");
+        return response;
       }
     }
     return NextResponse.next();
