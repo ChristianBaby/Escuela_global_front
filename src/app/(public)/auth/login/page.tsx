@@ -50,13 +50,13 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginFormData) => {
     setServerError(null);
     try {
-      const { access_token, user } = await authService.login({
+      const result = await authService.login({
         email: data.email,
         password: data.password,
         remember_me: data.remember_me,
       });
-      setUser(user, access_token, data.remember_me);
-      router.push(ROLE_REDIRECTS[user.role] ?? "/dashboard");
+      setUser(result.user);
+      router.push(ROLE_REDIRECTS[result.user.role] ?? "/dashboard");
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
       setServerError(msg ?? "Credenciales incorrectas. Inténtalo de nuevo.");

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Logo, Button, Badge, buttonVariants } from "@/components/atoms";
 import { useAuthStore } from "@/store/authStore";
 import { useCartStore } from "@/store/cartStore";
+import { authService } from "@/lib/services/auth";
 import { ShoppingCart, Menu, X, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -26,7 +27,12 @@ export function Header() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await authService.logout();
+    } catch {
+      // continuar aunque falle la llamada API
+    }
     clearUser();
     router.push("/auth/login");
   };

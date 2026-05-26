@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
+import { authService } from "@/lib/services/auth";
 import {
   LayoutDashboard,
   BookOpen,
@@ -28,9 +29,20 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
   const router    = useRouter();
   const { user, clearUser } = useAuthStore();
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await authService.logout();
+    } catch {
+      // proceed with local logout even if API call fails
+    }
     clearUser();
-    router.push("/auth/login");
+<<<<<<< HEAD
+    router.push("/");
+=======
+    document.cookie = "access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    document.cookie = "access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=localhost;";
+    window.location.href = "/auth/login";
+>>>>>>> 29b8b29c7622531babc38d7f3be370338c8802a1
   };
 
   const initials = user?.first_name
