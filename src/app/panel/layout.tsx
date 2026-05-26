@@ -130,7 +130,6 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
   const { user, clearUser } = useAuthStore();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-<<<<<<< HEAD
   const handleLogout = async () => {
     try {
       await authService.logout();
@@ -140,15 +139,7 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
     clearUser();
     router.push("/");
   };
-=======
-const handleLogout = () => {
-  clearUser();
-  // Eliminar cookie con todas las variantes posibles
-  document.cookie = "access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-  document.cookie = "access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=localhost;";
-  window.location.href = "/auth/login";
-};
->>>>>>> 29b8b29c7622531babc38d7f3be370338c8802a1
+
 
   const isActive = (href: string) => {
     if (href === "/panel") return pathname === "/panel";

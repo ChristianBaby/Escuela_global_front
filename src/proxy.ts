@@ -63,7 +63,6 @@ export function proxy(request: NextRequest) {
 
   // ✅ Después — no redirigir si viene de logout
   if (pathname === "/auth/login") {
-<<<<<<< HEAD
     const token = request.cookies.get("access_token")?.value;
     if (token) {
       try {
@@ -77,9 +76,6 @@ export function proxy(request: NextRequest) {
         return response;
       }
     }
-=======
-
->>>>>>> 29b8b29c7622531babc38d7f3be370338c8802a1
     return NextResponse.next();
   }
 
