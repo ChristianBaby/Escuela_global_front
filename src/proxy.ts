@@ -38,13 +38,6 @@ const ROUTE_PREFIXES = [
   "/certificado",
 ];
 
-const ROLE_HOME: Record<string, string> = {
-  admin:      "/panel",
-  soporte:    "/panel/soporte/cursos",
-  marketing:  "/panel/marketing/publicaciones",
-  estudiante: "/dashboard",
-};
-
 // JWT usa base64url: reemplazar - por + y _ por / antes de atob
 function decodeJwtPayload(token: string): Record<string, unknown> {
   const base64Url = token.split(".")[1];
@@ -61,21 +54,8 @@ function decodeJwtPayload(token: string): Record<string, unknown> {
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // ✅ Después — no redirigir si viene de logout
+  // Siempre permitir acceso al login (necesario para que el logout funcione correctamente)
   if (pathname === "/auth/login") {
-    const token = request.cookies.get("access_token")?.value;
-    if (token) {
-      try {
-        const payload = decodeJwtPayload(token);
-        const home = ROLE_HOME[payload.role as string] ?? "/auth/login";
-        return NextResponse.redirect(new URL(home, request.url));
-      } catch {
-        // Token expirado o corrupto — limpiar cookie y mostrar login
-        const response = NextResponse.next();
-        response.cookies.delete("access_token");
-        return response;
-      }
-    }
     return NextResponse.next();
   }
 
