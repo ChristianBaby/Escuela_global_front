@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { authService } from "@/lib/services/auth";
 import {
@@ -26,7 +26,6 @@ const NAV = [
 
 export default function StudentLayout({ children }: { children: React.ReactNode }) {
   const pathname  = usePathname();
-  const router    = useRouter();
   const { user, clearUser } = useAuthStore();
 
   const handleLogout = async () => {
@@ -36,7 +35,8 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
       // proceed with local logout even if API call fails
     }
     clearUser();
-    router.push("/");
+    document.cookie = "access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    window.location.href = "/auth/login";
   };
 
   const initials = user?.first_name
