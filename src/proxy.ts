@@ -5,7 +5,6 @@ const ROLE_ROUTES: Record<string, string[]> = {
   "/dashboard":           ["estudiante"],
   "/mis-cursos":          ["estudiante"],
   "/curso":               ["estudiante"],
-  "/carrito":             ["estudiante"],
   "/checkout":            ["estudiante"],
   "/pedido":              ["estudiante"],
   "/perfil":              ["estudiante", "soporte", "marketing", "admin"],
@@ -30,20 +29,12 @@ const ROUTE_PREFIXES = [
   "/dashboard",
   "/mis-cursos",
   "/curso",
-  "/carrito",
   "/checkout",
   "/pedido",
   "/perfil",
   "/notificaciones",
   "/certificado",
 ];
-
-const ROLE_HOME: Record<string, string> = {
-  admin:      "/panel",
-  soporte:    "/panel/soporte/cursos",
-  marketing:  "/panel/marketing/publicaciones",
-  estudiante: "/dashboard",
-};
 
 // JWT usa base64url: reemplazar - por + y _ por / antes de atob
 function decodeJwtPayload(token: string): Record<string, unknown> {
@@ -61,25 +52,8 @@ function decodeJwtPayload(token: string): Record<string, unknown> {
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // ✅ Después — no redirigir si viene de logout
+  // Siempre permitir acceso al login (necesario para que el logout funcione correctamente)
   if (pathname === "/auth/login") {
-<<<<<<< HEAD
-    const token = request.cookies.get("access_token")?.value;
-    if (token) {
-      try {
-        const payload = decodeJwtPayload(token);
-        const home = ROLE_HOME[payload.role as string] ?? "/auth/login";
-        return NextResponse.redirect(new URL(home, request.url));
-      } catch {
-        // Token expirado o corrupto — limpiar cookie y mostrar login
-        const response = NextResponse.next();
-        response.cookies.delete("access_token");
-        return response;
-      }
-    }
-=======
-
->>>>>>> 29b8b29c7622531babc38d7f3be370338c8802a1
     return NextResponse.next();
   }
 
@@ -125,7 +99,6 @@ export const config = {
     "/mis-cursos",
     "/mis-cursos/:path*",
     "/curso/:path*",
-    "/carrito/:path*",
     "/checkout/:path*",
     "/pedido/:path*",
     "/perfil/:path*",

@@ -1,2 +1,2 @@
 export * from "./courses.service";
-export * from "./modules.service";
+export * from "./courses.server-service"
