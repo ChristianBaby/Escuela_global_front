@@ -50,8 +50,7 @@ export interface Category {
 export interface Instructor {
   id: string;
   course_id: string;
-  first_name: string;
-  last_name: string;
+  full_name: string;
   title: string;
   description?: string;
   photo_url?: string;
