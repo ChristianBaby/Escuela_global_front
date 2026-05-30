@@ -1,5 +1,5 @@
 import { PublicLayout } from "@/components/templates";
-import { HeroSection, CourseGrid } from "@/components/organisms";
+import { HeroSlider, PromoBanners, CourseGrid } from "@/components/organisms";
 import { coursesServerService } from "@/lib/services/courses/courses.server-service";
 import { BookOpen, Globe, TrendingUp, Award } from "lucide-react";
 import type { Course } from "@/types";
@@ -40,21 +40,25 @@ export default async function HomePage() {
 
   return (
     <PublicLayout>
-      <HeroSection />
+      {/* Hero Slider — ocupa toda la pantalla */}
+      <HeroSlider />
 
-      {/* Featured courses */}
+      {/* Publicaciones / Promociones activas */}
+      <PromoBanners />
+
+      {/* Cursos destacados */}
       <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-end justify-between mb-10">
             <div>
-              <span className="text-brand-secondary font-semibold text-sm uppercase tracking-wide">
+              <span className="text-[#3FB1E5] font-bold text-xs uppercase tracking-widest">
                 Destacados
               </span>
               <h2 className="text-3xl font-bold text-gray-900 mt-1">Cursos más populares</h2>
             </div>
             <a
               href="/cursos"
-              className="text-sm font-medium text-brand-primary hover:text-brand-secondary transition-colors hidden sm:block"
+              className="text-sm font-medium text-[#2B55A3] hover:text-[#3FB1E5] transition-colors hidden sm:block"
             >
               Ver todos →
             </a>
@@ -66,11 +70,11 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Benefits */}
+      {/* Beneficios */}
       <section id="nosotros" className="py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <span className="text-brand-secondary font-semibold text-sm uppercase tracking-wide">
+            <span className="text-[#3FB1E5] font-bold text-xs uppercase tracking-widest">
               ¿Por qué elegirnos?
             </span>
             <h2 className="text-3xl font-bold text-gray-900 mt-2">
@@ -86,10 +90,10 @@ export default async function HomePage() {
             {BENEFITS.map(({ icon: Icon, title, description }) => (
               <div
                 key={title}
-                className="bg-white p-6 rounded-xl border border-gray-200 hover:border-brand-secondary/40 hover:shadow-sm transition-all text-center"
+                className="bg-white p-6 rounded-xl border border-gray-200 hover:border-[#3FB1E5]/40 hover:shadow-sm transition-all text-center"
               >
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-brand-primary/10 mb-4">
-                  <Icon className="text-brand-primary" size={22} />
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[#2B55A3]/10 mb-4">
+                  <Icon className="text-[#2B55A3]" size={22} />
                 </div>
                 <h3 className="font-semibold text-gray-900 mb-2">{title}</h3>
                 <p className="text-sm text-gray-500 leading-relaxed">{description}</p>
@@ -100,17 +104,24 @@ export default async function HomePage() {
       </section>
 
       {/* CTA Banner */}
-      <section className="bg-brand-primary py-16">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold text-white mb-4">
+      <section className="bg-[#0f1f4d] py-20 relative overflow-hidden">
+        <div
+          className="absolute inset-0"
+          style={{ background: "radial-gradient(ellipse at 30% 50%, #1a3a7a 0%, #0f1f4d 70%)" }}
+        />
+        <div className="relative z-10 max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <span className="inline-block text-xs font-bold uppercase tracking-widest text-[#3FB1E5] mb-4 border border-[#3FB1E5]/30 rounded-full px-3 py-1">
+            Únete hoy
+          </span>
+          <h2 className="text-3xl lg:text-4xl font-extrabold text-white mb-4">
             Comienza tu especialización hoy
           </h2>
-          <p className="text-white/80 mb-8 text-lg">
+          <p className="text-white/70 mb-8 text-lg">
             Únete a más de 5,000 estudiantes que ya están avanzando en sus carreras.
           </p>
           <a
             href="/auth/register"
-            className="inline-flex items-center justify-center bg-white text-brand-primary font-semibold px-8 py-3 rounded-lg hover:bg-white/90 transition-colors"
+            className="inline-flex items-center justify-center bg-[#3FB1E5] hover:bg-[#3FB1E5]/90 text-white font-bold px-8 py-4 rounded-xl hover:scale-105 transition-all shadow-lg"
           >
             Crear cuenta gratis
           </a>
