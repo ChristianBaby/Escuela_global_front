@@ -36,7 +36,6 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
       // proceed with local logout even if API call fails
     }
     clearUser();
-<<<<<<< HEAD
     router.push("/");
 =======
     document.cookie = "access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
