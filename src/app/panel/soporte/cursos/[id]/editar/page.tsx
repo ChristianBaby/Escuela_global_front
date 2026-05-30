@@ -97,7 +97,7 @@ export default function EditarCursoPage() {
     if (course.instructors?.length) {
       setInstructors(
         course.instructors.map((ins) => ({
-          full_name: `${ins.first_name} ${ins.last_name}`.trim(),
+          full_name: ins.full_name,
           title: ins.title,
           description: ins.description ?? "",
           photo_url: ins.photo_url,

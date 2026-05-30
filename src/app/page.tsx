@@ -1,16 +1,15 @@
+"use client";
+
+import { useQuery } from "@tanstack/react-query";
 import { PublicLayout } from "@/components/templates";
+<<<<<<< HEAD
 import { HeroSlider, PromoBanners, CourseGrid } from "@/components/organisms";
 import { coursesServerService } from "@/lib/services/courses/courses.server-service";
+=======
+import { HeroSection, CourseGrid } from "@/components/organisms";
+import { cursosService } from "@/lib/services/courses";
+>>>>>>> b10ae2a4377b2cf4fc374984796c8116f75838b6
 import { BookOpen, Globe, TrendingUp, Award } from "lucide-react";
-import type { Course } from "@/types";
-
-async function getFeaturedCourses(): Promise<Course[]> {
-  try {
-    return await coursesServerService.getFeatured();
-  } catch {
-    return [];
-  }
-}
 
 const BENEFITS = [
   {
@@ -35,8 +34,14 @@ const BENEFITS = [
   },
 ];
 
-export default async function HomePage() {
-  const courses = await getFeaturedCourses();
+export default function HomePage() {
+  const { data, isLoading } = useQuery({
+    queryKey: ["featured-courses"],
+    queryFn: () => cursosService.listCatalog({ limit: 8, sort: "popular", status: "published" }),
+    staleTime: 5 * 60_000,
+  });
+
+  const courses = data?.data ?? [];
 
   return (
     <PublicLayout>
@@ -65,6 +70,7 @@ export default async function HomePage() {
           </div>
           <CourseGrid
             courses={courses}
+            loading={isLoading}
             emptyMessage="Los cursos estarán disponibles próximamente."
           />
         </div>
