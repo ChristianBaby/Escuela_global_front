@@ -4,105 +4,17 @@ import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { promocionesService, type CreatePromocionDto } from "@/lib/services/marketing";
 import { toast } from "sonner";
-import { Upload, X, ImageIcon } from "lucide-react";
+import { ImageIcon } from "lucide-react";
 import type { Promotion } from "@/types";
 
 const empty: CreatePromocionDto = {
   title: "",
-  image_url: "",
+  image: undefined,
   destination_url: "",
   status: "inactive",
   starts_at: "",
   ends_at: "",
 };
-
-// ── Image uploader ─────────────────────────────────────────────────────────────
-function ImageUploader({ value, onChange }: { value: string; onChange: (url: string) => void }) {
-  const fileRef = useRef<HTMLInputElement>(null);
-  const [dragging, setDragging] = useState(false);
-
-  const handleFile = (file: File) => {
-    if (!file.type.startsWith("image/")) { toast.error("Selecciona un archivo de imagen"); return; }
-    if (file.size > 5 * 1024 * 1024) { toast.error("La imagen no debe superar 5 MB"); return; }
-    const reader = new FileReader();
-    reader.onload = (e) => onChange((e.target?.result as string) ?? "");
-    reader.readAsDataURL(file);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setDragging(false);
-    const file = e.dataTransfer.files[0];
-    if (file) handleFile(file);
-  };
-
-  return (
-    <div className="space-y-2">
-      <label className="text-sm font-medium text-gray-700">Imagen de la publicación *</label>
-
-      {value ? (
-        <div className="relative rounded-xl overflow-hidden border border-gray-200 group">
-          <img src={value} alt="Vista previa" className="w-full object-cover" style={{ aspectRatio: "3/1" }} />
-          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100">
-            <button
-              type="button"
-              onClick={() => fileRef.current?.click()}
-              className="bg-white text-gray-800 rounded-lg px-3 py-1.5 text-xs font-medium flex items-center gap-1.5 hover:bg-gray-100"
-            >
-              <Upload size={12} /> Cambiar
-            </button>
-            <button
-              type="button"
-              onClick={() => onChange("")}
-              className="bg-red-500 text-white rounded-lg px-3 py-1.5 text-xs font-medium flex items-center gap-1.5 hover:bg-red-600"
-            >
-              <X size={12} /> Quitar
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div
-          onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
-          onDragLeave={() => setDragging(false)}
-          onDrop={handleDrop}
-          onClick={() => fileRef.current?.click()}
-          className={`relative border-2 border-dashed rounded-xl cursor-pointer transition-all flex flex-col items-center justify-center gap-3 text-sm py-8
-            ${dragging ? "border-[#2B55A3] bg-[#2B55A3]/5" : "border-gray-300 hover:border-[#2B55A3]/50 hover:bg-gray-50"}`}
-        >
-          <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-            <ImageIcon size={18} className="text-gray-400" />
-          </div>
-          <div className="text-center">
-            <p className="font-medium text-gray-600">Arrastra aquí o haz clic para subir</p>
-            <p className="text-xs text-gray-400 mt-0.5">PNG, JPG, WEBP · máx. 5 MB</p>
-          </div>
-        </div>
-      )}
-
-      <input
-        ref={fileRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = ""; }}
-      />
-
-      {/* URL alternativa */}
-      <div className="flex items-center gap-2">
-        <div className="h-px flex-1 bg-gray-200" />
-        <span className="text-xs text-gray-400">o pega una URL</span>
-        <div className="h-px flex-1 bg-gray-200" />
-      </div>
-      <input
-        type="url"
-        placeholder="https://..."
-        value={value.startsWith("data:") ? "" : value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
-      />
-    </div>
-  );
-}
 
 // ── Página principal ───────────────────────────────────────────────────────────
 export default function PublicacionesPage() {
@@ -111,6 +23,8 @@ export default function PublicacionesPage() {
   const [editing, setEditing] = useState<Promotion | null>(null);
   const [form, setForm] = useState<CreatePromocionDto>(empty);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string>("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: promociones, isLoading, isError } = useQuery({
     queryKey: ["promociones"],
@@ -138,19 +52,44 @@ export default function PublicacionesPage() {
   const toggleStatus = (p: Promotion) =>
     updateMutation.mutate({ id: p.id, data: { status: p.status === "active" ? "inactive" : "active" } });
 
-  const openCreate = () => { setEditing(null); setForm(empty); setShowModal(true); };
-  const openEdit = (p: Promotion) => {
-    setEditing(p);
-    setForm({ title: p.title, image_url: p.image_url, destination_url: p.destination_url, status: p.status, starts_at: p.starts_at, ends_at: p.ends_at });
+  const openCreate = () => {
+    setEditing(null);
+    setForm(empty);
+    setPreviewUrl("");
+    if (fileInputRef.current) fileInputRef.current.value = "";
     setShowModal(true);
   };
-  const closeModal = () => { setShowModal(false); setEditing(null); setForm(empty); };
+
+  const openEdit = (p: Promotion) => {
+    setEditing(p);
+    setForm({ title: p.title, image: undefined, destination_url: p.destination_url ?? "", status: p.status, starts_at: p.starts_at ?? "", ends_at: p.ends_at ?? "" });
+    setPreviewUrl(p.image_url);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setEditing(null);
+    setForm(empty);
+    setPreviewUrl("");
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Selecciona un archivo de imagen");
+      return;
+    }
+    setForm({ ...form, image: file });
+    setPreviewUrl(URL.createObjectURL(file));
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const payload = { ...form, starts_at: form.starts_at || undefined, ends_at: form.ends_at || undefined };
-    if (editing) updateMutation.mutate({ id: editing.id, data: payload });
-    else createMutation.mutate(payload);
+    if (editing) updateMutation.mutate({ id: editing.id, data: form });
+    else createMutation.mutate(form);
   };
 
   const isPending = createMutation.isPending || updateMutation.isPending;
@@ -229,68 +168,86 @@ export default function PublicacionesPage() {
         )}
       </div>
 
-      {/* Modal crear/editar */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl w-full max-w-md shadow-xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 sticky top-0 bg-white z-10">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
               <h2 className="font-semibold text-gray-900">{editing ? "Editar publicación" : "Nueva publicación"}</h2>
               <button onClick={closeModal} className="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              {/* Título */}
               <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-700">Título interno *</label>
+                <label className="text-sm font-medium text-gray-700">Título (interno) *</label>
                 <input
+                  type="text"
                   required
+                  placeholder="Ej: Banner navidad 2025"
                   value={form.title}
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
-                  placeholder="Ej: Banner Verano 2025"
                 />
               </div>
 
-              {/* Image uploader */}
-              <ImageUploader
-                value={form.image_url ?? ""}
-                onChange={(url) => setForm({ ...form, image_url: url })}
-              />
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-gray-700">Imagen {editing ? "" : "*"}</label>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  required={!editing}
+                  onChange={handleFileChange}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30 file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-[#2B55A3] file:text-white file:cursor-pointer"
+                />
+                {form.image && (
+                  <div className="flex items-center gap-2 mt-1">
+                    <p className="text-xs text-gray-500 truncate">{form.image.name}</p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setForm({ ...form, image: undefined });
+                        setPreviewUrl(editing ? editing.image_url : "");
+                        if (fileInputRef.current) fileInputRef.current.value = "";
+                      }}
+                      className="text-xs text-red-500 hover:text-red-700 font-medium"
+                    >
+                      ✕ Quitar
+                    </button>
+                  </div>
+                )}
+              </div>
 
-              {/* Link destino */}
               <div className="space-y-1">
                 <label className="text-sm font-medium text-gray-700">Link de destino</label>
                 <input
                   type="url"
-                  value={form.destination_url ?? ""}
-                  onChange={(e) => setForm({ ...form, destination_url: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none"
                   placeholder="https://..."
+                  value={form.destination_url}
+                  onChange={(e) => setForm({ ...form, destination_url: e.target.value })}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
                 />
               </div>
 
-              {/* Fechas */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-sm font-medium text-gray-700">Inicio</label>
+                  <label className="text-sm font-medium text-gray-700">Inicio vigencia</label>
                   <input
                     type="datetime-local"
-                    value={form.starts_at ?? ""}
+                    value={form.starts_at}
                     onChange={(e) => setForm({ ...form, starts_at: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm font-medium text-gray-700">Fin</label>
+                  <label className="text-sm font-medium text-gray-700">Fin vigencia</label>
                   <input
                     type="datetime-local"
-                    value={form.ends_at ?? ""}
+                    value={form.ends_at}
                     onChange={(e) => setForm({ ...form, ends_at: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
                   />
                 </div>
               </div>
 
-              {/* Estado */}
               <div className="space-y-1">
                 <label className="text-sm font-medium text-gray-700">Estado</label>
                 <select
@@ -302,6 +259,17 @@ export default function PublicacionesPage() {
                   <option value="active">Activa</option>
                 </select>
               </div>
+
+              {previewUrl && (
+                <div className="rounded-lg overflow-hidden border border-gray-200">
+                  <img
+                    src={previewUrl}
+                    alt="Vista previa"
+                    className="w-full h-24 object-cover"
+                    onError={(e) => (e.currentTarget.style.display = "none")}
+                  />
+                </div>
+              )}
 
               <div className="flex justify-end gap-3 pt-2">
                 <button type="button" onClick={closeModal} className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">
@@ -316,7 +284,6 @@ export default function PublicacionesPage() {
         </div>
       )}
 
-      {/* Confirm delete */}
       {confirmDelete && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-6 w-full max-w-sm shadow-xl">
