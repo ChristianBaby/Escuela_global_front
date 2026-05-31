@@ -2,13 +2,8 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { PublicLayout } from "@/components/templates";
-<<<<<<< HEAD
 import { HeroSlider, PromoBanners, CourseGrid } from "@/components/organisms";
-import { coursesServerService } from "@/lib/services/courses/courses.server-service";
-=======
-import { HeroSection, CourseGrid } from "@/components/organisms";
 import { cursosService } from "@/lib/services/courses";
->>>>>>> b10ae2a4377b2cf4fc374984796c8116f75838b6
 import { BookOpen, Globe, TrendingUp, Award } from "lucide-react";
 
 const BENEFITS = [
