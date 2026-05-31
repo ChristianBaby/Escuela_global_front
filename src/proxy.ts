@@ -4,8 +4,7 @@ import type { NextRequest } from "next/server";
 const ROLE_ROUTES: Record<string, string[]> = {
   "/dashboard":           ["estudiante"],
   "/mis-cursos":          ["estudiante"],
-  "/curso":               ["estudiante"],
-  "/carrito":             ["estudiante"],
+  "/curso/":              ["estudiante"],
   "/checkout":            ["estudiante"],
   "/pedido":              ["estudiante"],
   "/perfil":              ["estudiante", "soporte", "marketing", "admin"],
@@ -29,8 +28,7 @@ const ROUTE_PREFIXES = [
   "/panel",
   "/dashboard",
   "/mis-cursos",
-  "/curso",
-  "/carrito",
+  "/curso/",
   "/checkout",
   "/pedido",
   "/perfil",
@@ -38,38 +36,24 @@ const ROUTE_PREFIXES = [
   "/certificado",
 ];
 
-const ROLE_HOME: Record<string, string> = {
-  admin:      "/panel",
-  soporte:    "/panel/soporte/cursos",
-  marketing:  "/panel/marketing/publicaciones",
-  estudiante: "/dashboard",
-};
-
 // JWT usa base64url: reemplazar - por + y _ por / antes de atob
 function decodeJwtPayload(token: string): Record<string, unknown> {
   const base64Url = token.split(".")[1];
   if (!base64Url) throw new Error("Token inválido");
   const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
   const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), "=");
-  return JSON.parse(atob(padded));
+  const payload = JSON.parse(atob(padded));
+  if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
+    throw new Error("Token expirado");
+  }
+  return payload;
 }
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Redirigir usuarios ya autenticados que intenten ir al login
+  // Siempre permitir acceso al login (necesario para que el logout funcione correctamente)
   if (pathname === "/auth/login") {
-    const token = request.cookies.get("access_token")?.value;
-    console.log(token)
-    if (token) {
-      try {
-        const payload = decodeJwtPayload(token);
-        const home = ROLE_HOME[payload.role as string] ?? "/auth/login";
-        return NextResponse.redirect(new URL(home, request.url));
-      } catch {
-        // Token corrupto — dejar pasar al login
-      }
-    }
     return NextResponse.next();
   }
 
@@ -115,7 +99,6 @@ export const config = {
     "/mis-cursos",
     "/mis-cursos/:path*",
     "/curso/:path*",
-    "/carrito/:path*",
     "/checkout/:path*",
     "/pedido/:path*",
     "/perfil/:path*",

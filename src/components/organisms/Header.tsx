@@ -2,9 +2,10 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Logo, Button, Badge, buttonVariants } from "@/components/atoms";
+import { Logo, Badge, buttonVariants } from "@/components/atoms";
 import { useAuthStore } from "@/store/authStore";
 import { useCartStore } from "@/store/cartStore";
+import { authService } from "@/lib/services/auth";
 import { ShoppingCart, Menu, X, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -17,8 +18,12 @@ export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const { isAuthenticated, user, clearUser } = useAuthStore();
-  const items = useCartStore((s) => s.items);
+  const localItems = useCartStore((s) => s.items);
   const router = useRouter();
+
+  // cartCount uses local store for both guests and authenticated users
+  // (local store is always in sync since add/remove actions update it)
+  const cartCount = localItems.length;
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 10);
@@ -26,8 +31,14 @@ export function Header() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await authService.logout();
+    } catch {
+      // continuar aunque falle la llamada API
+    }
     clearUser();
+    document.cookie = "access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     router.push("/auth/login");
   };
 
@@ -57,20 +68,22 @@ export function Header() {
 
           {/* Desktop actions */}
           <div className="hidden md:flex items-center gap-2">
+            {/* Cart icon — visible for all users */}
+            <Link
+              href="/carrito"
+              className="relative p-1.5 text-gray-600 hover:text-brand-primary transition-colors"
+              aria-label="Carrito de compras"
+            >
+              <ShoppingCart size={18} />
+              {cartCount > 0 && (
+                <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[10px] bg-brand-secondary text-white border-0">
+                  {cartCount}
+                </Badge>
+              )}
+            </Link>
+
             {isAuthenticated ? (
               <>
-                <Link
-                  href="/carrito"
-                  className="relative p-1.5 text-gray-600 hover:text-brand-primary transition-colors"
-                  aria-label="Carrito de compras"
-                >
-                  <ShoppingCart size={18} />
-                  {items.length > 0 && (
-                    <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[10px] bg-brand-secondary text-white border-0">
-                      {items.length}
-                    </Badge>
-                  )}
-                </Link>
                 <Link
                   href="/dashboard"
                   className="flex items-center gap-1.5 text-sm font-medium text-gray-700 hover:text-brand-primary transition-colors"

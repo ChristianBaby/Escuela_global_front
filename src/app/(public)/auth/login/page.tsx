@@ -50,13 +50,18 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginFormData) => {
     setServerError(null);
     try {
-      const { access_token, user } = await authService.login({
+      const result = await authService.login({
         email: data.email,
         password: data.password,
         remember_me: data.remember_me,
       });
-      setUser(user, access_token, data.remember_me);
-      router.push(ROLE_REDIRECTS[user.role] ?? "/dashboard");
+      if (result.access_token) {
+        const maxAge = data.remember_me ? 60 * 60 * 24 * 30 : "";
+        const expires = maxAge ? `; max-age=${maxAge}` : "";
+        document.cookie = `access_token=${result.access_token}; path=/; SameSite=Lax${expires}`;
+      }
+      setUser(result.user);
+      router.push(ROLE_REDIRECTS[result.user.role] ?? "/dashboard");
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
       setServerError(msg ?? "Credenciales incorrectas. Inténtalo de nuevo.");

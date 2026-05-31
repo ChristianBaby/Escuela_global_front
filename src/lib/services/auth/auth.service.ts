@@ -23,4 +23,7 @@ export const authService = {
 
 	verifyEmail: ({ token }: VerifyEmailDto) =>
 		api.get("/auth/verify-email", { params: { token } }).then((r) => r.data),
+
+	logout: () =>
+		api.post("/auth/logout").then((r) => r.data),
 };
