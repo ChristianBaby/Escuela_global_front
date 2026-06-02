@@ -71,4 +71,16 @@ export const slidersService = {
 
   delete: (id: string) =>
     api.delete(`/sliders/${id}`).then((r) => r.data),
+
+  uploadImage: (sliderId: string, file: File) => {
+    const formData = new FormData();
+    formData.append("image", file);
+    return api
+      .post<{ success: boolean; image_url: string }>(
+        `/sliders/${sliderId}/image`,
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      )
+      .then((r) => r.data);
+  },
 };

@@ -29,12 +29,16 @@ const empty: CreateSliderDto = {
 // ── Image uploader reutilizable ────────────────────────────────────────────────
 function ImageUploader({
   value,
+  preview,
   onChange,
+  onFileSelect,
   aspectRatio = "16/9",
   label = "Imagen del slider",
 }: {
   value: string;
+  preview?: string;
   onChange: (url: string) => void;
+  onFileSelect?: (file: File) => void;
   aspectRatio?: string;
   label?: string;
 }) {
@@ -44,9 +48,13 @@ function ImageUploader({
   const handleFile = (file: File) => {
     if (!file.type.startsWith("image/")) { toast.error("Selecciona un archivo de imagen"); return; }
     if (file.size > 5 * 1024 * 1024) { toast.error("La imagen no debe superar 5 MB"); return; }
-    const reader = new FileReader();
-    reader.onload = (e) => onChange((e.target?.result as string) ?? "");
-    reader.readAsDataURL(file);
+    if (onFileSelect) {
+      onFileSelect(file);
+    } else {
+      const reader = new FileReader();
+      reader.onload = (e) => onChange((e.target?.result as string) ?? "");
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -56,14 +64,16 @@ function ImageUploader({
     if (file) handleFile(file);
   };
 
+  const displayPreview = preview || value;
+
   return (
     <div className="space-y-2">
       <label className="text-sm font-medium text-gray-700">{label}</label>
 
-      {value ? (
+      {displayPreview ? (
         <div className="relative rounded-xl overflow-hidden border border-gray-200 group">
           <img
-            src={value}
+            src={displayPreview}
             alt="Vista previa"
             className="w-full object-cover"
             style={{ aspectRatio }}
@@ -78,7 +88,7 @@ function ImageUploader({
             </button>
             <button
               type="button"
-              onClick={() => onChange("")}
+              onClick={() => { onChange(""); onFileSelect?.(null as unknown as File); }}
               className="bg-red-500 text-white rounded-lg px-3 py-1.5 text-xs font-medium flex items-center gap-1.5 hover:bg-red-600"
             >
               <X size={12} /> Quitar
@@ -113,19 +123,22 @@ function ImageUploader({
         onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = ""; }}
       />
 
-      {/* URL manual como alternativa */}
-      <div className="flex items-center gap-2">
-        <div className="h-px flex-1 bg-gray-200" />
-        <span className="text-xs text-gray-400">o pega una URL</span>
-        <div className="h-px flex-1 bg-gray-200" />
-      </div>
-      <input
-        type="url"
-        placeholder="https://..."
-        value={value.startsWith("data:") ? "" : value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
-      />
+      {!onFileSelect && (
+        <>
+          <div className="flex items-center gap-2">
+            <div className="h-px flex-1 bg-gray-200" />
+            <span className="text-xs text-gray-400">o pega una URL</span>
+            <div className="h-px flex-1 bg-gray-200" />
+          </div>
+          <input
+            type="url"
+            placeholder="https://..."
+            value={value.startsWith("data:") ? "" : value}
+            onChange={(e) => onChange(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+          />
+        </>
+      )}
     </div>
   );
 }
@@ -137,6 +150,8 @@ export default function SlidersPage() {
   const [editing, setEditing] = useState<Slider | null>(null);
   const [form, setForm] = useState<CreateSliderDto>(empty);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>("");
 
   const { data: sliders, isLoading, isError } = useQuery({
     queryKey: ["sliders"],
@@ -166,6 +181,11 @@ export default function SlidersPage() {
     onError: (err: unknown) => { toast.error((err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? "Error"); setConfirmDelete(null); },
   });
 
+  const uploadMutation = useMutation({
+    mutationFn: ({ id, file }: { id: string; file: File }) => slidersService.uploadImage(id, file),
+    onError: (err: unknown) => toast.error((err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? "Error subiendo imagen"),
+  });
+
   const toggleStatus = (s: Slider) =>
     updateMutation.mutate({ id: s.id, data: { status: s.status === "active" ? "inactive" : "active" } });
 
@@ -182,24 +202,48 @@ export default function SlidersPage() {
       title: s.title,
       subtitle: s.subtitle ?? "",
       type: s.type,
-      image_url: s.image_url,
-      destination_url: s.destination_url,
+      image_url: s.image_url ?? "",
+      destination_url: s.destination_url ?? "",
       contact_url: s.contact_url ?? "",
       position_on_page: s.position_on_page,
       status: s.status,
       course_ids: s.courses?.map((c) => c.id) ?? [],
     });
+    setImageFile(null);
+    setImagePreview(s.image_url ?? "");
     setShowModal(true);
   };
-  const closeModal = () => { setShowModal(false); setEditing(null); setForm(empty); };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (editing) updateMutation.mutate({ id: editing.id, data: form });
-    else createMutation.mutate(form);
+  const closeModal = () => {
+    setShowModal(false);
+    setEditing(null);
+    setForm(empty);
+    setImageFile(null);
+    setImagePreview("");
   };
 
-  const isPending = createMutation.isPending || updateMutation.isPending;
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      if (editing) {
+        const finalData = { ...form };
+        if (imageFile) {
+          const result = await uploadMutation.mutateAsync({ id: editing.id, file: imageFile });
+          finalData.image_url = result.image_url;
+        }
+        updateMutation.mutate({ id: editing.id, data: finalData });
+      } else {
+        const result = await createMutation.mutateAsync(form);
+        if (imageFile) {
+          const uploaded = await uploadMutation.mutateAsync({ id: result.id, file: imageFile });
+          updateMutation.mutate({ id: result.id, data: { image_url: uploaded.image_url } });
+        }
+      }
+    } catch {
+    }
+  };
+
+  const isPending = createMutation.isPending || updateMutation.isPending || uploadMutation.isPending;
 
   return (
     <div>
@@ -338,7 +382,12 @@ export default function SlidersPage() {
                   <ImageUploader
                     label="Imagen del banner (fondo del slide)"
                     value={form.image_url ?? ""}
+                    preview={imagePreview}
                     onChange={(url) => setForm({ ...form, image_url: url })}
+                    onFileSelect={(file) => {
+                      setImageFile(file);
+                      setImagePreview(URL.createObjectURL(file));
+                    }}
                     aspectRatio="16/5"
                   />
 
