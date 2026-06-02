@@ -55,6 +55,11 @@ export default function LoginPage() {
         password: data.password,
         remember_me: data.remember_me,
       });
+      if (result.access_token) {
+        const maxAge = data.remember_me ? 60 * 60 * 24 * 30 : "";
+        const expires = maxAge ? `; max-age=${maxAge}` : "";
+        document.cookie = `access_token=${result.access_token}; path=/; SameSite=Lax${expires}`;
+      }
       setUser(result.user);
       router.push(ROLE_REDIRECTS[result.user.role] ?? "/dashboard");
     } catch (err: unknown) {

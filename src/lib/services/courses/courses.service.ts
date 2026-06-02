@@ -7,13 +7,13 @@ export interface CursoParams {
   search?: string;
   status?: string;
   categoria_id?: string;
-  categoria_ids?: string;   // IDs separados por coma (multi-selección)
-  sort?: string;             // popular | best_rated | recent | price_asc | price_desc
+  categoria_ids?: string;  
+  sort?: string;           
   min_rating?: number;
-  softwares?: string;        // nombres separados por coma
+  softwares?: string;     
   min_price?: number;
   max_price?: number;
-  duration?: string;         // '<10' | '10-30' | '>30'
+  duration?: string;        
 }
 
 export interface InstructorInput {
@@ -62,7 +62,7 @@ export interface CreateInstructorDto {
   display_order?: number;
 }
 
-// ── Módulos ────────────────────────────────────────────────────────────────────
+// ── Módulos
 
 export interface ModuleListItem {
   id: string;
@@ -78,7 +78,7 @@ export interface CreateModuleDto {
   description?: string;
 }
 
-// ── Sesiones ───────────────────────────────────────────────────────────────────
+// ── Sesiones 
 
 export interface SessionListItem {
   id: string;
@@ -98,7 +98,7 @@ export interface CreateSessionDto {
   duration_minutes: number;
 }
 
-// ── Materiales ─────────────────────────────────────────────────────────────────
+// ── Materiales
 
 export interface MaterialItem {
   id: string;
@@ -118,7 +118,7 @@ export const cursosService = {
     return api.get<PaginatedResponse<Course>>("/courses", { params }).then((r) => r.data)
   },
 
-  // PARA MEJORAR FILTRADO DE LISTA DE CATALOGO
+  // CATALOGO
   listCatalog: (params?: CursoParams) =>
     api.get<PaginatedResponse<Course>>("/courses/catalog", { params }).then((r) => r.data),
 

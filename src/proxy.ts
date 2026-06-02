@@ -4,7 +4,7 @@ import type { NextRequest } from "next/server";
 const ROLE_ROUTES: Record<string, string[]> = {
   "/dashboard":           ["estudiante"],
   "/mis-cursos":          ["estudiante"],
-  "/curso":               ["estudiante"],
+  "/curso/":              ["estudiante"],
   "/checkout":            ["estudiante"],
   "/pedido":              ["estudiante"],
   "/perfil":              ["estudiante", "soporte", "marketing", "admin"],
@@ -28,7 +28,7 @@ const ROUTE_PREFIXES = [
   "/panel",
   "/dashboard",
   "/mis-cursos",
-  "/curso",
+  "/curso/",
   "/checkout",
   "/pedido",
   "/perfil",

@@ -50,8 +50,7 @@ export interface Category {
 export interface Instructor {
   id: string;
   course_id: string;
-  first_name: string;
-  last_name: string;
+  full_name: string;
   title: string;
   description?: string;
   photo_url?: string;
@@ -250,9 +249,11 @@ export interface Promotion {
 export interface Slider {
   id: string;
   title: string;
+  subtitle?: string;
   type: SliderType;
   image_url?: string;
   destination_url?: string;
+  contact_url?: string;
   position_on_page: SliderPosition;
   display_order: number;
   status: PromotionStatus;
