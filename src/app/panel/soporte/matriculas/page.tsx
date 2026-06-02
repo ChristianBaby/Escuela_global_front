@@ -135,6 +135,9 @@ export default function MatriculasPage() {
       setSeleccionados([]);
       queryClient.invalidateQueries({ queryKey: ["matriculas"] });
       queryClient.invalidateQueries({ queryKey: ["enrollments-por-cursos"] });
+      queryClient.invalidateQueries({ queryKey: ["cursos"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-top-cursos"] });
     },
     onError: (err: unknown) => {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
