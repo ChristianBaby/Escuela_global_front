@@ -246,11 +246,20 @@ export interface Promotion {
   created_at: string;
 }
 
+export interface EventType {
+  id: string;
+  name: string;
+  display_order: number;
+  created_at: string;
+}
+
 export interface Slider {
   id: string;
   title: string;
   subtitle?: string;
   type: SliderType;
+  event_type_id?: string | null;
+  event_type?: Pick<EventType, "id" | "name"> | null;
   image_url?: string;
   destination_url?: string;
   contact_url?: string;

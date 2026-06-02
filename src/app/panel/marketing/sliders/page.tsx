@@ -2,10 +2,10 @@
 
 import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { slidersService, type CreateSliderDto } from "@/lib/services/marketing";
+import { slidersService, eventTypesService, type CreateSliderDto } from "@/lib/services/marketing";
 import { cursosService } from "@/lib/services/courses";
 import { toast } from "sonner";
-import { Upload, X, ImageIcon } from "lucide-react";
+import { Upload, X, ImageIcon, Plus, Check } from "lucide-react";
 import type { Slider } from "@/types";
 
 const POSICIONES = [
@@ -18,6 +18,7 @@ const empty: CreateSliderDto = {
   title: "",
   subtitle: "",
   type: "banner",
+  event_type_id: null,
   image_url: "",
   destination_url: "",
   contact_url: "",
@@ -152,6 +153,8 @@ export default function SlidersPage() {
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
+  const [newTypeName, setNewTypeName] = useState("");
+  const [showNewTypeInput, setShowNewTypeInput] = useState(false);
 
   const { data: sliders, isLoading, isError } = useQuery({
     queryKey: ["sliders"],
@@ -161,6 +164,11 @@ export default function SlidersPage() {
   const { data: cursosData } = useQuery({
     queryKey: ["cursos-activos"],
     queryFn: () => cursosService.list({ status: "published", limit: 100 }),
+  });
+
+  const { data: eventTypes = [] } = useQuery({
+    queryKey: ["event-types"],
+    queryFn: eventTypesService.list,
   });
 
   const createMutation = useMutation({
@@ -186,6 +194,26 @@ export default function SlidersPage() {
     onError: (err: unknown) => toast.error((err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? "Error subiendo imagen"),
   });
 
+  const createEventTypeMutation = useMutation({
+    mutationFn: eventTypesService.create,
+    onSuccess: (created) => {
+      queryClient.invalidateQueries({ queryKey: ["event-types"] });
+      setForm((prev) => ({ ...prev, event_type_id: created.id }));
+      setNewTypeName("");
+      setShowNewTypeInput(false);
+      toast.success(`Tipo "${created.name}" creado`);
+    },
+    onError: (err: unknown) =>
+      toast.error((err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? "Error creando tipo"),
+  });
+
+  const handleCreateEventType = (e: React.FormEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!newTypeName.trim()) return;
+    createEventTypeMutation.mutate({ name: newTypeName.trim() });
+  };
+
   const toggleStatus = (s: Slider) =>
     updateMutation.mutate({ id: s.id, data: { status: s.status === "active" ? "inactive" : "active" } });
 
@@ -202,6 +230,7 @@ export default function SlidersPage() {
       title: s.title,
       subtitle: s.subtitle ?? "",
       type: s.type,
+      event_type_id: s.event_type_id ?? null,
       image_url: s.image_url ?? "",
       destination_url: s.destination_url ?? "",
       contact_url: s.contact_url ?? "",
@@ -219,6 +248,8 @@ export default function SlidersPage() {
     setForm(empty);
     setImageFile(null);
     setImagePreview("");
+    setNewTypeName("");
+    setShowNewTypeInput(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -349,6 +380,86 @@ export default function SlidersPage() {
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30 resize-none"
                   placeholder="Ej: Domina la legislación laboral con casos reales del sector."
                 />
+              </div>
+
+              {/* Tipo de evento — chips + creación inline */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">
+                  Tipo de evento{" "}
+                  <span className="text-xs text-gray-400 font-normal">(etiqueta del hero)</span>
+                </label>
+
+                <div className="flex flex-wrap gap-2">
+                  {/* Chip "Sin etiqueta" */}
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, event_type_id: null })}
+                    className={`text-xs px-3 py-1.5 rounded-full border transition-all ${
+                      !form.event_type_id
+                        ? "bg-gray-700 text-white border-gray-700"
+                        : "border-gray-300 text-gray-500 hover:border-gray-400"
+                    }`}
+                  >
+                    Sin etiqueta
+                  </button>
+
+                  {/* Chips de tipos existentes */}
+                  {eventTypes.map((et) => (
+                    <button
+                      key={et.id}
+                      type="button"
+                      onClick={() => setForm({ ...form, event_type_id: et.id })}
+                      className={`text-xs font-bold uppercase tracking-wide px-3 py-1.5 rounded-full border transition-all flex items-center gap-1.5 ${
+                        form.event_type_id === et.id
+                          ? "bg-[#3FB1E5] text-white border-[#3FB1E5]"
+                          : "border-[#3FB1E5]/40 text-[#3FB1E5] hover:bg-[#3FB1E5]/10"
+                      }`}
+                    >
+                      {form.event_type_id === et.id && <Check size={10} />}
+                      {et.name}
+                    </button>
+                  ))}
+
+                  {/* Botón agregar nuevo tipo */}
+                  {!showNewTypeInput && (
+                    <button
+                      type="button"
+                      onClick={() => setShowNewTypeInput(true)}
+                      className="text-xs px-3 py-1.5 rounded-full border border-dashed border-gray-300 text-gray-400 hover:border-[#2B55A3] hover:text-[#2B55A3] transition-all flex items-center gap-1"
+                    >
+                      <Plus size={11} /> Nuevo tipo
+                    </button>
+                  )}
+                </div>
+
+                {/* Formulario inline para crear nuevo tipo */}
+                {showNewTypeInput && (
+                  <div className="flex items-center gap-2 mt-1">
+                    <input
+                      autoFocus
+                      value={newTypeName}
+                      onChange={(e) => setNewTypeName(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Escape") { setShowNewTypeInput(false); setNewTypeName(""); } }}
+                      placeholder="Ej: Foro, Taller, Ponencia..."
+                      className="flex-1 border border-[#2B55A3]/40 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleCreateEventType}
+                      disabled={!newTypeName.trim() || createEventTypeMutation.isPending}
+                      className="bg-[#2B55A3] text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-[#2B55A3]/90 disabled:opacity-50 shrink-0"
+                    >
+                      {createEventTypeMutation.isPending ? "..." : "Crear"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setShowNewTypeInput(false); setNewTypeName(""); }}
+                      className="text-gray-400 hover:text-gray-600 shrink-0"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Tipo + Posición */}

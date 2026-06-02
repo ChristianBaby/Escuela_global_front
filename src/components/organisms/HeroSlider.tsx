@@ -82,9 +82,11 @@ function CourseSlide({ slider }: { slider: Slider }) {
       {/* Content */}
       <div className="relative z-10 max-w-7xl mx-auto px-8 lg:px-16 w-full">
         <div className="max-w-xl">
-          <span className="inline-block text-xs font-bold uppercase tracking-widest text-[#3FB1E5] mb-5 border border-[#3FB1E5]/40 rounded-full px-4 py-1.5 backdrop-blur-sm">
-            Programa de Alta Especialización
-          </span>
+          {slider.event_type && (
+            <span className="inline-block text-xs font-bold uppercase tracking-widest text-[#3FB1E5] mb-5 border border-[#3FB1E5]/40 rounded-full px-4 py-1.5 backdrop-blur-sm">
+              {slider.event_type.name}
+            </span>
+          )}
 
           <h2 className="text-4xl lg:text-5xl xl:text-6xl font-extrabold text-white leading-tight mb-4 drop-shadow-lg">
             {slider.title}
