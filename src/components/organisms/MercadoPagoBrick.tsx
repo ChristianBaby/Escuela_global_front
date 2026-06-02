@@ -28,11 +28,11 @@ export function MercadoPagoBrick({ orderId, totalAmount }: MercadoPagoBrickProps
   const [loading, setLoading] = useState(true);
 
   // Pedimos el ID de preferencia oficial al backend al montar el componente
- // Busca este bloque dentro de tu MercadoPagoBrick.tsx y déjalo así:
+  // Deja este bloque exactamente así en tu MercadoPagoBrick.tsx:
   useEffect(() => {
-    api.post("/payments/session", { // 👈 CORREGIDO: Quitamos el "/api" de adelante
+    api.post("/payments/session", { // 🚀 SOLUCIÓN: Quitamos el "/api" para que no se duplique
       orderId: orderId,
-      paymentMethod: "mercado_pago"
+      paymentMethod: "mercado_pago"  // Con 'd', impecable
     })
     .then(({ data }) => {
       setPreferenceId(data.preferenceId);

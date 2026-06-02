@@ -9,6 +9,7 @@ import { MercadoPagoBrick } from "@/components/organisms/MercadoPagoBrick";
 import { cartService } from "@/lib/services/cart";
 import { CreditCard, Wallet, ArrowLeft, CheckCircle2, ShieldCheck } from "lucide-react";
 import Link from "next/link";
+import { PayPalButtonComponent } from "@/components/organisms/PayPalButtonComponent";
 
 export default function CheckoutPage() {
   const { user, isAuthenticated } = useAuthStore();
@@ -132,13 +133,10 @@ export default function CheckoutPage() {
                   <MercadoPagoBrick orderId={demoOrderId} totalAmount={subtotal} />
                 </div>
               )}
-
               {paymentMethod === "paypal" && (
-                <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm text-center space-y-4">
-                  <div className="w-full py-3 bg-[#FFC439] text-[#003087] font-bold rounded-lg cursor-not-allowed text-sm shadow-sm">
-                    <i>PayPal</i> Smart Checkout
-                  </div>
-                  <p className="text-xs text-gray-400">Módulo controlado por `PaypalAdapter` listo para producción.</p>
+                <div className="animate-fadeIn">
+                  {/* 🚀 LÍNEA CORRECTA: Quitamos el div con el texto estático y montamos el botón real */}
+                  <PayPalButtonComponent orderId={demoOrderId} totalAmount={subtotal} />
                 </div>
               )}
 
