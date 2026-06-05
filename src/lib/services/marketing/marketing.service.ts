@@ -1,5 +1,5 @@
 import { api } from "@/lib/http/api";
-import type { Promotion, Slider } from "@/types";
+import type { EventType, Promotion, Slider } from "@/types";
 
 export interface CreatePromocionDto {
   title: string;
@@ -12,10 +12,16 @@ export interface CreatePromocionDto {
   ends_at?: string;
 }
 
+export interface CreateEventTypeDto {
+  name: string;
+  display_order?: number;
+}
+
 export interface CreateSliderDto {
   title: string;
   subtitle?: string;
   type: "courses" | "banner";
+  event_type_id?: string | null;
   image_url?: string;
   destination_url?: string;
   contact_url?: string;
@@ -57,6 +63,20 @@ export const promocionesService = {
 
   reorder: (ids: string[]) =>
     api.patch("/promociones/reorder", { ids }).then((r) => r.data),
+};
+
+export const eventTypesService = {
+  list: () =>
+    api.get<EventType[]>("/event-types").then((r) => r.data),
+
+  create: (data: CreateEventTypeDto) =>
+    api.post<EventType>("/event-types", data).then((r) => r.data),
+
+  update: (id: string, data: Partial<CreateEventTypeDto>) =>
+    api.patch<EventType>(`/event-types/${id}`, data).then((r) => r.data),
+
+  delete: (id: string) =>
+    api.delete(`/event-types/${id}`).then((r) => r.data),
 };
 
 export const slidersService = {
