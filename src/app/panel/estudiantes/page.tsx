@@ -37,7 +37,7 @@ export default function EstudiantesPage() {
 
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
-  const [roleFilter, setRoleFilter] = useState<string>("");
+  const [roleFilter, setRoleFilter] = useState<string>("estudiante");
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState<CreateUsuarioDto>(empty);
 
