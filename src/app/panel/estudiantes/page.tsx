@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { usuariosService, type CreateUsuarioDto } from "@/lib/services/users";
 import { useAuthStore } from "@/store/authStore";
 import { toast } from "sonner";
+import { Eye, EyeOff } from "lucide-react";
 import type { UserRole } from "@/types";
 
 const ROLES: { value: UserRole; label: string }[] = [
@@ -40,6 +41,7 @@ export default function EstudiantesPage() {
   const [roleFilter, setRoleFilter] = useState<string>("estudiante");
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState<CreateUsuarioDto>(empty);
+  const [showPassword, setShowPassword] = useState(false);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["usuarios", page, search, roleFilter],
@@ -251,9 +253,27 @@ export default function EstudiantesPage() {
                   ))}
                 </select>
               </Field>
-              <Field label="Contraseña temporal *">
-                <input required type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
-              </Field>
+              {/* Campo contraseña con ojito para mostrar/ocultar */}
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-gray-700">Contraseña temporal *</label>
+                <div className="relative">
+                  <input
+                    required
+                    type={showPassword ? "text" : "password"}
+                    value={form.password}
+                    onChange={(e) => setForm({ ...form, password: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
               <p className="text-xs text-gray-400">Se enviará un email con las credenciales de acceso.</p>
               <div className="flex justify-end gap-3 pt-2">
                 <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">
