@@ -161,6 +161,7 @@ export default function SoporteCursosPage() {
           </div>
         ) : (
           <>
+            <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-200">
@@ -278,6 +279,7 @@ export default function SoporteCursosPage() {
                 )}
               </tbody>
             </table>
+            </div>
 
             {/* Paginación */}
             {data && data.total_pages > 1 && (

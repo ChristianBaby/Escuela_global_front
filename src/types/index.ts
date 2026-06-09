@@ -211,6 +211,27 @@ export interface Certificate {
   issued_at: string;
 }
 
+export interface XYPosition {
+  x: number;
+  y: number;
+}
+
+export interface CertificateFontSizes {
+  student_name: number;
+}
+
+export interface CertificateTemplate {
+  id: string;
+  name: string;
+  background_image_url: string;
+  student_name_position: XYPosition;
+  qr_position: XYPosition;
+  font_family: string;
+  font_sizes: CertificateFontSizes;
+  is_active: boolean;
+  created_at: string;
+}
+
 export interface CertificateSummary {
   id: string;
   enrollment_id: string;
