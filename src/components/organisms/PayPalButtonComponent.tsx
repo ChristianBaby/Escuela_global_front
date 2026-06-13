@@ -29,17 +29,18 @@ export function PayPalButtonComponent({ orderId, totalAmount }: PayPalButtonProp
   const handleCreateOrder = async () => {
     try {
       const { data } = await api.post("/payments/session", {
-        orderId: orderId,
-        paymentMethod: "paypal",
-      });
-      
-      return data.paypalOrderId;
-    } catch (error) {
+          orderId: orderId,
+          paymentMethod: "paypal",
+          currency: "USD", // PayPal siempre requiere USD
+          amount: amountInUSD
+        });
+        return data.paypalOrderId;
+      } catch (error) { 
       console.error("Error al iniciar orden de PayPal:", error);
       toast.error("No se pudo conectar con la pasarela de PayPal.");
-      throw error;
-    }
-  };
+      throw error; }
+    };
+      
 
   // 2. Llama a tu endpoint @Post('paypal/capture/:paypalOrderId') al confirmar el pago en la ventana flotante
   const handleOnApprove = async (data: any) => {

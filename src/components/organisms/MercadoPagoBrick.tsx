@@ -17,9 +17,10 @@ initMercadoPago(PUBLIC_KEY, {
 interface MercadoPagoBrickProps {
   orderId: string;
   totalAmount: number;
+  currency: string;
 }
 
-export function MercadoPagoBrick({ orderId, totalAmount }: MercadoPagoBrickProps) {
+export function MercadoPagoBrick({ orderId, totalAmount, currency }: MercadoPagoBrickProps) {
   const { user } = useAuthStore();
   const router = useRouter();
   
@@ -30,9 +31,11 @@ export function MercadoPagoBrick({ orderId, totalAmount }: MercadoPagoBrickProps
   // Pedimos el ID de preferencia oficial al backend al montar el componente
   // Deja este bloque exactamente así en tu MercadoPagoBrick.tsx:
   useEffect(() => {
-    api.post("/payments/session", { // 🚀 SOLUCIÓN: Quitamos el "/api" para que no se duplique
+    setLoading(true);
+    api.post("/payments/session", {
       orderId: orderId,
-      paymentMethod: "mercado_pago"  // Con 'd', impecable
+      paymentMethod: "mercado_pago",
+      currency: currency, // 
     })
     .then(({ data }) => {
       setPreferenceId(data.preferenceId);
@@ -42,7 +45,7 @@ export function MercadoPagoBrick({ orderId, totalAmount }: MercadoPagoBrickProps
       console.error("Error al obtener la sesión de Mercado Pago:", err);
       setLoading(false);
     });
-  }, [orderId]);
+  }, [orderId, currency]);
 
   if (loading) {
     return (

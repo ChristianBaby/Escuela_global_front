@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/navigation";
+import Link from "next/link"; 
 import { useCartStore } from "@/store/cartStore";
 import { useAuthStore } from "@/store/authStore";
 import { PublicLayout } from "@/components/templates";
@@ -9,15 +9,48 @@ import { CheckCircle2, BookOpen, ArrowRight, Download, Calendar, ShieldCheck } f
 
 export default function CheckoutSuccessPage() {
   const { user } = useAuthStore();
-  const { clearCart } = useCartStore();
+  const { items: cartItems, clearCart } = useCartStore();
   const [ticketNumber, setTicketNumber] = useState("");
 
-  // Al montar la página, limpiamos el carrito local para simular la compra finalizada
   useEffect(() => {
-    clearCart();
-    // Generamos un número de operación aleatorio para la estética de la Demo
-    setTicketNumber("OP-" + Math.floor(100000 + Math.random() * 900000));
-  }, [clearCart]);
+    // 🚀 CLAVE DE SEGURIDAD: Solo ejecutamos la lógica si hay elementos por procesar
+    if (cartItems.length > 0) {
+      // 1. Convertimos los ítems del carrito al formato 'Enrollment'
+      const newEnrollments = cartItems.map((item) => ({
+        id: "demo-enr-" + Math.floor(100000 + Math.random() * 900000),
+        course_id: item.course.id,
+        progress_percent: 0, // Cursos nuevos empiezan en 0%
+        completed_at: null,
+        last_accessed_at: new Date().toISOString(),
+        total_watched_seconds: 0,
+        has_review: false,
+        course: item.course,
+      }));
+
+      // 2. Leemos inscripciones previas de la simulación
+      const existingEnrollmentsRaw = localStorage.getItem("demo_enrollments");
+      const existingEnrollments = existingEnrollmentsRaw ? JSON.parse(existingEnrollmentsRaw) : [];
+
+      // 3. Unimos los nuevos evitando duplicados
+      const combined = [...existingEnrollments];
+      newEnrollments.forEach((newE) => {
+        if (!combined.some((oldE) => oldE.course_id === newE.course_id)) {
+          combined.push(newE);
+        }
+      });
+
+      // 4. Guardamos en el baúl persistente de la demo
+      localStorage.setItem("demo_enrollments", JSON.stringify(combined));
+
+      // 5. 🟢 Mover clearCart() AQUÍ ADENTRO rompe el bucle infinito por completo
+      clearCart();
+    }
+
+    // Generamos el número de operación solo si está vacío (evita que cambie al re-renderizar)
+    if (!ticketNumber) {
+      setTicketNumber("OP-" + Math.floor(100000 + Math.random() * 900000));
+    }
+  }, [cartItems, clearCart, ticketNumber]);
 
   const fechaActual = new Date().toLocaleDateString("es-PE", {
     day: "numeric",
@@ -29,7 +62,7 @@ export default function CheckoutSuccessPage() {
     <PublicLayout>
       <div className="max-w-3xl mx-auto px-4 py-16 text-center">
         
-        {/* Contenedor Principal Animado */}
+        {/* Contenedor Principal */}
         <div className="bg-white border border-gray-200 rounded-2xl p-8 md:p-12 shadow-sm space-y-6 animate-fadeIn">
           
           {/* Éxito Icono */}
@@ -46,7 +79,7 @@ export default function CheckoutSuccessPage() {
             </p>
           </div>
 
-          {/* Comprobante de la Demo para impresionar al Jurado */}
+          {/* Comprobante de la Demo */}
           <div className="bg-slate-50 rounded-xl p-5 border border-gray-100 text-left max-w-md mx-auto space-y-3 text-xs text-gray-600">
             <div className="flex justify-between pb-2 border-b border-gray-200/60 font-semibold text-gray-800">
               <span>Detalle de la Transacción</span>
@@ -57,7 +90,9 @@ export default function CheckoutSuccessPage() {
             
             <div className="flex justify-between">
               <span className="text-gray-400">Estudiante:</span>
-              <span className="font-medium text-gray-900">{user?.first_name ? `${user.first_name} ${user.last_name || ""}` : "Alumno Demo"}</span>
+              <span className="font-medium text-gray-900">
+                {user?.first_name ? `${user.first_name} ${user.last_name || ""}` : "Alumno Demo"}
+              </span>
             </div>
 
             <div className="flex justify-between">
@@ -80,17 +115,17 @@ export default function CheckoutSuccessPage() {
 
           {/* Botones de Acción */}
           <div className="pt-4 flex flex-col sm:flex-row gap-3 justify-center items-center">
-            <a
-              href="/dashboard" // Redirige al panel del alumno (LMS)
+            <Link
+              href="/dashboard"
               className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#2B55A3] hover:bg-[#2B55A3]/90 text-white font-medium px-6 py-3 rounded-xl shadow-sm transition-colors text-sm"
             >
               <BookOpen size={16} />
               Ir a mi Aula Virtual
               <ArrowRight size={16} />
-            </a>
+            </Link>
 
             <button
-              onClick={() => window.print()} // Truco pro: abre el panel de impresión/guardar PDF nativo
+              onClick={() => window.print()}
               className="w-full sm:w-auto flex items-center justify-center gap-2 border border-gray-300 hover:border-gray-400 text-gray-700 font-medium px-5 py-3 rounded-xl transition-colors text-sm bg-white"
             >
               <Download size={16} />
@@ -100,7 +135,6 @@ export default function CheckoutSuccessPage() {
 
         </div>
 
-        {/* Footer Informativo */}
         <p className="text-xs text-gray-400 mt-6">
           Se ha enviado un correo electrónico de confirmación con los detalles de tus accesos y la factura digital correspondiente.
         </p>
