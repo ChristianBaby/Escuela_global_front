@@ -5,6 +5,8 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { authService } from "@/lib/services/auth";
+import { useQuery } from "@tanstack/react-query";
+import { notificacionesService } from "@/lib/services/notifications";
 import {
   LayoutDashboard,
   BookOpen,
@@ -27,6 +29,16 @@ const NAV = [
 export default function StudentLayout({ children }: { children: React.ReactNode }) {
   const pathname  = usePathname();
   const { user, clearUser } = useAuthStore();
+
+  // Consulta el conteo de notificaciones no leídas cada 60 segundos
+  const { data: notifData } = useQuery({
+    queryKey: ["notificaciones"],
+    queryFn: notificacionesService.list,
+    refetchInterval: 60_000,
+    staleTime: 0,
+  });
+  const unreadCount = notifData?.unread_count ?? 0;
+  const badgeLabel  = unreadCount > 9 ? "9+" : unreadCount > 0 ? String(unreadCount) : null;
 
   const handleLogout = async () => {
     try {
@@ -65,6 +77,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
         <nav className="flex-1 px-3 py-4 space-y-0.5">
           {NAV.map(({ label, href, icon: Icon }) => {
             const active = pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
+            const isNotif = href === "/notificaciones";
             return (
               <Link
                 key={href}
@@ -75,7 +88,15 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
                     : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                 }`}
               >
-                <Icon size={18} />
+                {/* Ícono con badge de no leídas en Notificaciones */}
+                <span className="relative shrink-0">
+                  <Icon size={18} />
+                  {isNotif && badgeLabel && (
+                    <span className="absolute -top-2 -right-2 min-w-[16px] h-4 px-0.5 rounded-full bg-[#2B55A3] text-white text-[10px] font-bold flex items-center justify-center leading-none">
+                      {badgeLabel}
+                    </span>
+                  )}
+                </span>
                 {label}
               </Link>
             );
