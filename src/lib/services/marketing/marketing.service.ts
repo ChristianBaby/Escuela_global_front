@@ -79,6 +79,32 @@ export const eventTypesService = {
     api.delete(`/event-types/${id}`).then((r) => r.data),
 };
 
+// ── Notificaciones personalizadas ───────────────────────────────────────────
+
+export interface SendNotificationDto {
+  title: string;
+  body: string;
+  redirect_url?: string;
+  audience: "all" | "course" | "users";
+  course_id?: string;
+  user_ids?: string[];
+}
+
+export interface NotificationRecipient {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+}
+
+export const notificacionesMktService = {
+  getRecipients: (params?: { search?: string; course_id?: string }) =>
+    api.get<NotificationRecipient[]>("/marketing/notifications/recipients", { params }).then((r) => r.data),
+
+  send: (data: SendNotificationDto) =>
+    api.post<{ success: boolean; sent: number }>("/marketing/notifications/send", data).then((r) => r.data),
+};
+
 export const slidersService = {
   list: () =>
     api.get<Slider[]>("/sliders").then((r) => r.data),

@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { promocionesService, slidersService } from "@/lib/services/marketing";
 import Link from "next/link";
-import { Megaphone, Images, CheckCircle, Clock, ArrowRight, TrendingUp } from "lucide-react";
+import { Megaphone, Images, Bell, CheckCircle, Clock, ArrowRight, TrendingUp } from "lucide-react";
 import type { Promotion, Slider } from "@/types";
 
 function StatCard({
@@ -103,7 +103,7 @@ export default function MarketingDashboardPage() {
       )}
 
       {/* Acceso rápido */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
         <Link
           href="/panel/marketing/publicaciones"
           className="bg-white rounded-xl border border-gray-200 p-6 hover:border-[#2B55A3]/40 hover:shadow-sm transition-all group"
@@ -156,6 +156,26 @@ export default function MarketingDashboardPage() {
             </span>
             <span className="text-xs text-gray-400">{sliders.length} total</span>
           </div>
+        </Link>
+
+        <Link
+          href="/panel/marketing/notificaciones"
+          className="bg-white rounded-xl border border-gray-200 p-6 hover:border-[#2B55A3]/40 hover:shadow-sm transition-all group"
+        >
+          <div className="flex items-start justify-between">
+            <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center mb-4">
+              <Bell size={20} className="text-indigo-500" />
+            </div>
+            <ArrowRight
+              size={16}
+              className="text-gray-300 group-hover:text-[#2B55A3] transition-colors mt-1"
+            />
+          </div>
+          <h2 className="font-semibold text-gray-900 mb-1">Notificaciones</h2>
+          <p className="text-sm text-gray-500 leading-relaxed">
+            Envía mensajes personalizados a todos los estudiantes, a los matriculados en un
+            curso o a usuarios específicos.
+          </p>
         </Link>
       </div>
 
