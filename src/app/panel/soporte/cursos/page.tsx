@@ -19,6 +19,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Filter,
+  Award,
 } from "lucide-react";
 
 // ── Constantes ─────────────────────────────────────────────────────────────────
@@ -255,6 +256,14 @@ export default function SoporteCursosPage() {
                           >
                             <FileText size={13} />
                             Contenido
+                          </Link>
+                          <Link
+                            href={`/panel/soporte/cursos/${curso.id}/certificaciones`}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                            title="Certificaciones"
+                          >
+                            <Award size={13} />
+                            Certificaciones
                           </Link>
                           <Link
                             href={`/panel/soporte/cursos/${curso.id}/editar`}

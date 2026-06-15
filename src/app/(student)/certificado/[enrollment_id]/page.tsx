@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useParams } from "next/navigation";
 import { studentService } from "@/lib/services/student";
 import {
-  Award, Download, Share2, CheckCircle2, Loader2, AlertCircle, ExternalLink,
+  Award, Download, Share2, CheckCircle2, Loader2, AlertCircle, ExternalLink, FileText,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -12,6 +12,14 @@ function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("es-PE", {
     day: "2-digit", month: "long", year: "numeric",
   });
+}
+
+function resolveUrl(pdfUrl: string) {
+  if (!pdfUrl || pdfUrl.startsWith("http")) return pdfUrl;
+  const base = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000")
+    .replace(/\/api\/?$/, "")
+    .replace(/\/$/, "");
+  return `${base}${pdfUrl}`;
 }
 
 export default function CertificadoPage() {
@@ -50,73 +58,57 @@ export default function CertificadoPage() {
     );
   }
 
-  const issuedDate = formatDate(cert.issued_at);
+  const isPending = !cert.pdf_url || cert.pdf_url === "PENDIENTE_GENERACION_PDF";
+  const pdfUrl = isPending ? null : resolveUrl(cert.pdf_url);
   const verifyUrl = `/verificar/${cert.verification_code}`;
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-5">
       {/* Cabecera */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Mi certificado</h1>
-        <p className="text-gray-500 mt-1">Descarga y comparte tu logro.</p>
+        <div className="flex items-center gap-2 mb-1">
+          <Award size={16} className="text-[#2B55A3]" />
+          <p className="text-xs font-semibold uppercase tracking-wider text-[#2B55A3]">
+            Mi certificado
+          </p>
+        </div>
+        <h1 className="text-2xl font-bold text-gray-900">{cert.course_title}</h1>
+        <p className="text-gray-500 text-sm mt-0.5">
+          {cert.student_name} · Emitido el {formatDate(cert.issued_at)} · {cert.total_hours} horas
+        </p>
       </div>
 
-      {/* Certificado card */}
-      <div className="bg-white rounded-2xl border-2 border-[#2B55A3]/20 overflow-hidden shadow-sm">
-        {/* Banda superior */}
-        <div className="bg-gradient-to-r from-[#2B55A3] to-[#3FB1E5] px-8 py-6 text-white text-center">
-          <Award size={48} className="mx-auto mb-3 opacity-90" />
-          <p className="text-sm font-medium uppercase tracking-widest opacity-80">Certificado de Finalización</p>
-          <h2 className="text-2xl font-bold mt-1">Escuela Global</h2>
+      {/* PDF viewer */}
+      {pdfUrl ? (
+        <div className="rounded-2xl overflow-hidden border border-gray-200 bg-gray-100 shadow-sm">
+          <iframe
+            src={`${pdfUrl}#toolbar=0&navpanes=0&scrollbar=0`}
+            className="w-full"
+            style={{ height: "560px" }}
+            title="Certificado PDF"
+          />
         </div>
-
-        {/* Cuerpo */}
-        <div className="px-8 py-8 text-center">
-          <p className="text-gray-500 text-sm mb-2">Este certificado acredita que</p>
-          <p className="text-3xl font-bold text-gray-900 mb-4">{cert.student_name}</p>
-          <p className="text-gray-500 text-sm mb-2">completó satisfactoriamente el curso</p>
-          <p className="text-xl font-semibold text-[#2B55A3] mb-6">{cert.course_title}</p>
-
-          {/* Datos */}
-          <div className="grid grid-cols-2 gap-4 py-6 border-t border-b border-gray-100">
-            <div>
-              <p className="text-xs text-gray-400 uppercase tracking-wide">Duración</p>
-              <p className="text-sm font-medium text-gray-700 mt-1">{cert.total_hours} horas</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-400 uppercase tracking-wide">Emitido</p>
-              <p className="text-sm font-medium text-gray-700 mt-1">{issuedDate}</p>
-            </div>
-          </div>
-
-          {/* Código de verificación */}
-          <div className="mt-6 bg-gray-50 rounded-xl p-4">
-            <div className="flex items-center justify-center gap-2 mb-1">
-              <CheckCircle2 size={16} className="text-emerald-500" />
-              <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                Código de verificación
-              </p>
-            </div>
-            <p className="font-mono text-sm font-bold text-gray-800 tracking-wider">
-              {cert.verification_code}
+      ) : (
+        <div
+          className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 flex flex-col items-center justify-center gap-3"
+          style={{ height: "280px" }}
+        >
+          <FileText size={40} className="text-gray-300" />
+          <div className="text-center">
+            <p className="text-sm font-medium text-gray-500">PDF en procesamiento</p>
+            <p className="text-xs text-gray-400 mt-0.5">
+              Disponible en unos instantes. Recarga la página.
             </p>
-            <Link
-              href={verifyUrl}
-              target="_blank"
-              className="inline-flex items-center gap-1 text-xs text-[#2B55A3] hover:underline mt-2"
-            >
-              Verificar autenticidad
-              <ExternalLink size={11} />
-            </Link>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Acciones */}
       <div className="flex flex-col sm:flex-row gap-3">
-        {cert.pdf_url ? (
+        {pdfUrl ? (
           <a
-            href={cert.pdf_url}
+            href={pdfUrl}
+            download
             target="_blank"
             rel="noopener noreferrer"
             className="flex-1 flex items-center justify-center gap-2 bg-[#2B55A3] text-white py-3 rounded-xl text-sm font-medium hover:bg-[#2B55A3]/90 transition-colors"
@@ -136,14 +128,15 @@ export default function CertificadoPage() {
 
         <button
           onClick={() => {
+            const shareUrl = `${window.location.origin}${verifyUrl}`;
             if (navigator.share) {
               navigator.share({
                 title: `Certificado — ${cert.course_title}`,
-                text: `Completé el curso "${cert.course_title}" en Escuela Global.`,
-                url: `${window.location.origin}${verifyUrl}`,
+                text: `Completé "${cert.course_title}" en Escuela Global.`,
+                url: shareUrl,
               });
             } else {
-              navigator.clipboard.writeText(`${window.location.origin}${verifyUrl}`);
+              navigator.clipboard.writeText(shareUrl);
               alert("Enlace de verificación copiado al portapapeles.");
             }
           }}
@@ -152,6 +145,52 @@ export default function CertificadoPage() {
           <Share2 size={16} />
           Compartir
         </button>
+      </div>
+
+      {/* Datos del certificado */}
+      <div className="bg-white rounded-2xl border border-gray-100 divide-y divide-gray-100">
+        <div className="flex items-center justify-between px-6 py-3.5 text-sm">
+          <span className="text-gray-400">Programa</span>
+          <span className="font-medium text-gray-800 text-right max-w-xs truncate">{cert.course_title}</span>
+        </div>
+        <div className="flex items-center justify-between px-6 py-3.5 text-sm">
+          <span className="text-gray-400">Estudiante</span>
+          <span className="font-medium text-gray-800">{cert.student_name}</span>
+        </div>
+        <div className="flex items-center justify-between px-6 py-3.5 text-sm">
+          <span className="text-gray-400">Duración</span>
+          <span className="font-medium text-gray-800">{cert.total_hours} horas</span>
+        </div>
+        <div className="flex items-center justify-between px-6 py-3.5 text-sm">
+          <span className="text-gray-400">Fecha de emisión</span>
+          <span className="font-medium text-gray-800">{formatDate(cert.issued_at)}</span>
+        </div>
+        {cert.instructors && cert.instructors.length > 0 && (
+          <div className="flex items-center justify-between px-6 py-3.5 text-sm">
+            <span className="text-gray-400">
+              {cert.instructors.length === 1 ? "Instructor" : "Instructores"}
+            </span>
+            <span className="font-medium text-gray-800 text-right max-w-xs">
+              {cert.instructors.join(" · ")}
+            </span>
+          </div>
+        )}
+        <div className="flex items-center justify-between px-6 py-3.5">
+          <div className="flex items-center gap-1.5">
+            <CheckCircle2 size={14} className="text-emerald-500" />
+            <span className="font-mono text-xs text-gray-500 tracking-wider">
+              {cert.verification_code}
+            </span>
+          </div>
+          <Link
+            href={verifyUrl}
+            target="_blank"
+            className="inline-flex items-center gap-1 text-xs text-[#2B55A3] hover:underline"
+          >
+            Verificar autenticidad
+            <ExternalLink size={11} />
+          </Link>
+        </div>
       </div>
 
       <Link

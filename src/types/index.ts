@@ -226,6 +226,7 @@ export interface CertificateTemplate {
   background_image_url: string;
   student_name_position: XYPosition;
   qr_position: XYPosition;
+  qr_size: number; // unidades del espacio virtual 3508×2480 (default 300)
   font_family: string;
   font_sizes: CertificateFontSizes;
   is_active: boolean;

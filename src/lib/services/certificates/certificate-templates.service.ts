@@ -6,6 +6,7 @@ export interface CreateCertificateTemplateDto {
   background_image?: File | null;
   student_name_position: XYPosition;
   qr_position: XYPosition;
+  qr_size: number;
   font_family: string;
   font_sizes: CertificateFontSizes;
 }
@@ -17,6 +18,7 @@ function buildFormData(data: Partial<CreateCertificateTemplateDto>): FormData {
   if (data.font_family) fd.append("font_family", data.font_family);
   if (data.student_name_position) fd.append("student_name_position", JSON.stringify(data.student_name_position));
   if (data.qr_position)           fd.append("qr_position",           JSON.stringify(data.qr_position));
+  if (data.qr_size !== undefined)  fd.append("qr_size",               String(data.qr_size));
   if (data.font_sizes)            fd.append("font_sizes",            JSON.stringify(data.font_sizes));
   return fd;
 }
