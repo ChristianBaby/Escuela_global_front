@@ -40,6 +40,9 @@ export interface CreateCursoDto {
   instructors: InstructorInput[];
   prerequisites: string[];
   outcomes: string[];
+  certification_mode?: "auto" | "manual";
+  certificate_template_id?: string | null;
+  constancia_template_id?: string | null;
 }
 
 export interface CreateCursoResponse {

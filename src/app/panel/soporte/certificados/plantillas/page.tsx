@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   certificateTemplatesService,
@@ -57,6 +57,7 @@ interface FormState {
   name: string;
   student_name_position: XYPosition;
   qr_position: XYPosition;
+  qr_size: number;
   font_family: string;
   font_sizes: {
     student_name: number;
@@ -67,8 +68,9 @@ const EMPTY: FormState = {
   name: "",
   student_name_position: { x: 1754, y: 1300 },
   qr_position: { x: 3000, y: 2000 },
+  qr_size: 300,
   font_family: "Georgia",
-  font_sizes: { student_name: 72 },
+  font_sizes: { student_name: 200 },
 };
 
 type ApiError = { response?: { data?: { message?: string } } };
@@ -192,6 +194,16 @@ function PositionEditor({
     "student_name_position"
   );
   const previewRef = useRef<HTMLDivElement>(null);
+  const [previewWidth, setPreviewWidth] = useState(0);
+
+  useEffect(() => {
+    if (!previewRef.current) return;
+    const ro = new ResizeObserver((entries) => {
+      setPreviewWidth(entries[0].contentRect.width);
+    });
+    ro.observe(previewRef.current);
+    return () => ro.disconnect();
+  }, []);
 
   const handleClick = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
@@ -209,6 +221,7 @@ function PositionEditor({
 
   const activeDef = FIELD_DEFS.find((f) => f.key === activeField)!;
   const activePos = form[activeField];
+  const scale = previewWidth > 0 ? previewWidth / CERT_W : 0;
 
   return (
     <div className="space-y-4">
@@ -279,32 +292,76 @@ function PositionEditor({
           {FIELD_DEFS.map((f) => {
             const pos = form[f.key];
             const isActive = f.key === activeField;
+            const leftPct = `${(pos.x / CERT_W) * 100}%`;
+            const topPct = `${(pos.y / CERT_H) * 100}%`;
+
+            if (f.key === "student_name_position") {
+              const fontSize = scale > 0 ? Math.max(6, form.font_sizes.student_name * scale) : 12;
+              return (
+                <div
+                  key={f.key}
+                  style={{
+                    position: "absolute",
+                    left: leftPct,
+                    top: topPct,
+                    transform: "translate(-50%, -50%)",
+                    fontSize,
+                    fontFamily: form.font_family,
+                    color: f.color,
+                    whiteSpace: "nowrap",
+                    textShadow: "0 1px 4px rgba(0,0,0,0.6)",
+                    cursor: "pointer",
+                    zIndex: isActive ? 20 : 10,
+                    outline: isActive ? `2px dashed ${f.color}88` : "none",
+                    outlineOffset: 4,
+                    padding: "2px 4px",
+                    userSelect: "none",
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveField(f.key);
+                  }}
+                >
+                  Nombre del Estudiante
+                </div>
+              );
+            }
+
+            // QR position → caja punteada proporcional
+            const qrPx = scale > 0 ? Math.max(12, form.qr_size * scale) : 24;
             return (
               <div
                 key={f.key}
                 style={{
                   position: "absolute",
-                  left: `${(pos.x / CERT_W) * 100}%`,
-                  top: `${(pos.y / CERT_H) * 100}%`,
+                  left: leftPct,
+                  top: topPct,
                   transform: "translate(-50%, -50%)",
-                  width: isActive ? 22 : 14,
-                  height: isActive ? 22 : 14,
-                  borderRadius: "50%",
-                  backgroundColor: f.color,
-                  border: "2px solid white",
-                  boxShadow: isActive
-                    ? `0 0 0 3px ${f.color}55, 0 2px 8px rgba(0,0,0,0.35)`
-                    : "0 1px 4px rgba(0,0,0,0.3)",
-                  zIndex: isActive ? 20 : 10,
-                  transition: "width 0.1s, height 0.1s, box-shadow 0.1s",
+                  width: qrPx,
+                  height: qrPx,
+                  border: `2px dashed ${f.color}`,
+                  backgroundColor: `${f.color}22`,
                   cursor: "pointer",
-                  pointerEvents: "auto",
+                  zIndex: isActive ? 20 : 10,
+                  boxShadow: isActive ? `0 0 0 2px ${f.color}55` : "none",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  userSelect: "none",
                 }}
                 onClick={(e) => {
                   e.stopPropagation();
                   setActiveField(f.key);
                 }}
-              />
+              >
+                <span style={{
+                  fontSize: Math.max(6, qrPx * 0.2),
+                  color: f.color,
+                  fontFamily: "monospace",
+                  fontWeight: "bold",
+                  opacity: 0.8,
+                }}>QR</span>
+              </div>
             );
           })}
         </div>
@@ -465,6 +522,7 @@ export default function PlantillasPage() {
       name: t.name,
       student_name_position: t.student_name_position,
       qr_position: t.qr_position,
+      qr_size: t.qr_size ?? 300,
       font_family: t.font_family,
       font_sizes: t.font_sizes,
     });
@@ -512,6 +570,7 @@ export default function PlantillasPage() {
       background_image: imageFile ?? undefined,
       student_name_position: form.student_name_position,
       qr_position: form.qr_position,
+      qr_size: form.qr_size,
       font_family: form.font_family,
       font_sizes: form.font_sizes,
     };
@@ -882,7 +941,7 @@ function ConfigTab({
       <div className="space-y-3">
         <label className="text-sm font-medium text-gray-700">
           Tamaño de fuente por campo{" "}
-          <span className="text-xs text-gray-400 font-normal">(puntos)</span>
+          <span className="text-xs text-gray-400 font-normal">(unidades virtuales)</span>
         </label>
         <div className="grid grid-cols-2 gap-3">
           {[
@@ -902,8 +961,8 @@ function ConfigTab({
               </label>
               <input
                 type="number"
-                min={8}
-                max={300}
+                min={50}
+                max={600}
                 value={form.font_sizes[sizeKey]}
                 onChange={(e) =>
                   onChange({
@@ -919,8 +978,34 @@ function ConfigTab({
           ))}
         </div>
         <p className="text-xs text-gray-400">
-          El color del dot corresponde al marcador en el editor de posiciones
+          Mismo espacio de coordenadas que las posiciones (3508×2480 px virtuales)
         </p>
+      </div>
+
+      {/* Tamaño del QR */}
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-gray-700">
+          Tamaño del código QR{" "}
+          <span className="text-xs text-gray-400 font-normal">(unidades virtuales)</span>
+        </label>
+        <div className="flex items-center gap-3">
+          <input
+            type="number"
+            min={100}
+            max={800}
+            step={10}
+            value={form.qr_size}
+            onChange={(e) => onChange({ qr_size: Number(e.target.value) })}
+            className="w-36 border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+          />
+          <span
+            className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+            style={{ backgroundColor: "#805AD5" }}
+          />
+          <span className="text-xs text-gray-400">
+            Valor por defecto: 300 · se visualiza en la pestaña &quot;Posiciones&quot;
+          </span>
+        </div>
       </div>
     </div>
   );

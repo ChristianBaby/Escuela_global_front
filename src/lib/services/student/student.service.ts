@@ -15,11 +15,13 @@ export const studentService = {
 
 	getMyCourseProgress: (courseId: string) => api.get<CourseProgress>(`/student/progress/courses/${courseId}`).then((r) => r.data),
 
-	updateSessionProgress: (sessionId: string, watchedSeconds: number) => api .put<{ completed: boolean; progress_percent: number }>(
-	`student/progress/sessions/${sessionId}`,
-	{ watched_seconds: watchedSeconds }) .then((r) => r.data),
+	updateSessionProgress: (sessionId: string, watchedSeconds: number, forceComplete = false) =>
+		api.put<{ completed: boolean; progress_percent: number }>(
+			`student/progress/sessions/${sessionId}`,
+			{ watched_seconds: watchedSeconds, force_complete: forceComplete },
+		).then((r) => r.data),
 
 	submitReview: (data: SubmitReviewDto) => api.post<{ id: string; certificate_available: boolean }>("/reviews", data).then((r) => r.data),
-	getMyCertificates: () => api.get<{ data: CertificateSummary[] }>("/student/certificates").then((r) => r.data.data),
+	getMyCertificates: () => api.get<CertificateSummary[]>("/student/certificates").then((r) => r.data),
 	getMyCertificate: (enrollmentId: string) => api.get<CertificateDetail>(`/student/certificates/${enrollmentId}`).then((r) => r.data),
 };

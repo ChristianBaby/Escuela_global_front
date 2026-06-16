@@ -11,6 +11,14 @@ function formatDate(iso: string) {
   });
 }
 
+function resolveUrl(pdfUrl: string) {
+  if (!pdfUrl || pdfUrl.startsWith("http")) return pdfUrl;
+  const base = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000")
+    .replace(/\/api\/?$/, "")
+    .replace(/\/$/, "");
+  return `${base}${pdfUrl}`;
+}
+
 export default function MisCertificadosPage() {
   const { data: certificates, isLoading } = useQuery({
     queryKey: ["mis-certificados"],
@@ -63,6 +71,8 @@ export default function MisCertificadosPage() {
             const shareUrl = typeof window !== "undefined"
               ? `${window.location.origin}${verifyUrl}`
               : verifyUrl;
+            const isPending = !cert.pdf_url || cert.pdf_url === "PENDIENTE_GENERACION_PDF";
+            const pdfUrl = isPending ? null : resolveUrl(cert.pdf_url);
 
             return (
               <div
@@ -93,9 +103,10 @@ export default function MisCertificadosPage() {
                     Ver
                   </Link>
 
-                  {cert.pdf_url ? (
+                  {pdfUrl ? (
                     <a
-                      href={cert.pdf_url}
+                      href={pdfUrl}
+                      download
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#2B55A3] text-white text-xs font-medium hover:bg-[#2B55A3]/90 transition-colors"
