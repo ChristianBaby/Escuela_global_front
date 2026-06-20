@@ -8,16 +8,15 @@ import { PublicLayout } from "@/components/templates";
 import { MercadoPagoBrick } from "@/components/organisms/MercadoPagoBrick";
 import { PayPalButtonComponent } from "@/components/organisms/PayPalButtonComponent";
 import { cartService } from "@/lib/services/cart";
-// 🚀 AGREGADO: ShoppingBag para el botón de retorno
 import { CreditCard, Wallet, ArrowLeft, CheckCircle2, ShieldCheck, Globe, ShoppingBag } from "lucide-react";
 import Link from "next/link";
 
-// Configuración de monedas y tipo de cambio base para la Demo (Base: PEN)
+// 1. CONFIGURACIÓN GEOLOCALIZADA ACTUALIZADA (Mercado Pago activo para la región Latam)
 const GEO_CONFIG = {
   PE: { country: "Perú", currency: "PEN", symbol: "S/", rate: 1.0, activeGateway: "mercado_pago" },
   US: { country: "Estados Unidos", currency: "USD", symbol: "$", rate: 0.27, activeGateway: "paypal" },
-  CO: { country: "Colombia", currency: "COP", symbol: "$", rate: 1080.0, activeGateway: "paypal" },
-  CL: { country: "Chile", currency: "CLP", symbol: "$", rate: 250.0, activeGateway: "paypal" },
+  CO: { country: "Colombia", currency: "COP", symbol: "$", rate: 1080.0, activeGateway: "mercado_pago" }, // 🚀 Activado MP nativo
+  CL: { country: "Chile", currency: "CLP", symbol: "$", rate: 250.0, activeGateway: "mercado_pago" },    // 🚀 Activado MP nativo
 };
 
 type CountryKey = keyof typeof GEO_CONFIG;
@@ -38,7 +37,7 @@ export default function CheckoutPage() {
   const { items: localItems, total: localTotal } = useCartStore();
   const [paymentMethod, setPaymentMethod] = useState<"paypal" | "mercado_pago">("mercado_pago");
 
-  // 📡 GEOLOCALIZACIÓN AUTOMÁTICA POR IP (Inicializa el país solo al montar la pantalla)
+  // 📡 GEOLOCALIZACIÓN AUTOMÁTICA POR IP
   useEffect(() => {
     fetch("https://ipapi.co/json/")
       .then((res) => res.json())
@@ -54,13 +53,14 @@ export default function CheckoutPage() {
       });
   }, []);
 
-  // Cambiar método por defecto según el país seleccionado (Soporta el "engaño" del selector manual)
+ // Cambiar método por defecto según el país seleccionado
   useEffect(() => {
     setPaymentMethod(GEO_CONFIG[country].activeGateway as "paypal" | "mercado_pago");
+    // 🚀 REPOTENCIADO: Guarda el país seleccionado para que la factura sepa en qué moneda emitirse
+    localStorage.setItem("checkout_country", country); 
   }, [country]);
 
-  // 🚀 NORMALIZACIÓN COMPLETA CON EXTRACTOR INTELIGENTE (Anti-envolturas del Backend)
-  // Castemos temporalmente a 'any' para que TypeScript permita validar estructuras alternativas sin reclamar
+  // 🚀 NORMALIZACIÓN COMPLETA CON EXTRACTOR INTELIGENTE
   const serverCartAny = serverCart as any;
 
   const cartItemsRaw = serverCartAny?.items 
@@ -83,7 +83,7 @@ export default function CheckoutPage() {
         price: Number(e.course.discount_price ?? e.course.price),
       }));
 
-  // 3. CÁLCULO LOCALIZADO: Multiplicamos el subtotal base por la tasa de cambio del país
+  // 3. CÁLCULO LOCALIZADO
   const currentGeo = GEO_CONFIG[country];
   const localizedSubtotal = baseSubtotal * currentGeo.rate;
   
@@ -147,6 +147,7 @@ export default function CheckoutPage() {
               <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4">1. Selecciona tu método de pago</h3>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* BOTÓN SELECCIONAR MERCADO PAGO */}
                 <button
                   type="button"
                   onClick={() => setPaymentMethod("mercado_pago")}
@@ -157,12 +158,13 @@ export default function CheckoutPage() {
                   }`}
                 >
                   <CreditCard size={22} />
-                  <span className="text-xs font-bold">Mercado Pago (Local)</span>
+                  <span className="text-xs font-bold">Mercado Pago (Latam)</span>
                   <span className="text-[10px] text-gray-400">
-                    {country === "PE" ? "Tarjetas de débito/crédito en Soles" : "No recomendado fuera de Perú"}
+                    Tarjetas de débito/crédito locales en {currentGeo.currency}
                   </span>
                 </button>
-
+                
+                {/* BOTÓN SELECCIONAR PAYPAL */}
                 <button
                   type="button"
                   onClick={() => setPaymentMethod("paypal")}
@@ -179,16 +181,19 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            {/* CONTENEDOR DINÁMICO */}
+            {/* CONTENEDOR DINÁMICO DE PASARELAS */}
             <div className="space-y-4">
               <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider px-1">2. Procesar Transacción</h3>
               
               {paymentMethod === "mercado_pago" && (
                 <div className="animate-fadeIn">
+                  {/* 🛡️ EL CAMBIO MAESTRO PARA EL ESCUDO DE DIVISAS: 
+                      Pasamos 'baseSubtotal' (Soles) y 'currency="PEN"' para que tus llaves de desarrollo de Perú
+                      autentiquen el Brick inmediatamente sin colapsar en Colombia o Chile. */}
                   <MercadoPagoBrick 
                     orderId={demoOrderId} 
-                    totalAmount={localizedSubtotal} 
-                    currency={currentGeo.currency} 
+                    totalAmount={baseSubtotal} 
+                    currency="PEN" 
                   />
                 </div>
               )}
@@ -242,7 +247,7 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            {/* 🚀 BOTÓN NUEVO: Volver a catálogo para continuar comprando */}
+            {/* BOTÓN NUEVO: Volver a catálogo */}
             <Link
               href="/cursos"
               className="w-full flex items-center justify-center gap-2 border border-gray-300 hover:border-[#2B55A3] text-gray-700 hover:text-[#2B55A3] font-medium py-3 rounded-xl transition-colors text-sm bg-white shadow-sm"
