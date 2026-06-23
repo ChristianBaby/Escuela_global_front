@@ -38,7 +38,9 @@ const FONT_FAMILIES = [
 
 type PositionKey = "student_name_position" | "qr_position";
 
-const FIELD_DEFS: {
+type PageSide = "front" | "back";
+
+const FRONT_FIELDS: {
   key: PositionKey;
   label: string;
   color: string;
@@ -50,8 +52,13 @@ const FIELD_DEFS: {
     color: "#2B55A3",
     sizeKey: "student_name",
   },
-  { key: "qr_position", label: "QR Code", color: "#805AD5" },
 ];
+
+const BACK_FIELDS: {
+  key: PositionKey;
+  label: string;
+  color: string;
+}[] = [{ key: "qr_position", label: "QR Code", color: "#805AD5" }];
 
 interface FormState {
   name: string;
@@ -67,7 +74,7 @@ interface FormState {
 const EMPTY: FormState = {
   name: "",
   student_name_position: { x: 1754, y: 1300 },
-  qr_position: { x: 3000, y: 2000 },
+  qr_position: { x: 1754, y: 1240 },
   qr_size: 300,
   font_family: "Georgia",
   font_sizes: { student_name: 200 },
@@ -82,9 +89,13 @@ function errMsg(e: unknown) {
 function ImageUploader({
   preview,
   onChange,
+  label = "Imagen de fondo",
+  hint = "",
 }: {
   preview: string;
   onChange: (file: File | null, localUrl: string) => void;
+  label?: string;
+  hint?: string;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
@@ -104,9 +115,10 @@ function ImageUploader({
   return (
     <div className="space-y-2">
       <label className="text-sm font-medium text-gray-700">
-        Imagen de fondo{" "}
+        {label}{" "}
         <span className="text-xs text-gray-400 font-normal">
           (PNG recomendado · 3508×2480 px · máx. 10 MB)
+          {hint && ` — ${hint}`}
         </span>
       </label>
 
@@ -184,15 +196,15 @@ function ImageUploader({
 function PositionEditor({
   form,
   backgroundPreview,
+  backPreview,
   onChangePosition,
 }: {
   form: FormState;
   backgroundPreview: string;
+  backPreview: string;
   onChangePosition: (key: PositionKey, pos: XYPosition) => void;
 }) {
-  const [activeField, setActiveField] = useState<PositionKey>(
-    "student_name_position"
-  );
+  const [activeSide, setActiveSide] = useState<PageSide>("front");
   const previewRef = useRef<HTMLDivElement>(null);
   const [previewWidth, setPreviewWidth] = useState(0);
 
@@ -204,6 +216,13 @@ function PositionEditor({
     ro.observe(previewRef.current);
     return () => ro.disconnect();
   }, []);
+
+  const fields = activeSide === "front" ? FRONT_FIELDS : BACK_FIELDS;
+  const activeField: PositionKey =
+    activeSide === "front" ? "student_name_position" : "qr_position";
+  const activeDef = fields[0];
+  const activePos = form[activeField];
+  const currentPreview = activeSide === "front" ? backgroundPreview : backPreview;
 
   const handleClick = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
@@ -219,42 +238,31 @@ function PositionEditor({
     [activeField, onChangePosition]
   );
 
-  const activeDef = FIELD_DEFS.find((f) => f.key === activeField)!;
-  const activePos = form[activeField];
   const scale = previewWidth > 0 ? previewWidth / CERT_W : 0;
 
   return (
     <div className="space-y-4">
-      {/* Selector de campo */}
-      <div>
-        <p className="text-sm font-medium text-gray-700 mb-2">
-          Selecciona el campo a posicionar
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {FIELD_DEFS.map((f) => (
-            <button
-              key={f.key}
-              type="button"
-              onClick={() => setActiveField(f.key)}
-              className="text-xs px-3 py-1.5 rounded-full border transition-all flex items-center gap-1.5"
-              style={
-                activeField === f.key
-                  ? {
-                      backgroundColor: f.color,
-                      borderColor: f.color,
-                      color: "#fff",
-                    }
-                  : { borderColor: "#e5e7eb", color: "#4b5563" }
-              }
-            >
-              <span
-                className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                style={{ backgroundColor: f.color }}
-              />
-              {f.label}
-            </button>
-          ))}
-        </div>
+      {/* Selector cara / contraportada */}
+      <div className="flex gap-2">
+        {(
+          [
+            { key: "front" as PageSide, label: "Cara (portada)" },
+            { key: "back" as PageSide, label: "Contraportada" },
+          ] as const
+        ).map(({ key, label }) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => setActiveSide(key)}
+            className={`text-xs px-4 py-2 rounded-lg border transition-all font-medium ${
+              activeSide === key
+                ? "bg-[#2B55A3] border-[#2B55A3] text-white"
+                : "border-gray-300 text-gray-600 hover:bg-gray-50"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
       </div>
 
       {/* Preview interactivo */}
@@ -272,9 +280,9 @@ function PositionEditor({
           style={{ aspectRatio: `${CERT_W}/${CERT_H}` }}
           onClick={handleClick}
         >
-          {backgroundPreview ? (
+          {currentPreview ? (
             <img
-              src={backgroundPreview}
+              src={currentPreview}
               alt=""
               className="absolute inset-0 w-full h-full object-fill"
               draggable={false}
@@ -282,21 +290,24 @@ function PositionEditor({
           ) : (
             <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
               <p className="text-sm text-gray-400 text-center px-4">
-                Sube la imagen de fondo en la pestaña &quot;Configuración&quot;
-                para visualizar el certificado
+                {activeSide === "front"
+                  ? 'Sube la imagen de portada en la pestaña "Configuración"'
+                  : 'Sube la imagen de contraportada en la pestaña "Configuración"'}
               </p>
             </div>
           )}
 
           {/* Marcadores */}
-          {FIELD_DEFS.map((f) => {
+          {fields.map((f) => {
             const pos = form[f.key];
-            const isActive = f.key === activeField;
             const leftPct = `${(pos.x / CERT_W) * 100}%`;
             const topPct = `${(pos.y / CERT_H) * 100}%`;
 
             if (f.key === "student_name_position") {
-              const fontSize = scale > 0 ? Math.max(6, form.font_sizes.student_name * scale) : 12;
+              const fontSize =
+                scale > 0
+                  ? Math.max(6, form.font_sizes.student_name * scale)
+                  : 12;
               return (
                 <div
                   key={f.key}
@@ -311,15 +322,11 @@ function PositionEditor({
                     whiteSpace: "nowrap",
                     textShadow: "0 1px 4px rgba(0,0,0,0.6)",
                     cursor: "pointer",
-                    zIndex: isActive ? 20 : 10,
-                    outline: isActive ? `2px dashed ${f.color}88` : "none",
+                    zIndex: 20,
+                    outline: `2px dashed ${f.color}88`,
                     outlineOffset: 4,
                     padding: "2px 4px",
                     userSelect: "none",
-                  }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setActiveField(f.key);
                   }}
                 >
                   Nombre del Estudiante
@@ -327,7 +334,6 @@ function PositionEditor({
               );
             }
 
-            // QR position → caja punteada proporcional
             const qrPx = scale > 0 ? Math.max(12, form.qr_size * scale) : 24;
             return (
               <div
@@ -342,25 +348,25 @@ function PositionEditor({
                   border: `2px dashed ${f.color}`,
                   backgroundColor: `${f.color}22`,
                   cursor: "pointer",
-                  zIndex: isActive ? 20 : 10,
-                  boxShadow: isActive ? `0 0 0 2px ${f.color}55` : "none",
+                  zIndex: 20,
+                  boxShadow: `0 0 0 2px ${f.color}55`,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   userSelect: "none",
                 }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setActiveField(f.key);
-                }}
               >
-                <span style={{
-                  fontSize: Math.max(6, qrPx * 0.2),
-                  color: f.color,
-                  fontFamily: "monospace",
-                  fontWeight: "bold",
-                  opacity: 0.8,
-                }}>QR</span>
+                <span
+                  style={{
+                    fontSize: Math.max(6, qrPx * 0.2),
+                    color: f.color,
+                    fontFamily: "monospace",
+                    fontWeight: "bold",
+                    opacity: 0.8,
+                  }}
+                >
+                  QR
+                </span>
               </div>
             );
           })}
@@ -412,21 +418,31 @@ function PositionEditor({
         </div>
       </div>
 
-      {/* Leyenda de todas las posiciones */}
+      {/* Resumen posiciones */}
       <div className="grid grid-cols-1 gap-1.5">
-        {FIELD_DEFS.map((f) => {
+        {[...FRONT_FIELDS, ...BACK_FIELDS].map((f) => {
           const pos = form[f.key];
+          const side = f.key === "student_name_position" ? "Cara" : "Contra";
           return (
             <div
               key={f.key}
-              className="flex items-center gap-2 text-xs text-gray-600 py-1 px-2 rounded-lg hover:bg-gray-50 cursor-pointer"
-              onClick={() => setActiveField(f.key)}
+              className={`flex items-center gap-2 text-xs text-gray-600 py-1 px-2 rounded-lg hover:bg-gray-50 cursor-pointer ${
+                f.key === activeField ? "bg-gray-100" : ""
+              }`}
+              onClick={() =>
+                setActiveSide(
+                  f.key === "student_name_position" ? "front" : "back"
+                )
+              }
             >
               <span
                 className="w-2.5 h-2.5 rounded-full flex-shrink-0"
                 style={{ backgroundColor: f.color }}
               />
-              <span className="flex-1 truncate">{f.label}</span>
+              <span className="flex-1 truncate">
+                {f.label}{" "}
+                <span className="text-gray-400">({side})</span>
+              </span>
               <span className="text-gray-400 font-mono text-[11px]">
                 {pos.x} , {pos.y}
               </span>
@@ -448,6 +464,8 @@ export default function PlantillasPage() {
   const [form, setForm] = useState<FormState>(EMPTY);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
+  const [backImageFile, setBackImageFile] = useState<File | null>(null);
+  const [backImagePreview, setBackImagePreview] = useState<string>("");
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   // ── Queries ──
@@ -512,6 +530,8 @@ export default function PlantillasPage() {
     setForm(EMPTY);
     setImageFile(null);
     setImagePreview("");
+    setBackImageFile(null);
+    setBackImagePreview("");
     setActiveTab("config");
     setShowModal(true);
   };
@@ -528,6 +548,8 @@ export default function PlantillasPage() {
     });
     setImageFile(null);
     setImagePreview(t.background_image_url ?? "");
+    setBackImageFile(null);
+    setBackImagePreview(t.back_image_url ?? "");
     setActiveTab("config");
     setShowModal(true);
   };
@@ -538,11 +560,18 @@ export default function PlantillasPage() {
     setForm(EMPTY);
     setImageFile(null);
     setImagePreview("");
+    setBackImageFile(null);
+    setBackImagePreview("");
   };
 
   const handleImageChange = (file: File | null, localUrl: string) => {
     setImageFile(file);
     setImagePreview(localUrl);
+  };
+
+  const handleBackImageChange = (file: File | null, localUrl: string) => {
+    setBackImageFile(file);
+    setBackImagePreview(localUrl);
   };
 
   const handlePositionChange = useCallback(
@@ -568,6 +597,7 @@ export default function PlantillasPage() {
     const dto: CreateCertificateTemplateDto = {
       name: form.name,
       background_image: imageFile ?? undefined,
+      back_image: backImageFile ?? undefined,
       student_name_position: form.student_name_position,
       qr_position: form.qr_position,
       qr_size: form.qr_size,
@@ -583,7 +613,6 @@ export default function PlantillasPage() {
   };
 
   const isPending = createMut.isPending || updateMut.isPending;
-  const backgroundPreview = imagePreview;
 
   // ── Render ──
   return (
@@ -695,13 +724,16 @@ export default function PlantillasPage() {
                   <ConfigTab
                     form={form}
                     imagePreview={imagePreview}
+                    backImagePreview={backImagePreview}
                     onChange={(patch) => setForm((prev) => ({ ...prev, ...patch }))}
                     onImageChange={handleImageChange}
+                    onBackImageChange={handleBackImageChange}
                   />
                 ) : (
                   <PositionEditor
                     form={form}
-                    backgroundPreview={backgroundPreview}
+                    backgroundPreview={imagePreview}
+                    backPreview={backImagePreview}
                     onChangePosition={handlePositionChange}
                   />
                 )}
@@ -891,13 +923,17 @@ function TemplateCard({
 function ConfigTab({
   form,
   imagePreview,
+  backImagePreview,
   onChange,
   onImageChange,
+  onBackImageChange,
 }: {
   form: FormState;
   imagePreview: string;
+  backImagePreview: string;
   onChange: (patch: Partial<FormState>) => void;
   onImageChange: (file: File | null, localUrl: string) => void;
+  onBackImageChange: (file: File | null, localUrl: string) => void;
 }) {
   return (
     <div className="space-y-6">
@@ -915,8 +951,21 @@ function ConfigTab({
         />
       </div>
 
-      {/* Imagen de fondo */}
-      <ImageUploader preview={imagePreview} onChange={onImageChange} />
+      {/* Imagen de portada (cara) */}
+      <ImageUploader
+        preview={imagePreview}
+        onChange={onImageChange}
+        label="Imagen de portada (cara)"
+        hint="Página frontal del certificado con nombre del estudiante"
+      />
+
+      {/* Imagen de contraportada */}
+      <ImageUploader
+        preview={backImagePreview}
+        onChange={onBackImageChange}
+        label="Imagen de contraportada"
+        hint="Página trasera del certificado donde se ubica el código QR"
+      />
 
       {/* Tipografía */}
       <div className="space-y-1">

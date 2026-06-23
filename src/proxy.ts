@@ -12,7 +12,7 @@ const ROLE_ROUTES: Record<string, string[]> = {
   "/certificado":         ["estudiante"],
   "/panel/soporte":       ["soporte", "admin"],
   "/panel/marketing":     ["marketing", "admin"],
-  "/panel/estudiantes":   ["admin"],
+  "/panel/estudiantes":   ["admin", "soporte"],
   "/panel/auditoria":     ["admin"],
   "/panel/cursos":        ["admin"],
   "/panel":               ["admin", "soporte", "marketing"],

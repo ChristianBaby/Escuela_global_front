@@ -62,20 +62,6 @@ export const certificationsService = {
       .delete(`/courses/${courseId}/certifications/emit/${enrollmentId}`)
       .then((r) => r.data),
 
-  generateAll: (courseId: string) =>
-    api
-      .post<{ success: boolean; generated: number; message: string }>(
-        `/courses/${courseId}/certifications/generate`
-      )
-      .then((r) => r.data),
-
-  regeneratePdf: (courseId: string, enrollmentId: string) =>
-    api
-      .post<{ success: boolean; pdf_url?: string; message?: string }>(
-        `/courses/${courseId}/certifications/emit/${enrollmentId}/generate-pdf`
-      )
-      .then((r) => r.data),
-
   updateTemplate: (courseId: string, templateId: string | null) =>
     api
       .patch(`/courses/${courseId}`, { certificate_template_id: templateId })

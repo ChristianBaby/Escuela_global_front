@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from "next/navigation";
 import { studentService } from "@/lib/services/student";
@@ -14,14 +15,6 @@ function formatDate(iso: string) {
   });
 }
 
-function resolveUrl(pdfUrl: string) {
-  if (!pdfUrl || pdfUrl.startsWith("http")) return pdfUrl;
-  const base = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000")
-    .replace(/\/api\/?$/, "")
-    .replace(/\/$/, "");
-  return `${base}${pdfUrl}`;
-}
-
 export default function CertificadoPage() {
   const { enrollment_id } = useParams<{ enrollment_id: string }>();
 
@@ -31,6 +24,36 @@ export default function CertificadoPage() {
     enabled: !!enrollment_id,
     retry: false,
   });
+
+  const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
+  const [loadingPdf, setLoadingPdf] = useState(false);
+
+  useEffect(() => {
+    if (!cert?.id) return;
+    let objectUrl: string | null = null;
+    setLoadingPdf(true);
+
+    studentService
+      .downloadCertificate(cert.id)
+      .then((blob) => {
+        objectUrl = URL.createObjectURL(blob);
+        setPdfBlobUrl(objectUrl);
+      })
+      .catch(() => {})
+      .finally(() => setLoadingPdf(false));
+
+    return () => {
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [cert?.id]);
+
+  function handleDownload() {
+    if (!pdfBlobUrl || !cert) return;
+    const a = document.createElement("a");
+    a.href = pdfBlobUrl;
+    a.download = `certificado-${cert.course_title}.pdf`;
+    a.click();
+  }
 
   if (isLoading) {
     return (
@@ -58,8 +81,6 @@ export default function CertificadoPage() {
     );
   }
 
-  const isPending = !cert.pdf_url || cert.pdf_url === "PENDIENTE_GENERACION_PDF";
-  const pdfUrl = isPending ? null : resolveUrl(cert.pdf_url);
   const verifyUrl = `/verificar/${cert.verification_code}`;
 
   return (
@@ -79,10 +100,10 @@ export default function CertificadoPage() {
       </div>
 
       {/* PDF viewer */}
-      {pdfUrl ? (
+      {pdfBlobUrl ? (
         <div className="rounded-2xl overflow-hidden border border-gray-200 bg-gray-100 shadow-sm">
           <iframe
-            src={`${pdfUrl}#toolbar=0&navpanes=0&scrollbar=0`}
+            src={`${pdfBlobUrl}#toolbar=0&navpanes=0&scrollbar=0`}
             className="w-full"
             style={{ height: "560px" }}
             title="Certificado PDF"
@@ -93,38 +114,34 @@ export default function CertificadoPage() {
           className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 flex flex-col items-center justify-center gap-3"
           style={{ height: "280px" }}
         >
-          <FileText size={40} className="text-gray-300" />
-          <div className="text-center">
-            <p className="text-sm font-medium text-gray-500">PDF en procesamiento</p>
-            <p className="text-xs text-gray-400 mt-0.5">
-              Disponible en unos instantes. Recarga la página.
-            </p>
-          </div>
+          {loadingPdf ? (
+            <>
+              <Loader2 size={32} className="animate-spin text-[#2B55A3]" />
+              <p className="text-sm text-gray-500">Generando certificado...</p>
+            </>
+          ) : (
+            <>
+              <FileText size={40} className="text-gray-300" />
+              <p className="text-sm font-medium text-gray-500">No se pudo cargar el PDF</p>
+            </>
+          )}
         </div>
       )}
 
       {/* Acciones */}
       <div className="flex flex-col sm:flex-row gap-3">
-        {pdfUrl ? (
-          <a
-            href={pdfUrl}
-            download
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex-1 flex items-center justify-center gap-2 bg-[#2B55A3] text-white py-3 rounded-xl text-sm font-medium hover:bg-[#2B55A3]/90 transition-colors"
-          >
+        <button
+          onClick={handleDownload}
+          disabled={!pdfBlobUrl || loadingPdf}
+          className="flex-1 flex items-center justify-center gap-2 bg-[#2B55A3] text-white py-3 rounded-xl text-sm font-medium hover:bg-[#2B55A3]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {loadingPdf ? (
+            <Loader2 size={16} className="animate-spin" />
+          ) : (
             <Download size={16} />
-            Descargar PDF
-          </a>
-        ) : (
-          <button
-            disabled
-            className="flex-1 flex items-center justify-center gap-2 bg-gray-200 text-gray-400 py-3 rounded-xl text-sm font-medium cursor-not-allowed"
-          >
-            <Download size={16} />
-            PDF en procesamiento...
-          </button>
-        )}
+          )}
+          {loadingPdf ? "Generando PDF..." : "Descargar PDF"}
+        </button>
 
         <button
           onClick={() => {

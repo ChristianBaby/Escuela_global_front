@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { usuariosService, type CreateUsuarioDto } from "@/lib/services/users";
 import { useAuthStore } from "@/store/authStore";
 import { toast } from "sonner";
+import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
 import type { UserRole } from "@/types";
 
@@ -174,6 +175,12 @@ export default function EstudiantesPage() {
                       {new Date(u.created_at).toLocaleDateString("es-PE")}
                     </td>
                     <td className="px-4 py-3 text-right">
+                      <Link
+                        href={`/panel/estudiantes/${u.id}`}
+                        className="text-[#2B55A3] hover:underline text-xs mr-3"
+                      >
+                        Ver detalle
+                      </Link>
                       {u.status === "active" ? (
                         <button
                           onClick={() => suspendMutation.mutate(u.id)}

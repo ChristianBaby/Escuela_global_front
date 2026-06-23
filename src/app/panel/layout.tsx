@@ -50,7 +50,7 @@ const NAV_SECTIONS: NavSection[] = [
         label: "Estudiantes",
         href: "/panel/estudiantes",
         icon: <Users size={18} />,
-        roles: ["admin"],
+        roles: ["admin", "soporte"],
       },
     ],
   },

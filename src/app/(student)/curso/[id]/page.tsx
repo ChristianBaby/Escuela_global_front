@@ -206,7 +206,14 @@ export default function CourseViewerPage() {
         <div className="flex-1 min-w-0 overflow-y-auto bg-gray-950">
 
           {/* Video */}
-          {currentSession && (
+          {allSessions.length === 0 ? (
+            <div className="w-full aspect-video bg-gray-100 flex flex-col items-center justify-center gap-3">
+              <FileText size={48} className="text-gray-300" />
+              <p className="text-gray-500 text-sm font-medium">
+                Próximamente se cargarán las sesiones de este curso
+              </p>
+            </div>
+          ) : currentSession && (
             <YouTubePlayer
               key={currentSession.id}
               videoId={currentSession.youtube_video_id}
@@ -354,6 +361,14 @@ export default function CourseViewerPage() {
 
           {/* Módulos y sesiones */}
           <div className="flex-1 overflow-y-auto">
+            {content.modules.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-16 px-4 gap-3">
+                <Circle size={32} className="text-gray-300" />
+                <p className="text-sm text-gray-400 text-center">
+                  Próximamente se cargarán las sesiones de este curso
+                </p>
+              </div>
+            )}
             {content.modules.map((mod) => {
               const isOpen = openModules.has(mod.id);
               const modDone = mod.sessions.filter((s) => completedSet.has(s.id)).length;

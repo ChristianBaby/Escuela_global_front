@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { studentService } from "@/lib/services/student";
 import { Award, Download, ExternalLink, Loader2, Share2 } from "lucide-react";
@@ -11,19 +12,33 @@ function formatDate(iso: string) {
   });
 }
 
-function resolveUrl(pdfUrl: string) {
-  if (!pdfUrl || pdfUrl.startsWith("http")) return pdfUrl;
-  const base = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000")
-    .replace(/\/api\/?$/, "")
-    .replace(/\/$/, "");
-  return `${base}${pdfUrl}`;
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 export default function MisCertificadosPage() {
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
   const { data: certificates, isLoading } = useQuery({
     queryKey: ["mis-certificados"],
     queryFn: () => studentService.getMyCertificates(),
   });
+
+  async function handleDownload(certId: string, courseTitle: string) {
+    if (downloadingId) return;
+    setDownloadingId(certId);
+    try {
+      const blob = await studentService.downloadCertificate(certId);
+      downloadBlob(blob, `certificado-${courseTitle}.pdf`);
+    } finally {
+      setDownloadingId(null);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -71,8 +86,7 @@ export default function MisCertificadosPage() {
             const shareUrl = typeof window !== "undefined"
               ? `${window.location.origin}${verifyUrl}`
               : verifyUrl;
-            const isPending = !cert.pdf_url || cert.pdf_url === "PENDIENTE_GENERACION_PDF";
-            const pdfUrl = isPending ? null : resolveUrl(cert.pdf_url);
+            const isDownloading = downloadingId === cert.id;
 
             return (
               <div
@@ -103,23 +117,18 @@ export default function MisCertificadosPage() {
                     Ver
                   </Link>
 
-                  {pdfUrl ? (
-                    <a
-                      href={pdfUrl}
-                      download
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#2B55A3] text-white text-xs font-medium hover:bg-[#2B55A3]/90 transition-colors"
-                    >
+                  <button
+                    onClick={() => handleDownload(cert.id, cert.course_title)}
+                    disabled={!!downloadingId}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#2B55A3] text-white text-xs font-medium hover:bg-[#2B55A3]/90 transition-colors disabled:opacity-60"
+                  >
+                    {isDownloading ? (
+                      <Loader2 size={13} className="animate-spin" />
+                    ) : (
                       <Download size={13} />
-                      PDF
-                    </a>
-                  ) : (
-                    <span className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gray-100 text-gray-400 text-xs font-medium cursor-not-allowed">
-                      <Download size={13} />
-                      PDF
-                    </span>
-                  )}
+                    )}
+                    PDF
+                  </button>
 
                   <button
                     onClick={() => {

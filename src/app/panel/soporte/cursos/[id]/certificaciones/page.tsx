@@ -13,7 +13,6 @@ import {
   FileCheck,
   Loader2,
   CheckCircle,
-  XCircle,
   RefreshCw,
   ChevronDown,
 } from "lucide-react";
@@ -52,7 +51,6 @@ export default function CertificacionesPage() {
   const [certTemplateId, setCertTemplateId] = useState<string>("");
   const [constanciaTemplateId, setConstanciaTemplateId] = useState<string>("");
   const [templateInitialized, setTemplateInitialized] = useState(false);
-  const [regeneratingId, setRegeneratingId] = useState<string | null>(null);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["certifications", courseId],
@@ -146,33 +144,6 @@ export default function CertificacionesPage() {
     onError: () => toast.error("Error al eliminar"),
   });
 
-  // ── Regenerate single PDF ─────────────────────────────────────────────────
-  const regenerateMutation = useMutation({
-    mutationFn: (enrollmentId: string) => {
-      setRegeneratingId(enrollmentId);
-      return certificationsService.regeneratePdf(courseId, enrollmentId);
-    },
-    onSuccess: () => {
-      toast.success("PDF regenerado correctamente");
-      setRegeneratingId(null);
-      queryClient.invalidateQueries({ queryKey: ["certifications", courseId] });
-    },
-    onError: () => {
-      toast.error("Error al regenerar el PDF");
-      setRegeneratingId(null);
-    },
-  });
-
-  // ── Generate all ──────────────────────────────────────────────────────────
-  const generateMutation = useMutation({
-    mutationFn: () => certificationsService.generateAll(courseId),
-    onSuccess: (res) => {
-      toast.success(res.message);
-      queryClient.invalidateQueries({ queryKey: ["certifications", courseId] });
-    },
-    onError: () => toast.error("Error al generar certificaciones"),
-  });
-
   // ── Save templates ────────────────────────────────────────────────────────
   const saveTemplatesMutation = useMutation({
     mutationFn: () =>
@@ -227,10 +198,6 @@ export default function CertificacionesPage() {
     );
   }
 
-  const pendingCount = data.students.filter(
-    (s) => s.certificate_type && s.certificate_type !== null
-  ).length;
-
   return (
     <div className="space-y-6">
       {/* ── Header ──────────────────────────────────────────────────────────── */}
@@ -283,24 +250,6 @@ export default function CertificacionesPage() {
             onChange={handleImportFile}
           />
 
-          {/* Generar certificaciones */}
-          <button
-            onClick={() => generateMutation.mutate()}
-            disabled={generateMutation.isPending || pendingCount === 0}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-40 transition-colors"
-          >
-            {generateMutation.isPending ? (
-              <Loader2 size={14} className="animate-spin" />
-            ) : (
-              <Award size={14} />
-            )}
-            Generar Certificaciones
-            {pendingCount > 0 && (
-              <span className="bg-white/20 text-xs px-1.5 py-0.5 rounded-full">
-                {pendingCount}
-              </span>
-            )}
-          </button>
         </div>
       </div>
 
@@ -453,16 +402,13 @@ export default function CertificacionesPage() {
                 <th className="text-center px-4 py-3 text-xs font-semibold text-amber-600 uppercase tracking-wide">
                   Constancia
                 </th>
-                <th className="text-center px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">
-                  PDF
-                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {data.students.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={data.modules.length + 5}
+                    colSpan={data.modules.length + 4}
                     className="text-center py-12 text-gray-400"
                   >
                     <Award size={32} className="mx-auto mb-2 opacity-30" />
@@ -596,28 +542,6 @@ export default function CertificacionesPage() {
                         </button>
                       </td>
 
-                      {/* Col Regenerar PDF */}
-                      <td className="px-4 py-3.5 text-center">
-                        {student.certificate_type ? (
-                          <button
-                            onClick={() =>
-                              regenerateMutation.mutate(student.enrollment_id)
-                            }
-                            disabled={regeneratingId === student.enrollment_id}
-                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-gray-200 text-gray-500 hover:border-[#2B55A3]/30 hover:text-[#2B55A3] hover:bg-[#2B55A3]/5 transition-colors disabled:opacity-50"
-                            title="Regenerar PDF del certificado"
-                          >
-                            {regeneratingId === student.enrollment_id ? (
-                              <Loader2 size={11} className="animate-spin" />
-                            ) : (
-                              <RefreshCw size={11} />
-                            )}
-                            PDF
-                          </button>
-                        ) : (
-                          <span className="text-gray-200 text-xs">—</span>
-                        )}
-                      </td>
                     </tr>
                   );
                 })
@@ -661,6 +585,7 @@ function TemplatePreview({
   const fontSize = scale > 0 ? Math.max(6, (template.font_sizes?.student_name ?? 200) * scale) : 12;
   const qrPx = scale > 0 ? Math.max(12, (template.qr_size ?? 300) * scale) : 24;
   const bgUrl = resolveUrl(template.background_image_url);
+  const backUrl = template.back_image_url ? resolveUrl(template.back_image_url) : "";
 
   return (
     <div className="space-y-1.5">
@@ -673,68 +598,92 @@ function TemplatePreview({
         </span>
         <span className="text-xs text-gray-400 truncate">{template.name}</span>
       </div>
-      <div
-        ref={containerRef}
-        className="relative w-full rounded-lg overflow-hidden border border-gray-200"
-        style={{ aspectRatio: `${CERT_W}/${CERT_H}` }}
-      >
-        {bgUrl ? (
-          <img
-            src={bgUrl}
-            alt=""
-            className="absolute inset-0 w-full h-full object-fill"
-            draggable={false}
-          />
-        ) : (
-          <div className="absolute inset-0 bg-gray-100" />
-        )}
-
-        {/* Nombre del estudiante */}
+      <div className="space-y-2">
+        {/* Cara (portada) */}
         <div
-          style={{
-            position: "absolute",
-            left: `${(namePos.x / CERT_W) * 100}%`,
-            top: `${(namePos.y / CERT_H) * 100}%`,
-            transform: "translate(-50%, -50%)",
-            fontSize,
-            fontFamily: template.font_family,
-            color: "#2B55A3",
-            whiteSpace: "nowrap",
-            textShadow: "0 1px 4px rgba(0,0,0,0.6)",
-            userSelect: "none",
-            pointerEvents: "none",
-          }}
+          ref={containerRef}
+          className="relative w-full rounded-lg overflow-hidden border border-gray-200"
+          style={{ aspectRatio: `${CERT_W}/${CERT_H}` }}
         >
-          Nombre del Estudiante
-        </div>
-
-        {/* QR placeholder */}
-        <div
-          style={{
-            position: "absolute",
-            left: `${(qrPos.x / CERT_W) * 100}%`,
-            top: `${(qrPos.y / CERT_H) * 100}%`,
-            transform: "translate(-50%, -50%)",
-            width: qrPx,
-            height: qrPx,
-            border: "2px dashed #805AD5",
-            backgroundColor: "#805AD522",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            userSelect: "none",
-            pointerEvents: "none",
-          }}
-        >
-          <span
+          {bgUrl ? (
+            <img
+              src={bgUrl}
+              alt=""
+              className="absolute inset-0 w-full h-full object-fill"
+              draggable={false}
+            />
+          ) : (
+            <div className="absolute inset-0 bg-gray-100" />
+          )}
+          <div
             style={{
-              fontSize: Math.max(6, qrPx * 0.2),
-              color: "#805AD5",
-              fontFamily: "monospace",
-              fontWeight: "bold",
+              position: "absolute",
+              left: `${(namePos.x / CERT_W) * 100}%`,
+              top: `${(namePos.y / CERT_H) * 100}%`,
+              transform: "translate(-50%, -50%)",
+              fontSize,
+              fontFamily: template.font_family,
+              color: "#2B55A3",
+              whiteSpace: "nowrap",
+              textShadow: "0 1px 4px rgba(0,0,0,0.6)",
+              userSelect: "none",
+              pointerEvents: "none",
             }}
           >
-            QR
+            Nombre del Estudiante
+          </div>
+          <span className="absolute top-1 left-1 text-[9px] bg-black/40 text-white px-1.5 py-0.5 rounded">
+            Cara
+          </span>
+        </div>
+
+        {/* Contraportada */}
+        <div
+          className="relative w-full rounded-lg overflow-hidden border border-gray-200"
+          style={{ aspectRatio: `${CERT_W}/${CERT_H}` }}
+        >
+          {backUrl ? (
+            <img
+              src={backUrl}
+              alt=""
+              className="absolute inset-0 w-full h-full object-fill"
+              draggable={false}
+            />
+          ) : (
+            <div className="absolute inset-0 bg-gray-100 flex items-center justify-center">
+              <span className="text-xs text-gray-400">Sin contraportada</span>
+            </div>
+          )}
+          <div
+            style={{
+              position: "absolute",
+              left: `${(qrPos.x / CERT_W) * 100}%`,
+              top: `${(qrPos.y / CERT_H) * 100}%`,
+              transform: "translate(-50%, -50%)",
+              width: qrPx,
+              height: qrPx,
+              border: "2px dashed #805AD5",
+              backgroundColor: "#805AD522",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              userSelect: "none",
+              pointerEvents: "none",
+            }}
+          >
+            <span
+              style={{
+                fontSize: Math.max(6, qrPx * 0.2),
+                color: "#805AD5",
+                fontFamily: "monospace",
+                fontWeight: "bold",
+              }}
+            >
+              QR
+            </span>
+          </div>
+          <span className="absolute top-1 left-1 text-[9px] bg-black/40 text-white px-1.5 py-0.5 rounded">
+            Contraportada
           </span>
         </div>
       </div>

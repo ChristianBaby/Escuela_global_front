@@ -207,7 +207,6 @@ export interface Certificate {
   enrollment?: Enrollment;
   template_id: string;
   verification_code: string;
-  pdf_url: string;
   issued_at: string;
 }
 
@@ -224,6 +223,7 @@ export interface CertificateTemplate {
   id: string;
   name: string;
   background_image_url: string;
+  back_image_url: string | null;
   student_name_position: XYPosition;
   qr_position: XYPosition;
   qr_size: number; // unidades del espacio virtual 3508×2480 (default 300)
@@ -238,14 +238,12 @@ export interface CertificateSummary {
   enrollment_id: string;
   course_title: string;
   verification_code: string;
-  pdf_url: string;
   issued_at: string;
 }
 
 export interface CertificateDetail {
   id: string;
   verification_code: string;
-  pdf_url: string;
   course_title: string;
   student_name: string;
   issued_at: string;

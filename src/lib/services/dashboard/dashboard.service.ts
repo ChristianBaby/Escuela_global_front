@@ -1,4 +1,5 @@
 import { api } from "@/lib/http/api";
+import type { User } from "@/types";
 
 export interface DashboardStats {
   ingresos: {
@@ -132,6 +133,38 @@ export interface ActividadEstudiante {
   activity_by_day: ActividadPorDia[];
 }
 
+export interface StudentDetailEnrollment {
+  id: string;
+  course_id: string;
+  course: {
+    id: string;
+    title: string;
+    slug: string;
+    thumbnail_url: string | null;
+    level: string;
+    total_duration_minutes: number;
+  };
+  enrolled_at: string;
+  enrollment_type: "online" | "manual";
+  offline_payment_method?: string;
+  progress_percent: number;
+  completed_at?: string;
+  last_accessed_at?: string;
+  total_watched_seconds: number;
+  has_review: boolean;
+  certificate: {
+    id: string;
+    verification_code: string;
+    type: string;
+    issued_at: string;
+  } | null;
+}
+
+export interface StudentDetail {
+  user: User;
+  enrollments: StudentDetailEnrollment[];
+}
+
 export const dashboardService = {
   getStats: (params?: DashboardFilters) =>
     api.get<DashboardStats>("/admin/stats", { params }).then((r) => r.data),
@@ -164,6 +197,9 @@ export const dashboardService = {
     api
       .get<MatriculadosCursoResponse>(`/admin/cursos/${cursoId}/matriculados`, { params })
       .then((r) => r.data),
+
+  getStudentDetail: (userId: string) =>
+    api.get<StudentDetail>(`/admin/estudiantes/${userId}`).then((r) => r.data),
 
   getActividadEstudiante: (userId: string, courseId: string) =>
     api

@@ -4,6 +4,7 @@ import type { CertificateTemplate, XYPosition, CertificateFontSizes } from "@/ty
 export interface CreateCertificateTemplateDto {
   name: string;
   background_image?: File | null;
+  back_image?: File | null;
   student_name_position: XYPosition;
   qr_position: XYPosition;
   qr_size: number;
@@ -15,6 +16,7 @@ function buildFormData(data: Partial<CreateCertificateTemplateDto>): FormData {
   const fd = new FormData();
   if (data.name) fd.append("name", data.name);
   if (data.background_image) fd.append("background_image", data.background_image);
+  if (data.back_image) fd.append("back_image", data.back_image);
   if (data.font_family) fd.append("font_family", data.font_family);
   if (data.student_name_position) fd.append("student_name_position", JSON.stringify(data.student_name_position));
   if (data.qr_position)           fd.append("qr_position",           JSON.stringify(data.qr_position));
