@@ -14,7 +14,7 @@ export type PaymentStatus = "pending" | "paid" | "failed" | "refunded";
 export type SliderType = "courses" | "banner";
 export type SliderPosition = "top" | "middle" | "bottom";
 export type PromotionStatus = "active" | "inactive";
-export type NotificationType = "nuevo_curso" | "completado" | "recordatorio" | "matriculacion" | "certificado";
+export type NotificationType = "nuevo_curso" | "completado" | "recordatorio" | "matriculacion" | "certificado" | "personalizada" | "descuento" | "anuncio";
 export type ReviewStatus = "approved" | "hidden";
 export type AuditAction = "create" | "update" | "delete";
 
@@ -207,8 +207,30 @@ export interface Certificate {
   enrollment?: Enrollment;
   template_id: string;
   verification_code: string;
-  pdf_url: string;
   issued_at: string;
+}
+
+export interface XYPosition {
+  x: number;
+  y: number;
+}
+
+export interface CertificateFontSizes {
+  student_name: number;
+}
+
+export interface CertificateTemplate {
+  id: string;
+  name: string;
+  background_image_url: string;
+  back_image_url: string | null;
+  student_name_position: XYPosition;
+  qr_position: XYPosition;
+  qr_size: number; // unidades del espacio virtual 3508×2480 (default 300)
+  font_family: string;
+  font_sizes: CertificateFontSizes;
+  is_active: boolean;
+  created_at: string;
 }
 
 export interface CertificateSummary {
@@ -216,14 +238,12 @@ export interface CertificateSummary {
   enrollment_id: string;
   course_title: string;
   verification_code: string;
-  pdf_url: string;
   issued_at: string;
 }
 
 export interface CertificateDetail {
   id: string;
   verification_code: string;
-  pdf_url: string;
   course_title: string;
   student_name: string;
   issued_at: string;
@@ -246,11 +266,20 @@ export interface Promotion {
   created_at: string;
 }
 
+export interface EventType {
+  id: string;
+  name: string;
+  display_order: number;
+  created_at: string;
+}
+
 export interface Slider {
   id: string;
   title: string;
   subtitle?: string;
   type: SliderType;
+  event_type_id?: string | null;
+  event_type?: Pick<EventType, "id" | "name"> | null;
   image_url?: string;
   destination_url?: string;
   contact_url?: string;

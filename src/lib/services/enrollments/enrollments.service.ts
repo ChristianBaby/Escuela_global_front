@@ -23,6 +23,9 @@ export const matriculasService = {
   create: (data: CreateMatriculasDto) =>
     api.post<Enrollment[]>("/enrollments", data).then((r) => r.data),
 
+  deleteEnrollment: (enrollmentId: string) =>
+    api.delete(`/enrollments/${enrollmentId}`).then((r) => r.data),
+
   buscarEstudiante: (query: string) =>
     api.get<{ id: string; first_name: string; last_name: string; email: string }[]>(
       "/users/buscar",

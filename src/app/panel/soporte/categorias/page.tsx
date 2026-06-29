@@ -127,6 +127,7 @@ export default function CategoriasPage() {
         ) : isError ? (
           <div className="p-8 text-center text-red-500 text-sm">Error al cargar categorías</div>
         ) : (
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
@@ -165,6 +166,7 @@ export default function CategoriasPage() {
               )}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 

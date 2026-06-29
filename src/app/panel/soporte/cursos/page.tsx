@@ -19,6 +19,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Filter,
+  Award,
 } from "lucide-react";
 
 // ── Constantes ─────────────────────────────────────────────────────────────────
@@ -161,6 +162,7 @@ export default function SoporteCursosPage() {
           </div>
         ) : (
           <>
+            <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-200">
@@ -256,6 +258,14 @@ export default function SoporteCursosPage() {
                             Contenido
                           </Link>
                           <Link
+                            href={`/panel/soporte/cursos/${curso.id}/certificaciones`}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                            title="Certificaciones"
+                          >
+                            <Award size={13} />
+                            Certificaciones
+                          </Link>
+                          <Link
                             href={`/panel/soporte/cursos/${curso.id}/editar`}
                             className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                             title="Editar curso"
@@ -278,6 +288,7 @@ export default function SoporteCursosPage() {
                 )}
               </tbody>
             </table>
+            </div>
 
             {/* Paginación */}
             {data && data.total_pages > 1 && (

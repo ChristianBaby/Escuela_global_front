@@ -451,9 +451,12 @@ export default function ContenidoPage() {
                         />
                       </div>
                     ) : (
-                      <button
+                      <div
+                        role="button"
+                        tabIndex={0}
                         onClick={() => setSelectedModuleId(mod.id)}
-                        className={`w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-gray-50 transition-colors ${
+                        onKeyDown={(e) => e.key === "Enter" && setSelectedModuleId(mod.id)}
+                        className={`w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-gray-50 transition-colors cursor-pointer ${
                           selectedModuleId === mod.id ? "bg-blue-50 border-l-2 border-[#2B55A3]" : ""
                         }`}
                       >
@@ -486,7 +489,7 @@ export default function ContenidoPage() {
                             <Trash2 size={13} />
                           </button>
                         </div>
-                      </button>
+                      </div>
                     )}
                   </li>
                 ))}

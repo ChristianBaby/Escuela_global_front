@@ -5,6 +5,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { usuariosService, type CreateUsuarioDto } from "@/lib/services/users";
 import { useAuthStore } from "@/store/authStore";
 import { toast } from "sonner";
+import Link from "next/link";
+import { Eye, EyeOff } from "lucide-react";
 import type { UserRole } from "@/types";
 
 const ROLES: { value: UserRole; label: string }[] = [
@@ -37,9 +39,10 @@ export default function EstudiantesPage() {
 
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
-  const [roleFilter, setRoleFilter] = useState<string>("");
+  const [roleFilter, setRoleFilter] = useState<string>("estudiante");
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState<CreateUsuarioDto>(empty);
+  const [showPassword, setShowPassword] = useState(false);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["usuarios", page, search, roleFilter],
@@ -132,6 +135,7 @@ export default function EstudiantesPage() {
         ) : isError ? (
           <div className="p-8 text-center text-red-500 text-sm">Error al cargar usuarios</div>
         ) : (
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
@@ -171,6 +175,12 @@ export default function EstudiantesPage() {
                       {new Date(u.created_at).toLocaleDateString("es-PE")}
                     </td>
                     <td className="px-4 py-3 text-right">
+                      <Link
+                        href={`/panel/estudiantes/${u.id}`}
+                        className="text-[#2B55A3] hover:underline text-xs mr-3"
+                      >
+                        Ver detalle
+                      </Link>
                       {u.status === "active" ? (
                         <button
                           onClick={() => suspendMutation.mutate(u.id)}
@@ -192,6 +202,7 @@ export default function EstudiantesPage() {
               )}
             </tbody>
           </table>
+          </div>
         )}
 
         {/* Paginación */}
@@ -221,7 +232,7 @@ export default function EstudiantesPage() {
       {/* Modal crear usuario */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl w-full max-w-md shadow-xl">
+          <div className="bg-white rounded-xl w-full max-w-md shadow-xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
               <h2 className="font-semibold text-gray-900">Nuevo usuario</h2>
               <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
@@ -249,9 +260,27 @@ export default function EstudiantesPage() {
                   ))}
                 </select>
               </Field>
-              <Field label="Contraseña temporal *">
-                <input required type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
-              </Field>
+              {/* Campo contraseña con ojito para mostrar/ocultar */}
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-gray-700">Contraseña temporal *</label>
+                <div className="relative">
+                  <input
+                    required
+                    type={showPassword ? "text" : "password"}
+                    value={form.password}
+                    onChange={(e) => setForm({ ...form, password: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
               <p className="text-xs text-gray-400">Se enviará un email con las credenciales de acceso.</p>
               <div className="flex justify-end gap-3 pt-2">
                 <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">

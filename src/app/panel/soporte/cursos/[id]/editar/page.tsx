@@ -8,6 +8,7 @@ import Link from "next/link";
 import { ArrowLeft, Plus, X, Upload, ImageIcon, Loader2 } from "lucide-react";
 import { cursosService } from "@/lib/services/courses";
 import { categoriasService } from "@/lib/services/categories";
+import { certificateTemplatesService } from "@/lib/services/certificates";
 import type { InstructorInput } from "@/lib/services/courses/courses.service";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -64,6 +65,9 @@ export default function EditarCursoPage() {
 
   // ── Tab 5: Configuración ───────────────────────────────────────────────────
   const [status, setStatus] = useState<"draft" | "published" | "archived">("draft");
+  const [certificationMode, setCertificationMode] = useState<"auto" | "manual">("auto");
+  const [certTemplateId, setCertTemplateId] = useState<string>("");
+  const [constanciaTemplateId, setConstanciaTemplateId] = useState<string>("");
 
   const { data: course, isLoading: loadingCourse } = useQuery({
     queryKey: ["curso", courseId],
@@ -73,6 +77,11 @@ export default function EditarCursoPage() {
   const { data: categorias } = useQuery({
     queryKey: ["categorias"],
     queryFn: categoriasService.list,
+  });
+
+  const { data: plantillas } = useQuery({
+    queryKey: ["certificate-templates"],
+    queryFn: certificateTemplatesService.list,
   });
 
   // Pre-populate form fields when course data loads
@@ -94,6 +103,12 @@ export default function EditarCursoPage() {
     setPrerequisites(course.prerequisites ?? []);
     setOutcomes(course.outcomes ?? []);
     setStatus(course.status ?? "draft");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    setCertificationMode((course as any).certification_mode ?? "auto");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    setCertTemplateId((course as any).certificate_template_id ?? "");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    setConstanciaTemplateId((course as any).constancia_template_id ?? "");
     if (course.instructors?.length) {
       setInstructors(
         course.instructors.map((ins) => ({
@@ -125,6 +140,9 @@ export default function EditarCursoPage() {
         prerequisites,
         outcomes,
         status,
+        certification_mode: certificationMode,
+        certificate_template_id: certTemplateId || null,
+        constancia_template_id: constanciaTemplateId || null,
       });
 
       if (thumbnail) {
@@ -724,6 +742,104 @@ export default function EditarCursoPage() {
                     </div>
                   </label>
                 ))}
+              </div>
+            </div>
+
+            {/* ── Certificación ──────────────────────────────────────────── */}
+            <div className="space-y-4 pt-5 border-t border-gray-200">
+              <div>
+                <h3 className="font-medium text-gray-900">Modo de certificación</h3>
+                <p className="text-sm text-gray-500 mt-0.5">
+                  Define cómo se emitirán los certificados a los estudiantes de este curso.
+                </p>
+              </div>
+              <div className="flex flex-col gap-2 max-w-lg">
+                {(
+                  [
+                    {
+                      value: "auto",
+                      label: "Automático",
+                      desc: "El certificado se genera cuando el estudiante completa el 100% del curso y deja su reseña.",
+                    },
+                    {
+                      value: "manual",
+                      label: "Manual con notas por módulo",
+                      desc: "El administrador exporta un Excel, carga las notas de cada módulo e importa para luego emitir certificados o constancias manualmente.",
+                    },
+                  ] as const
+                ).map(({ value, label, desc }) => (
+                  <label
+                    key={value}
+                    className={`flex items-start gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
+                      certificationMode === value
+                        ? "border-emerald-500 bg-emerald-50"
+                        : "border-gray-200 hover:bg-gray-50"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="certificationMode"
+                      value={value}
+                      checked={certificationMode === value}
+                      onChange={() => setCertificationMode(value)}
+                      className="mt-0.5 accent-emerald-600"
+                    />
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{label}</p>
+                      <p className="text-xs text-gray-500">{desc}</p>
+                    </div>
+                  </label>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 max-w-2xl">
+                <div className="space-y-1.5">
+                  <Label htmlFor="plantilla">
+                    Plantilla de certificado{" "}
+                    <span className="text-gray-400 text-xs font-normal">(opcional)</span>
+                  </Label>
+                  <select
+                    id="plantilla"
+                    value={certTemplateId}
+                    onChange={(e) => setCertTemplateId(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+                  >
+                    <option value="">Sin plantilla asignada</option>
+                    {plantillas?.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.name}
+                        {t.is_active ? " (activa)" : ""}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-gray-400">
+                    Se aplica al emitir un <strong>Certificado</strong> (promedio ≥ 14).
+                  </p>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="plantilla-constancia">
+                    Plantilla de constancia{" "}
+                    <span className="text-gray-400 text-xs font-normal">(opcional)</span>
+                  </Label>
+                  <select
+                    id="plantilla-constancia"
+                    value={constanciaTemplateId}
+                    onChange={(e) => setConstanciaTemplateId(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+                  >
+                    <option value="">Sin plantilla asignada</option>
+                    {plantillas?.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.name}
+                        {t.is_active ? " (activa)" : ""}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-gray-400">
+                    Se aplica al emitir una <strong>Constancia</strong> (promedio &lt; 14). Solo en modo manual.
+                  </p>
+                </div>
               </div>
             </div>
 

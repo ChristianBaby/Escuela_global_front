@@ -9,7 +9,7 @@ import {
   FileText, ExternalLink, ChevronDown, Star, X, Award, Loader2,
 } from "lucide-react";
 import Link from "next/link";
-import type { CourseContent, LessonProgress } from "@/types";
+import type { CourseContent } from "@/types";
 
 // ── Tipos YouTube IFrame API ──────────────────────────────────────────────────
 declare global {
@@ -73,7 +73,6 @@ export default function CourseViewerPage() {
 
   // Estado del visor
   const [currentSessionId, setCurrentSessionId] = useState<string>("");
-  const [progressMap, setProgressMap] = useState<Record<string, number>>({});
   const [completedSet, setCompletedSet] = useState<Set<string>>(new Set());
   const [progressPercent, setProgressPercent] = useState(0);
   const [hasReview, setHasReview] = useState(false);
@@ -89,13 +88,10 @@ export default function CourseViewerPage() {
     const allSessions = content.modules.flatMap((m) => m.sessions);
 
     // Progreso por sesión
-    const map: Record<string, number> = {};
     const done = new Set<string>();
     for (const lp of progressData.lesson_progress) {
-      map[lp.session_id] = lp.watched_seconds;
       if (lp.completed) done.add(lp.session_id);
     }
-    setProgressMap(map);
     setCompletedSet(done);
     setProgressPercent(progressData.enrollment.progress_percent);
     setHasReview(progressData.has_review);
@@ -124,38 +120,18 @@ export default function CourseViewerPage() {
   const hasPrev = currentIndex > 0;
   const hasNext = currentIndex < allSessions.length - 1;
 
-  // Mutación: actualizar progreso de sesión
+  // Mutación: marcar sesión como completada
   const updateProgress = useMutation({
-    mutationFn: ({ sessionId, watched }: { sessionId: string; watched: number }) =>
-      studentService.updateSessionProgress(sessionId, watched),
+    mutationFn: ({ sessionId, forceComplete }: { sessionId: string; forceComplete: boolean }) =>
+      studentService.updateSessionProgress(sessionId, 0, forceComplete),
     onSuccess: (data, vars) => {
       if (data.completed && !completedSet.has(vars.sessionId)) {
         setCompletedSet((prev) => new Set([...prev, vars.sessionId]));
         setProgressPercent(data.progress_percent);
         queryClient.invalidateQueries({ queryKey: ["mis-inscripciones"] });
-
-        // Si se completó el curso y no tiene reseña → mostrar banner
-        if (data.progress_percent === 100 && !hasReview) {
-          setShowReviewModal(false); // se mostrará vía banner
-        }
       }
     },
   });
-
-  const handleProgress = useCallback(
-    (sessionId: string, watched: number) => {
-      setProgressMap((prev) => ({ ...prev, [sessionId]: watched }));
-      updateProgress.mutate({ sessionId, watched });
-    },
-    [completedSet, hasReview]
-  );
-
-  const handleSessionComplete = useCallback(
-    (sessionId: string) => {
-      setCompletedSet((prev) => new Set([...prev, sessionId]));
-    },
-    []
-  );
 
   const handleVideoEnded = useCallback(() => {
     if (hasNext) {
@@ -182,6 +158,9 @@ export default function CourseViewerPage() {
     setCurrentSessionId(sessionId);
     const mod = content?.modules.find((m) => m.sessions.some((s) => s.id === sessionId));
     if (mod) setOpenModules((prev) => new Set([...prev, mod.id]));
+    if (!completedSet.has(sessionId)) {
+      updateProgress.mutate({ sessionId, forceComplete: true });
+    }
   };
 
   const toggleModule = (moduleId: string) => {
@@ -221,20 +200,23 @@ export default function CourseViewerPage() {
       </div>
 
       {/* Layout principal */}
-      <div className="flex flex-col lg:flex-row min-h-[calc(100vh-113px)]">
+      <div className="flex flex-col lg:flex-row h-[calc(100vh-113px)]">
 
         {/* ── Columna izquierda (70%) ── */}
         <div className="flex-1 min-w-0 overflow-y-auto bg-gray-950">
 
-          {/* YouTube Player */}
-          {currentSession && (
+          {/* Video */}
+          {allSessions.length === 0 ? (
+            <div className="w-full aspect-video bg-gray-100 flex flex-col items-center justify-center gap-3">
+              <FileText size={48} className="text-gray-300" />
+              <p className="text-gray-500 text-sm font-medium">
+                Próximamente se cargarán las sesiones de este curso
+              </p>
+            </div>
+          ) : currentSession && (
             <YouTubePlayer
               key={currentSession.id}
               videoId={currentSession.youtube_video_id}
-              durationMinutes={currentSession.duration_minutes}
-              initialSeconds={progressMap[currentSession.id] ?? 0}
-              onProgress={(s) => handleProgress(currentSession.id, s)}
-              onComplete={() => handleSessionComplete(currentSession.id)}
               onEnded={handleVideoEnded}
             />
           )}
@@ -379,6 +361,14 @@ export default function CourseViewerPage() {
 
           {/* Módulos y sesiones */}
           <div className="flex-1 overflow-y-auto">
+            {content.modules.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-16 px-4 gap-3">
+                <Circle size={32} className="text-gray-300" />
+                <p className="text-sm text-gray-400 text-center">
+                  Próximamente se cargarán las sesiones de este curso
+                </p>
+              </div>
+            )}
             {content.modules.map((mod) => {
               const isOpen = openModules.has(mod.id);
               const modDone = mod.sessions.filter((s) => completedSet.has(s.id)).length;
@@ -464,47 +454,23 @@ export default function CourseViewerPage() {
 // ── YouTube Player ────────────────────────────────────────────────────────────
 function YouTubePlayer({
   videoId,
-  durationMinutes,
-  initialSeconds,
-  onProgress,
-  onComplete,
   onEnded,
 }: {
   videoId: string;
-  durationMinutes: number;
-  initialSeconds: number;
-  onProgress: (s: number) => void;
-  onComplete: () => void;
   onEnded: () => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<YTPlayer | null>(null);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const completedRef = useRef(false);
 
   useEffect(() => {
     const initPlayer = () => {
       if (!containerRef.current) return;
       playerRef.current = new window.YT.Player(containerRef.current, {
         videoId,
-        playerVars: { autoplay: 0, rel: 0, modestbranding: 1, start: Math.floor(initialSeconds) },
+        playerVars: { autoplay: 0, rel: 0, modestbranding: 1 },
         events: {
           onStateChange: (e) => {
-            if (e.data === 1) {
-              // PLAYING — iniciar tracking cada 30s
-              intervalRef.current = setInterval(() => {
-                const current = playerRef.current?.getCurrentTime() ?? 0;
-                onProgress(Math.floor(current));
-                if (!completedRef.current && current >= durationMinutes * 60 * 0.9) {
-                  completedRef.current = true;
-                  onComplete();
-                }
-              }, 30000);
-            } else {
-              if (intervalRef.current) clearInterval(intervalRef.current);
-              // ENDED
-              if (e.data === 0) onEnded();
-            }
+            if (e.data === 0) onEnded();
           },
         },
       });
@@ -513,7 +479,6 @@ function YouTubePlayer({
     loadYouTubeAPI(initPlayer);
 
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
       playerRef.current?.destroy();
     };
   }, []);

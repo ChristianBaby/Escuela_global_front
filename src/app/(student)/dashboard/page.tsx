@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/authStore";
 import { studentService } from "@/lib/services/student";
@@ -22,11 +22,30 @@ function useMyEnrollments() {
 
 export default function DashboardPage() {
   const { user } = useAuthStore();
-  const { data: enrollments = [], isLoading } = useMyEnrollments();
+  const { data: serverEnrollments = [], isLoading } = useMyEnrollments();
   const [tab, setTab] = useState<Tab>("progreso");
+  // 🚀 Estado para capturar las compras de la simulación
+  const [demoEnrollments, setDemoEnrollments] = useState<Enrollment[]>([]);
+
+  // Cargamos los cursos comprados en la demo al montar el componente
+  useEffect(() => {
+    const stored = localStorage.getItem("demo_enrollments");
+    if (stored) {
+      setDemoEnrollments(JSON.parse(stored));
+    }
+  }, []);
 
   const firstName = user?.first_name ?? "Estudiante";
 
+  // 🚀 ESCUDO HÍBRIDO: Combinamos inscripciones del servidor con las de la demo (evitando duplicados)
+  const enrollments = [...serverEnrollments];
+  demoEnrollments.forEach((demoE) => {
+    if (!enrollments.some((servE) => servE.course_id === demoE.course_id)) {
+      enrollments.push(demoE);
+    }
+  });
+
+  // Los filtros existentes ahora procesarán la lista combinada automáticamente 💎
   const enProgreso   = enrollments.filter((e) => !e.completed_at && e.progress_percent > 0);
   const completados  = enrollments.filter((e) => !!e.completed_at);
   const sinIniciar   = enrollments.filter((e) => !e.completed_at && e.progress_percent === 0);
@@ -201,6 +220,7 @@ export default function DashboardPage() {
   );
 }
 
+// ... Los subcomponentes StatCard, QuickLink, CourseCard y EmptyState se mantienen exactamente igual abajo ...
 function StatCard({ icon, label, value, bg }: { icon: React.ReactNode; label: string; value: string | number; bg: string }) {
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-5 flex items-center gap-4">
