@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# claude code (config local de permisos, no debe subirse)
+.claude/settings.local.json
