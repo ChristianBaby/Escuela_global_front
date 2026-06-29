@@ -8,8 +8,18 @@ import {
   type NotificationRecipient,
 } from "@/lib/services/marketing";
 import { cursosService } from "@/lib/services/courses";
+import { categoriasService } from "@/lib/services/categories";
 import { toast } from "sonner";
-import { Bell, Send, Users, BookOpen, UserCheck, Search, X } from "lucide-react";
+import { Bell, Send, Users, BookOpen, UserCheck, Search, X, Tag, Percent, Megaphone, Clock } from "lucide-react";
+
+const TIPOS = [
+  { value: "nuevo_curso", label: "Nuevo curso", icon: BookOpen },
+  { value: "descuento", label: "Descuento", icon: Percent },
+  { value: "anuncio", label: "Anuncio", icon: Megaphone },
+  { value: "recordatorio", label: "Recordatorio", icon: Clock },
+] as const;
+
+type TipoNotificacion = (typeof TIPOS)[number]["value"];
 
 const AUDIENCIAS = [
   {
@@ -34,11 +44,21 @@ const AUDIENCIAS = [
 
 type Audiencia = (typeof AUDIENCIAS)[number]["value"];
 
+// Con ~16 mil estudiantes, la búsqueda libre no basta: se puede acotar primero por curso o categoría.
+const FILTROS = [
+  { value: "search", label: "Nombre o correo", icon: Search },
+  { value: "course", label: "Por curso", icon: BookOpen },
+  { value: "category", label: "Por categoría", icon: Tag },
+] as const;
+
+type FiltroModo = (typeof FILTROS)[number]["value"];
+
 const empty = {
   title: "",
   body: "",
   redirect_url: "",
   audience: "all" as Audiencia,
+  type: "nuevo_curso" as TipoNotificacion,
   course_id: "",
 };
 
@@ -47,6 +67,9 @@ export default function NotificacionesMarketingPage() {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedUsers, setSelectedUsers] = useState<NotificationRecipient[]>([]);
+  const [filtroModo, setFiltroModo] = useState<FiltroModo>("search");
+  const [filtroCourseId, setFiltroCourseId] = useState("");
+  const [filtroCategoryId, setFiltroCategoryId] = useState("");
 
   // Debounce de la búsqueda de usuarios
   useEffect(() => {
@@ -57,13 +80,28 @@ export default function NotificacionesMarketingPage() {
   const { data: cursosData } = useQuery({
     queryKey: ["cursos-notif"],
     queryFn: () => cursosService.list({ status: "published", limit: 100 }),
-    enabled: form.audience === "course",
+    enabled: form.audience === "course" || (form.audience === "users" && filtroModo === "course"),
   });
 
+  const { data: categoriasData } = useQuery({
+    queryKey: ["categorias-notif"],
+    queryFn: categoriasService.list,
+    enabled: form.audience === "users" && filtroModo === "category",
+  });
+
+  const recipientsEnabled =
+    form.audience === "users" &&
+    (filtroModo === "search" || (filtroModo === "course" && !!filtroCourseId) || (filtroModo === "category" && !!filtroCategoryId));
+
   const { data: recipients = [], isLoading: loadingRecipients } = useQuery({
-    queryKey: ["notif-recipients", debouncedSearch],
-    queryFn: () => notificacionesMktService.getRecipients({ search: debouncedSearch }),
-    enabled: form.audience === "users",
+    queryKey: ["notif-recipients", debouncedSearch, filtroModo, filtroCourseId, filtroCategoryId],
+    queryFn: () =>
+      notificacionesMktService.getRecipients({
+        search: debouncedSearch || undefined,
+        course_id: filtroModo === "course" ? filtroCourseId : undefined,
+        category_id: filtroModo === "category" ? filtroCategoryId : undefined,
+      }),
+    enabled: recipientsEnabled,
   });
 
   const sendMutation = useMutation({
@@ -73,6 +111,9 @@ export default function NotificacionesMarketingPage() {
       setForm(empty);
       setSelectedUsers([]);
       setSearch("");
+      setFiltroModo("search");
+      setFiltroCourseId("");
+      setFiltroCategoryId("");
     },
     onError: (err: unknown) =>
       toast.error((err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? "Error al enviar la notificación"),
@@ -105,6 +146,7 @@ export default function NotificacionesMarketingPage() {
       body: form.body.trim(),
       redirect_url: form.redirect_url.trim() || undefined,
       audience: form.audience,
+      type: form.type,
       ...(form.audience === "course" && { course_id: form.course_id }),
       ...(form.audience === "users" && { user_ids: selectedUsers.map((u) => u.id) }),
     };
@@ -160,6 +202,28 @@ export default function NotificacionesMarketingPage() {
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
             placeholder="/cursos/nombre-del-curso"
           />
+        </div>
+
+        {/* Tipo de notificación */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-gray-700">Tipo de notificación</label>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {TIPOS.map((t) => (
+              <button
+                key={t.value}
+                type="button"
+                onClick={() => setForm({ ...form, type: t.value })}
+                className={`flex items-center gap-2 p-3 rounded-xl border transition-all ${
+                  form.type === t.value
+                    ? "border-[#2B55A3] bg-[#2B55A3]/5 text-[#2B55A3]"
+                    : "border-gray-200 text-gray-600 hover:border-gray-300"
+                }`}
+              >
+                <t.icon size={16} className={form.type === t.value ? "text-[#2B55A3]" : "text-gray-400"} />
+                <span className="text-sm font-medium">{t.label}</span>
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Audiencia */}
@@ -229,7 +293,54 @@ export default function NotificacionesMarketingPage() {
               </div>
             )}
 
-            {/* Búsqueda */}
+            {/* Modo de filtro: con ~16 mil estudiantes conviene acotar antes de buscar por nombre */}
+            <div className="flex gap-2">
+              {FILTROS.map((f) => (
+                <button
+                  key={f.value}
+                  type="button"
+                  onClick={() => setFiltroModo(f.value)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                    filtroModo === f.value
+                      ? "border-[#2B55A3] bg-[#2B55A3]/5 text-[#2B55A3]"
+                      : "border-gray-200 text-gray-500 hover:border-gray-300"
+                  }`}
+                >
+                  <f.icon size={13} />
+                  {f.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Acotar por curso */}
+            {filtroModo === "course" && (
+              <select
+                value={filtroCourseId}
+                onChange={(e) => setFiltroCourseId(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+              >
+                <option value="">Selecciona un curso...</option>
+                {cursosData?.data.map((c) => (
+                  <option key={c.id} value={c.id}>{c.title}</option>
+                ))}
+              </select>
+            )}
+
+            {/* Acotar por categoría */}
+            {filtroModo === "category" && (
+              <select
+                value={filtroCategoryId}
+                onChange={(e) => setFiltroCategoryId(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+              >
+                <option value="">Selecciona una categoría...</option>
+                {categoriasData?.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            )}
+
+            {/* Búsqueda por nombre o correo, se combina con el filtro elegido arriba */}
             <div className="relative">
               <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
@@ -242,7 +353,11 @@ export default function NotificacionesMarketingPage() {
 
             {/* Resultados */}
             <div className="border border-gray-200 rounded-lg max-h-48 overflow-y-auto">
-              {loadingRecipients ? (
+              {!recipientsEnabled ? (
+                <p className="text-center text-sm text-gray-400 py-4">
+                  {filtroModo === "course" ? "Selecciona un curso para ver estudiantes" : "Selecciona una categoría para ver estudiantes"}
+                </p>
+              ) : loadingRecipients ? (
                 <p className="text-center text-sm text-gray-400 py-4">Buscando...</p>
               ) : recipients.length === 0 ? (
                 <p className="text-center text-sm text-gray-400 py-4">Sin resultados</p>

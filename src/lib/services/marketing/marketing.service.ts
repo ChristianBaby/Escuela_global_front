@@ -86,6 +86,7 @@ export interface SendNotificationDto {
   body: string;
   redirect_url?: string;
   audience: "all" | "course" | "users";
+  type: "nuevo_curso" | "descuento" | "anuncio" | "recordatorio";
   course_id?: string;
   user_ids?: string[];
 }
@@ -98,7 +99,7 @@ export interface NotificationRecipient {
 }
 
 export const notificacionesMktService = {
-  getRecipients: (params?: { search?: string; course_id?: string }) =>
+  getRecipients: (params?: { search?: string; course_id?: string; category_id?: string }) =>
     api.get<NotificationRecipient[]>("/marketing/notifications/recipients", { params }).then((r) => r.data),
 
   send: (data: SendNotificationDto) =>

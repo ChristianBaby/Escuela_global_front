@@ -14,7 +14,7 @@ export type PaymentStatus = "pending" | "paid" | "failed" | "refunded";
 export type SliderType = "courses" | "banner";
 export type SliderPosition = "top" | "middle" | "bottom";
 export type PromotionStatus = "active" | "inactive";
-export type NotificationType = "nuevo_curso" | "completado" | "recordatorio" | "matriculacion" | "certificado" | "personalizada";
+export type NotificationType = "nuevo_curso" | "completado" | "recordatorio" | "matriculacion" | "certificado" | "personalizada" | "descuento" | "anuncio";
 export type ReviewStatus = "approved" | "hidden";
 export type AuditAction = "create" | "update" | "delete";
 
