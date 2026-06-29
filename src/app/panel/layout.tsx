@@ -148,10 +148,16 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
   };
 
 
-  const isActive = (href: string) => {
-    if (href === "/panel") return pathname === "/panel";
-    return pathname.startsWith(href);
-  };
+  // Entre varios hrefs que matchean el pathname (ej. "/panel/marketing" y
+  // "/panel/marketing/notificaciones"), solo el más específico debe quedar activo.
+  const allHrefs = NAV_SECTIONS.flatMap((section) => section.items.map((item) => item.href));
+  const bestMatch = allHrefs.reduce<string | null>((best, href) => {
+    const matches = href === "/panel" ? pathname === "/panel" : pathname.startsWith(href);
+    if (!matches) return best;
+    return best === null || href.length > best.length ? href : best;
+  }, null);
+
+  const isActive = (href: string) => href === bestMatch;
 
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">
