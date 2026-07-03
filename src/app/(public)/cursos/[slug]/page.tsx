@@ -23,6 +23,7 @@ import {
   CalendarDays,
   ArrowLeft,
   ChevronRight,
+  GraduationCap,
 } from "lucide-react";
 import { PublicLayout } from "@/components/templates";
 import { Skeleton } from "@/components/atoms";
@@ -387,6 +388,12 @@ export default function CourseDetailPage({
             <BookOpen size={14} className="text-gray-400 shrink-0" />
             {totalSessions} clases en {modules.length} módulos
           </div>
+          {course.academic_hours > 0 && (
+            <div className="flex items-center gap-2">
+              <GraduationCap size={14} className="text-gray-400 shrink-0" />
+              {course.academic_hours} horas académicas
+            </div>
+          )}
           <div className="flex items-center gap-2">
             <BarChart3 size={14} className="text-gray-400 shrink-0" />
             {LEVEL_LABEL[course.level] ?? course.level}

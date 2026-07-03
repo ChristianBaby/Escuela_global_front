@@ -6,6 +6,7 @@ export interface UpdateProfileDto {
   last_name: string;
   phone?: string;
   country?: string;
+  profession?: string;
 }
 
 export interface ChangePasswordDto {
@@ -14,11 +15,11 @@ export interface ChangePasswordDto {
 }
 
 export const profileService = {
-  getMe: () =>
-    api.get<User>("/usuarios/me").then((r) => r.data),
+  getMe: (id: string) =>
+    api.get<User>(`/users/profile/${id}`).then((r) => r.data),
 
-  update: (data: UpdateProfileDto) =>
-    api.patch<User>("/usuarios/me", data).then((r) => r.data),
+  update: (id: string, data: UpdateProfileDto) =>
+    api.patch<User>(`/users/profile/${id}`, data).then((r) => r.data),
 
   changePassword: (data: ChangePasswordDto) =>
     api.patch<{ message: string }>("/usuarios/me/password", data).then((r) => r.data),

@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import {
   Search, X, BookOpen, CheckCircle2, UserCheck, Users,
   ArrowRight, ArrowLeft, Info, Gavel, TrendingUp, Code,
-  Megaphone, ClipboardList, Award,
+  Megaphone, ClipboardList, Award, PlusCircle,
 } from "lucide-react";
 
 /* ─── tipos ──────────────────────────────────────────────────────────── */
@@ -94,6 +94,10 @@ export default function MatriculasPage() {
   const [monto,  setMonto]  = useState("");
   const [notas,  setNotas]  = useState("");
 
+  /* pantalla de éxito tras matricular */
+  const [justFinished, setJustFinished] = useState(false);
+  const [lastTotal, setLastTotal] = useState(0);
+
   const searchRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -129,20 +133,6 @@ export default function MatriculasPage() {
 
   const matricularMutation = useMutation({
     mutationFn: matriculasService.create,
-    onSuccess: () => {
-      const total = seleccionados.length * cursosSeleccionados.length;
-      toast.success(`${total} matrícula(s) creadas correctamente`);
-      setSeleccionados([]);
-      queryClient.invalidateQueries({ queryKey: ["matriculas"] });
-      queryClient.invalidateQueries({ queryKey: ["enrollments-por-cursos"] });
-      queryClient.invalidateQueries({ queryKey: ["cursos"] });
-      queryClient.invalidateQueries({ queryKey: ["admin-stats"] });
-      queryClient.invalidateQueries({ queryKey: ["admin-top-cursos"] });
-    },
-    onError: (err: unknown) => {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      toast.error(msg ?? "Error al matricular");
-    },
   });
 
   /* ── estudiantes con estado de matrícula derivado ── */
@@ -209,21 +199,53 @@ export default function MatriculasPage() {
     setSeleccionados([]);
   };
 
-  const handleMatricular = () => {
+  const handleMatricular = async () => {
     if (!seleccionados.length) {
       toast.error("Selecciona al menos un estudiante");
       return;
     }
+
     // Llama una vez por cada estudiante pasando todos los cursos
-    seleccionados.forEach((userId) => {
-      matricularMutation.mutate({
-        user_id:                userId,
-        course_ids:             cursosSeleccionados,
-        offline_payment_method: metodo,
-        offline_amount:         monto ? parseFloat(monto) : undefined,
-        internal_notes:         notas || undefined,
-      });
-    });
+    const results = await Promise.allSettled(
+      seleccionados.map((userId) =>
+        matricularMutation.mutateAsync({
+          user_id:                userId,
+          course_ids:             cursosSeleccionados,
+          offline_payment_method: metodo,
+          offline_amount:         monto ? parseFloat(monto) : undefined,
+          internal_notes:         notas || undefined,
+        })
+      )
+    );
+
+    const failed = results.filter((r) => r.status === "rejected").length;
+    const succeeded = results.length - failed;
+
+    queryClient.invalidateQueries({ queryKey: ["matriculas"] });
+    queryClient.invalidateQueries({ queryKey: ["enrollments-por-cursos"] });
+    queryClient.invalidateQueries({ queryKey: ["cursos"] });
+    queryClient.invalidateQueries({ queryKey: ["admin-stats"] });
+    queryClient.invalidateQueries({ queryKey: ["admin-top-cursos"] });
+
+    if (failed > 0) {
+      toast.error(`${failed} matrícula(s) fallaron`);
+    }
+    if (succeeded > 0) {
+      setLastTotal(succeeded * cursosSeleccionados.length);
+      setJustFinished(true);
+    }
+  };
+
+  const resetWizard = () => {
+    setStep(1);
+    setCursosSeleccionados([]);
+    setSeleccionados([]);
+    setCursosBusqueda("");
+    setBusqueda("");
+    setMetodo("transferencia");
+    setMonto("");
+    setNotas("");
+    setJustFinished(false);
   };
 
   const totalMatriculas = seleccionados.length * cursosSeleccionados.length;
@@ -253,14 +275,40 @@ export default function MatriculasPage() {
       </div>
 
       {/* ── Step pills ────────────────────────────────────────────── */}
-      <div className="flex items-center gap-2">
-        <StepPill step={1} label="Cursos"       state={step === 1 ? "active" : "done"} />
-        <div className="w-6 h-px bg-gray-300" />
-        <StepPill step={2} label="Estudiantes &amp; pago" state={step === 2 ? "active" : "idle"} />
-      </div>
+      {!justFinished && (
+        <div className="flex items-center gap-2">
+          <StepPill step={1} label="Cursos"       state={step === 1 ? "active" : "done"} />
+          <div className="w-6 h-px bg-gray-300" />
+          <StepPill step={2} label="Estudiantes &amp; pago" state={step === 2 ? "active" : "idle"} />
+        </div>
+      )}
+
+      {/* ════════════════ PANTALLA DE ÉXITO ════════════════ */}
+      {justFinished && (
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-10 flex flex-col items-center text-center gap-4">
+          <div className="w-14 h-14 rounded-full bg-emerald-50 flex items-center justify-center">
+            <CheckCircle2 className="size-7 text-emerald-600" />
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">
+              {lastTotal} matrícula(s) creada(s) correctamente
+            </h2>
+            <p className="text-sm text-gray-500 mt-1">
+              Los estudiantes ya tienen acceso a los cursos y recibieron su notificación.
+            </p>
+          </div>
+          <button
+            onClick={resetWizard}
+            className="flex items-center gap-2 px-5 py-2.5 bg-[#2B55A3] text-white text-sm font-semibold rounded-lg hover:bg-[#1e3d7a] transition-colors mt-2"
+          >
+            <PlusCircle className="size-4" />
+            Nueva matrícula
+          </button>
+        </div>
+      )}
 
       {/* ════════════════ STEP 1 — CURSOS ════════════════ */}
-      {step === 1 && (
+      {!justFinished && step === 1 && (
         <div className="space-y-4">
           <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
             <div className="flex items-center gap-2 mb-3">
@@ -355,7 +403,7 @@ export default function MatriculasPage() {
       )}
 
       {/* ════════════════ STEP 2 — ESTUDIANTES ════════════════ */}
-      {step === 2 && (
+      {!justFinished && step === 2 && (
         <div className="space-y-4">
 
           {/* Cursos elegidos (resumen) */}

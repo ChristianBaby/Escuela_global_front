@@ -62,6 +62,7 @@ export default function EditarCursoPage() {
   const [prerequisites, setPrerequisites] = useState<string[]>([]);
   const [outcomeInput, setOutcomeInput] = useState("");
   const [outcomes, setOutcomes] = useState<string[]>([]);
+  const [academicHours, setAcademicHours] = useState("");
 
   // ── Tab 5: Configuración ───────────────────────────────────────────────────
   const [status, setStatus] = useState<"draft" | "published" | "archived">("draft");
@@ -102,6 +103,7 @@ export default function EditarCursoPage() {
     setAccessDuration(course.access_duration ?? "lifetime");
     setPrerequisites(course.prerequisites ?? []);
     setOutcomes(course.outcomes ?? []);
+    setAcademicHours(course.academic_hours ? course.academic_hours.toString() : "");
     setStatus(course.status ?? "draft");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     setCertificationMode((course as any).certification_mode ?? "auto");
@@ -139,6 +141,7 @@ export default function EditarCursoPage() {
         instructors,
         prerequisites,
         outcomes,
+        academic_hours: academicHours ? parseInt(academicHours, 10) : undefined,
         status,
         certification_mode: certificationMode,
         certificate_template_id: certTemplateId || null,
@@ -357,6 +360,18 @@ export default function EditarCursoPage() {
                   <option value="intermedio">Intermedio</option>
                   <option value="avanzado">Avanzado</option>
                 </select>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="horas-academicas">Horas académicas</Label>
+                <Input
+                  id="horas-academicas"
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={academicHours}
+                  onChange={(e) => setAcademicHours(e.target.value)}
+                  placeholder="Ej: 40"
+                />
               </div>
             </div>
 

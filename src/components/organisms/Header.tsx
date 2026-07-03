@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Logo, Badge, buttonVariants } from "@/components/atoms";
+import { CartModal } from "@/components/organisms/CartModal";
 import { useAuthStore } from "@/store/authStore";
 import { useCartStore } from "@/store/cartStore";
 import { authService } from "@/lib/services/auth";
@@ -17,6 +18,7 @@ const NAV_LINKS = [
 export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [cartOpen, setCartOpen] = useState(false);
   const { isAuthenticated, user, clearUser } = useAuthStore();
   const localItems = useCartStore((s) => s.items);
   const router = useRouter();
@@ -68,11 +70,11 @@ export function Header() {
 
           {/* Desktop actions */}
           <div className="hidden md:flex items-center gap-2">
-            {/* Cart icon — visible for all users */}
-            <Link
-              href="/carrito"
+            {/* Cart icon — visible for all users, opens quick-add popup */}
+            <button
+              onClick={() => setCartOpen(true)}
               className="relative p-1.5 text-gray-600 hover:text-brand-primary transition-colors"
-              aria-label="Carrito de compras"
+              aria-label="Abrir carrito de compras"
             >
               <ShoppingCart size={18} />
               {cartCount > 0 && (
@@ -80,7 +82,7 @@ export function Header() {
                   {cartCount}
                 </Badge>
               )}
-            </Link>
+            </button>
 
             {isAuthenticated ? (
               <>
@@ -144,6 +146,23 @@ export function Header() {
                 {link.label}
               </Link>
             ))}
+            <button
+              onClick={() => {
+                setMobileOpen(false);
+                setCartOpen(true);
+              }}
+              className="w-full flex items-center justify-between py-2.5 px-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-brand-primary/5 hover:text-brand-primary transition-colors"
+            >
+              <span className="flex items-center gap-2">
+                <ShoppingCart size={16} />
+                Carrito
+              </span>
+              {cartCount > 0 && (
+                <Badge className="h-5 min-w-5 px-1.5 flex items-center justify-center text-[11px] bg-brand-secondary text-white border-0">
+                  {cartCount}
+                </Badge>
+              )}
+            </button>
             <div className="pt-3 border-t border-gray-100 flex flex-col gap-2">
               {isAuthenticated ? (
                 <>
@@ -183,6 +202,8 @@ export function Header() {
           </div>
         </div>
       )}
+
+      <CartModal open={cartOpen} onOpenChange={setCartOpen} />
     </header>
   );
 }

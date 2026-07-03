@@ -45,8 +45,8 @@ function buildFormData(data: CreatePromocionDto): FormData {
 }
 
 export const promocionesService = {
-  list: () =>
-    api.get<Promotion[]>("/promociones").then((r) => r.data),
+  list: (params?: { vigente?: boolean }) =>
+    api.get<Promotion[]>("/promociones", { params }).then((r) => r.data),
 
   create: (data: CreatePromocionDto) =>
     api.post<Promotion>("/promociones", buildFormData(data), {

@@ -29,7 +29,7 @@ function StatCard({
 export default function MarketingDashboardPage() {
   const { data: promociones = [], isLoading: loadingPromos } = useQuery<Promotion[]>({
     queryKey: ["promociones"],
-    queryFn: promocionesService.list,
+    queryFn: () => promocionesService.list(),
   });
 
   const { data: sliders = [], isLoading: loadingSliders } = useQuery<Slider[]>({

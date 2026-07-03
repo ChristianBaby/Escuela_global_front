@@ -27,6 +27,7 @@ export interface User {
   email: string;
   phone: string;
   country?: string;
+  profession?: string;
   role: UserRole;
   profile_photo_url?: string;
   email_verified: boolean;
@@ -80,6 +81,7 @@ export interface Course {
   review_count: number;
   enrolled_count: number;
   total_duration_minutes: number;
+  academic_hours: number;
   instructors: Instructor[];
   created_by: string;
   created_at: string;

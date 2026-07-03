@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Raleway, Nunito_Sans } from "next/font/google";
 import { Providers } from "@/lib/providers";
+import { WhatsAppButton } from "@/components/molecules";
 import "./globals.css";
 
 const raleway = Raleway({
@@ -32,6 +33,7 @@ export default function RootLayout({
     <html lang="es" className={`${raleway.variable} ${nunitoSans.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
         <Providers>{children}</Providers>
+        <WhatsAppButton />
       </body>
     </html>
   );

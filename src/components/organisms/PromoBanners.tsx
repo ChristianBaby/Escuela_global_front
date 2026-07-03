@@ -88,12 +88,10 @@ function PromoCardSkeleton() {
 }
 
 export function PromoBanners() {
-  const { data: promociones = [], isLoading } = useQuery({
-    queryKey: ["promociones"],
-    queryFn: promocionesService.list,
+  const { data: activePromos = [], isLoading } = useQuery({
+    queryKey: ["promociones", "vigentes"],
+    queryFn: () => promocionesService.list({ vigente: true }),
   });
-
-  const activePromos = promociones.filter((p) => p.status === "active");
 
   if (!isLoading && activePromos.length === 0) return null;
 

@@ -57,6 +57,7 @@ export default function NuevoCursoPage() {
   const [prerequisites, setPrerequisites] = useState<string[]>([]);
   const [outcomeInput, setOutcomeInput] = useState("");
   const [outcomes, setOutcomes] = useState<string[]>([]);
+  const [academicHours, setAcademicHours] = useState("");
 
   // ── Tab 5: Configuración ───────────────────────────────────────────────────
   const [status, setStatus] = useState<"draft" | "published" | "archived">("draft");
@@ -83,6 +84,7 @@ export default function NuevoCursoPage() {
         instructors,
         prerequisites,
         outcomes,
+        academic_hours: academicHours ? parseInt(academicHours, 10) : undefined,
         status: forceDraft ? "draft" : status,
       });
 
@@ -292,6 +294,18 @@ export default function NuevoCursoPage() {
                   <option value="intermedio">Intermedio</option>
                   <option value="avanzado">Avanzado</option>
                 </select>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="horas-academicas">Horas académicas</Label>
+                <Input
+                  id="horas-academicas"
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={academicHours}
+                  onChange={(e) => setAcademicHours(e.target.value)}
+                  placeholder="Ej: 40"
+                />
               </div>
             </div>
 

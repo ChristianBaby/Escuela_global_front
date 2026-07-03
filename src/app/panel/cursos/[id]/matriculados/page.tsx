@@ -1,12 +1,22 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import { toast } from "sonner";
 import { cursosService } from "@/lib/services/courses";
 import { dashboardService, type MatriculadoCurso } from "@/lib/services/dashboard";
-import { Download, ArrowLeft, Users, TrendingUp, Clock, Trophy } from "lucide-react";
+import { Download, ArrowLeft, Users, TrendingUp, Clock, Trophy, Loader2 } from "lucide-react";
+
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 const STATUS_LABELS: Record<string, string> = {
   activo: "Activo",
@@ -66,41 +76,14 @@ export default function MatriculadosCursoPage() {
       }),
   });
 
-  const exportCsv = useCallback(() => {
-    if (!data?.data?.length) return;
-    const rows: string[][] = [
-      [
-        "Nombre",
-        "Email",
-        "Matriculado",
-        "Progreso (%)",
-        "Última actividad",
-        "Estado",
-        "Método de pago",
-      ],
-      ...data.data.map((m: MatriculadoCurso) => [
-        `${m.user.first_name} ${m.user.last_name}`,
-        m.user.email,
-        new Date(m.enrolled_at).toLocaleDateString("es-PE"),
-        String(m.progress_percent),
-        m.last_accessed_at
-          ? new Date(m.last_accessed_at).toLocaleDateString("es-PE")
-          : "",
-        STATUS_LABELS[m.status] ?? m.status,
-        m.enrollment_type === "online"
-          ? "Online"
-          : `Manual${m.offline_payment_method ? ` (${m.offline_payment_method})` : ""}`,
-      ]),
-    ];
-    const csv = rows.map((r) => r.map((c) => `"${c}"`).join(",")).join("\n");
-    const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `matriculados-${courseId}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }, [data, courseId]);
+  const exportMutation = useMutation({
+    mutationFn: () => dashboardService.exportMatriculadosCurso(courseId),
+    onSuccess: (blob) => {
+      downloadBlob(blob, `matriculados-${courseId}.xlsx`);
+      toast.success("Excel exportado correctamente");
+    },
+    onError: () => toast.error("Error al exportar el Excel"),
+  });
 
   const stats = data?.stats;
 
@@ -182,12 +165,12 @@ export default function MatriculadosCursoPage() {
           <option value="manual">Manual</option>
         </select>
         <button
-          onClick={exportCsv}
-          disabled={!data?.data?.length}
+          onClick={() => exportMutation.mutate()}
+          disabled={!data?.data?.length || exportMutation.isPending}
           className="ml-auto flex items-center gap-2 px-4 py-2 text-sm bg-[#2B55A3] text-white rounded-lg hover:bg-[#2B55A3]/90 disabled:opacity-40 transition-colors"
         >
-          <Download size={15} />
-          Exportar CSV
+          {exportMutation.isPending ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />}
+          Exportar Excel
         </button>
       </div>
 

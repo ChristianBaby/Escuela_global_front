@@ -24,16 +24,9 @@ export const studentService = {
             { watched_seconds: watchedSeconds, force_complete: forceComplete },
         ).then((r) => r.data),
 
-<<<<<<< HEAD
-	submitReview: (data: SubmitReviewDto) => api.post<{ id: string; certificate_available: boolean }>("/reviews", data).then((r) => r.data),
-	getMyCertificates: () => api.get<CertificateSummary[]>("/student/certificates").then((r) => r.data),
-	getMyCertificate: (enrollmentId: string) => api.get<CertificateDetail>(`/student/certificates/${enrollmentId}`).then((r) => r.data),
-	downloadCertificate: (certificateId: string) =>
-		api.get(`/certificates/${certificateId}/download`, { responseType: "blob" }).then((r) => r.data as Blob),
-};
-=======
     submitReview: (data: SubmitReviewDto) => api.post<{ id: string; certificate_available: boolean }>("/reviews", data).then((r) => r.data),
     getMyCertificates: () => api.get<CertificateSummary[]>("/student/certificates").then((r) => r.data),
     getMyCertificate: (enrollmentId: string) => api.get<CertificateDetail>(`/student/certificates/${enrollmentId}`).then((r) => r.data),
+    downloadCertificate: (certificateId: string) =>
+        api.get(`/certificates/${certificateId}/download`, { responseType: "blob" }).then((r) => r.data as Blob),
 };
->>>>>>> 1a6f9dd599645a8b05ed5271cf6c4523bfb763ff
