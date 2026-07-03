@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { notificacionesService } from "@/lib/services/notifications";
 import {
   Bell, CheckCheck, BookOpen, Award, Clock, UserCheck,
-  ChevronRight, X, PlayCircle, ExternalLink, MessageSquare,
+  ChevronRight, X, PlayCircle, ExternalLink, MessageSquare, Percent, Megaphone,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { Notification } from "@/types";
@@ -20,6 +20,8 @@ function NotifIcon({ type }: { type: Notification["type"] }) {
     case "matriculacion": return <UserCheck className={cls} />;
     case "certificado":   return <Award className={cls} />;
     case "personalizada": return <MessageSquare className={cls} />;
+    case "descuento":     return <Percent className={cls} />;
+    case "anuncio":       return <Megaphone className={cls} />;
     default:              return <Bell className={cls} />;
   }
 }
@@ -32,6 +34,8 @@ const TYPE_COLOR: Record<string, string> = {
   matriculacion: "bg-purple-100 text-purple-600",
   certificado:   "bg-[#2B55A3]/10 text-[#2B55A3]",
   personalizada: "bg-indigo-100 text-indigo-600",
+  descuento:     "bg-orange-100 text-orange-600",
+  anuncio:       "bg-pink-100 text-pink-600",
 };
 
 // ── Contenido del panel según tipo ─────────────────────────────────────────
@@ -72,6 +76,18 @@ const PANEL_CONFIG: Record<
   personalizada: {
     heading: "Mensaje del equipo",
     description: "El equipo de Escuela Global tiene un mensaje para ti.",
+    btnLabel: "Ver más",
+    BtnIcon: ExternalLink,
+  },
+  descuento: {
+    heading: "¡Tienes un descuento!",
+    description: "Aprovecha esta oferta especial antes de que se acabe.",
+    btnLabel: "Ver oferta",
+    BtnIcon: ExternalLink,
+  },
+  anuncio: {
+    heading: "Tienes un anuncio",
+    description: "Escuela Global tiene algo nuevo para contarte.",
     btnLabel: "Ver más",
     BtnIcon: ExternalLink,
   },
