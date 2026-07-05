@@ -3,16 +3,9 @@
 import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { slidersService, eventTypesService, type CreateSliderDto } from "@/lib/services/marketing";
-import { cursosService } from "@/lib/services/courses";
 import { toast } from "sonner";
 import { Upload, X, ImageIcon, Plus, Check } from "lucide-react";
 import type { Slider } from "@/types";
-
-const POSICIONES = [
-  { value: "top", label: "Superior" },
-  { value: "middle", label: "Medio" },
-  { value: "bottom", label: "Inferior" },
-];
 
 const empty: CreateSliderDto = {
   title: "",
@@ -24,7 +17,6 @@ const empty: CreateSliderDto = {
   contact_url: "",
   position_on_page: "top",
   status: "inactive",
-  course_ids: [],
 };
 
 // ── Image uploader reutilizable ────────────────────────────────────────────────
@@ -161,11 +153,6 @@ export default function SlidersPage() {
     queryFn: slidersService.list,
   });
 
-  const { data: cursosData } = useQuery({
-    queryKey: ["cursos-activos"],
-    queryFn: () => cursosService.list({ status: "published", limit: 100 }),
-  });
-
   const { data: eventTypes = [] } = useQuery({
     queryKey: ["event-types"],
     queryFn: eventTypesService.list,
@@ -217,26 +204,19 @@ export default function SlidersPage() {
   const toggleStatus = (s: Slider) =>
     updateMutation.mutate({ id: s.id, data: { status: s.status === "active" ? "inactive" : "active" } });
 
-  const toggleCurso = (id: string) => {
-    const current = form.course_ids ?? [];
-    if (current.length >= 10 && !current.includes(id)) { toast.warning("Máximo 10 cursos por slider"); return; }
-    setForm({ ...form, course_ids: current.includes(id) ? current.filter((c) => c !== id) : [...current, id] });
-  };
-
   const openCreate = () => { setEditing(null); setForm(empty); setShowModal(true); };
   const openEdit = (s: Slider) => {
     setEditing(s);
     setForm({
       title: s.title,
       subtitle: s.subtitle ?? "",
-      type: s.type,
+      type: "banner",
       event_type_id: s.event_type_id ?? null,
       image_url: s.image_url ?? "",
       destination_url: s.destination_url ?? "",
       contact_url: s.contact_url ?? "",
-      position_on_page: s.position_on_page,
+      position_on_page: "top",
       status: s.status,
-      course_ids: s.courses?.map((c) => c.id) ?? [],
     });
     setImageFile(null);
     setImagePreview(s.image_url ?? "");
@@ -299,15 +279,13 @@ export default function SlidersPage() {
               <tr>
                 <th className="text-left px-4 py-3 text-gray-600 font-medium w-16">Vista</th>
                 <th className="text-left px-4 py-3 text-gray-600 font-medium">Título</th>
-                <th className="text-left px-4 py-3 text-gray-600 font-medium">Tipo</th>
-                <th className="text-left px-4 py-3 text-gray-600 font-medium">Posición</th>
                 <th className="text-left px-4 py-3 text-gray-600 font-medium">Estado</th>
                 <th className="text-right px-4 py-3 text-gray-600 font-medium">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {sliders?.length === 0 ? (
-                <tr><td colSpan={6} className="text-center py-8 text-gray-400">Sin sliders</td></tr>
+                <tr><td colSpan={4} className="text-center py-8 text-gray-400">Sin sliders</td></tr>
               ) : (
                 sliders?.map((s) => (
                   <tr key={s.id} className="hover:bg-gray-50">
@@ -321,12 +299,6 @@ export default function SlidersPage() {
                       )}
                     </td>
                     <td className="px-4 py-3 font-medium text-gray-900">{s.title}</td>
-                    <td className="px-4 py-3">
-                      <span className="text-xs bg-purple-50 text-purple-700 px-2 py-1 rounded-full">
-                        {s.type === "courses" ? "Cursos" : "Banner"}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-gray-500 capitalize">{POSICIONES.find((p) => p.value === s.position_on_page)?.label}</td>
                     <td className="px-4 py-3">
                       <button
                         onClick={() => toggleStatus(s)}
@@ -462,110 +434,48 @@ export default function SlidersPage() {
                 )}
               </div>
 
-              {/* Tipo + Posición */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-sm font-medium text-gray-700">Tipo *</label>
-                  <select
-                    value={form.type}
-                    onChange={(e) => setForm({ ...form, type: e.target.value as "courses" | "banner", course_ids: [] })}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none"
-                  >
-                    <option value="courses">Cursos</option>
-                    <option value="banner">Banner</option>
-                  </select>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-sm font-medium text-gray-700">Posición *</label>
-                  <select
-                    value={form.position_on_page}
-                    onChange={(e) => setForm({ ...form, position_on_page: e.target.value as "top" | "middle" | "bottom" })}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none"
-                  >
-                    {POSICIONES.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
-                  </select>
-                </div>
+              <ImageUploader
+                label="Imagen del banner (fondo del slide)"
+                value={form.image_url ?? ""}
+                preview={imagePreview}
+                onChange={(url) => setForm({ ...form, image_url: url })}
+                onFileSelect={(file) => {
+                  setImageFile(file);
+                  setImagePreview(URL.createObjectURL(file));
+                }}
+                aspectRatio="16/5"
+              />
+
+              {/* Link asesor comercial (WhatsApp) */}
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-gray-700">
+                  Link al asesor comercial{" "}
+                  <span className="text-xs text-gray-400 font-normal">(botón "Más Información")</span>
+                </label>
+                <input
+                  type="url"
+                  value={form.contact_url ?? ""}
+                  onChange={(e) => setForm({ ...form, contact_url: e.target.value })}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+                  placeholder="https://wa.me/51999000111?text=Hola, me interesa..."
+                />
+                <p className="text-xs text-gray-400">Pega el link de WhatsApp del asesor asignado a este programa.</p>
               </div>
 
-              {/* Campos según tipo */}
-              {form.type === "banner" && (
-                <>
-                  <ImageUploader
-                    label="Imagen del banner (fondo del slide)"
-                    value={form.image_url ?? ""}
-                    preview={imagePreview}
-                    onChange={(url) => setForm({ ...form, image_url: url })}
-                    onFileSelect={(file) => {
-                      setImageFile(file);
-                      setImagePreview(URL.createObjectURL(file));
-                    }}
-                    aspectRatio="16/5"
-                  />
-
-                  {/* Link asesor comercial (WhatsApp) */}
-                  <div className="space-y-1">
-                    <label className="text-sm font-medium text-gray-700">
-                      Link al asesor comercial{" "}
-                      <span className="text-xs text-gray-400 font-normal">(botón "Más Información")</span>
-                    </label>
-                    <input
-                      type="url"
-                      value={form.contact_url ?? ""}
-                      onChange={(e) => setForm({ ...form, contact_url: e.target.value })}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
-                      placeholder="https://wa.me/51999000111?text=Hola, me interesa..."
-                    />
-                    <p className="text-xs text-gray-400">Pega el link de WhatsApp del asesor asignado a este programa.</p>
-                  </div>
-
-                  {/* Link de destino (página del curso) */}
-                  <div className="space-y-1">
-                    <label className="text-sm font-medium text-gray-700">
-                      Link de la página del curso{" "}
-                      <span className="text-xs text-gray-400 font-normal">(opcional)</span>
-                    </label>
-                    <input
-                      type="url"
-                      value={form.destination_url ?? ""}
-                      onChange={(e) => setForm({ ...form, destination_url: e.target.value })}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none"
-                      placeholder="/cursos/nombre-del-curso"
-                    />
-                  </div>
-                </>
-              )}
-
-              {form.type === "courses" && (
-                <>
-                  <div className="space-y-1">
-                    <label className="text-sm font-medium text-gray-700">Link de destino</label>
-                    <input
-                      type="url"
-                      value={form.destination_url ?? ""}
-                      onChange={(e) => setForm({ ...form, destination_url: e.target.value })}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none"
-                      placeholder="/cursos"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">Cursos (máx. 10)</label>
-                    <div className="border border-gray-200 rounded-lg max-h-48 overflow-y-auto">
-                      {cursosData?.data.map((c) => (
-                        <label key={c.id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0">
-                          <input
-                            type="checkbox"
-                            checked={form.course_ids?.includes(c.id)}
-                            onChange={() => toggleCurso(c.id)}
-                            className="rounded"
-                          />
-                          <span className="text-sm text-gray-900 truncate">{c.title}</span>
-                        </label>
-                      ))}
-                    </div>
-                    <p className="text-xs text-gray-400">{form.course_ids?.length ?? 0} / 10 cursos seleccionados</p>
-                  </div>
-                </>
-              )}
+              {/* Link de destino (página del curso) */}
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-gray-700">
+                  Link de la página del curso{" "}
+                  <span className="text-xs text-gray-400 font-normal">(opcional)</span>
+                </label>
+                <input
+                  type="text"
+                  value={form.destination_url ?? ""}
+                  onChange={(e) => setForm({ ...form, destination_url: e.target.value })}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none"
+                  placeholder="/cursos/nombre-del-curso"
+                />
+              </div>
 
               {/* Estado */}
               <div className="space-y-1">

@@ -69,16 +69,6 @@ function CourseSlide({ slider }: { slider: Slider }) {
         />
       )}
 
-      {/* Gradient overlay — pesado a la izquierda para legibilidad del texto */}
-      <div
-        className="absolute inset-0"
-        style={{
-          background: hasImage
-            ? "linear-gradient(to right, rgba(15,31,77,0.93) 0%, rgba(15,31,77,0.78) 35%, rgba(15,31,77,0.45) 65%, rgba(15,31,77,0.15) 100%)"
-            : "none",
-        }}
-      />
-
       {/* Content */}
       <div className="relative z-10 max-w-7xl mx-auto px-8 lg:px-16 w-full">
         <div className="max-w-xl">
@@ -120,13 +110,13 @@ function CourseSlide({ slider }: { slider: Slider }) {
               </Link>
             )}
 
-            {/* Botón secundario — ver catálogo */}
+            {/* Botón secundario — página del curso si está configurada, si no catálogo general */}
             <Link
-              href="/cursos"
+              href={slider.contact_url && slider.destination_url ? slider.destination_url : "/cursos"}
               className="inline-flex items-center border-2 border-white/40 text-white hover:bg-white/10 font-semibold px-6 py-3.5 rounded-xl transition-all backdrop-blur-sm gap-2"
             >
               <BookOpen size={16} />
-              Ver catálogo
+              {slider.contact_url && slider.destination_url ? "Ver curso" : "Ver catálogo"}
             </Link>
           </div>
         </div>
