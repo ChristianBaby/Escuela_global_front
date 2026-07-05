@@ -40,6 +40,7 @@ export interface CreateCursoDto {
   instructors: InstructorInput[];
   prerequisites: string[];
   outcomes: string[];
+  academic_hours?: number;
   certification_mode?: "auto" | "manual";
   certificate_template_id?: string | null;
   constancia_template_id?: string | null;
@@ -98,7 +99,7 @@ export interface CreateSessionDto {
   title: string;
   description?: string;
   youtube_url: string;
-  duration_minutes: number;
+  duration_minutes?: number;
 }
 
 // ── Materiales

@@ -28,7 +28,7 @@ export default function PublicacionesPage() {
 
   const { data: promociones, isLoading, isError } = useQuery({
     queryKey: ["promociones"],
-    queryFn: promocionesService.list,
+    queryFn: () => promocionesService.list(),
   });
 
   const createMutation = useMutation({

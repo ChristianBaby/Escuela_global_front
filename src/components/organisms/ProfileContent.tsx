@@ -29,6 +29,7 @@ const profileSchema = z.object({
   last_name: z.string().min(2, "Mínimo 2 caracteres"),
   phone: z.string().optional(),
   country: z.string().optional(),
+  profession: z.string().optional(),
 });
 
 const passwordSchema = z
@@ -54,8 +55,9 @@ export function ProfileContent() {
   const { user, updateUser } = useAuthStore();
 
   const { data: profile } = useQuery({
-    queryKey: ["profile-me"],
-    queryFn: profileService.getMe,
+    queryKey: ["profile-me", user?.id],
+    queryFn: () => profileService.getMe(user!.id),
+    enabled: !!user?.id,
   });
 
   const currentUser = profile ?? user;
@@ -74,6 +76,7 @@ export function ProfileContent() {
       last_name: currentUser?.last_name ?? "",
       phone: currentUser?.phone ?? "",
       country: currentUser?.country ?? "",
+      profession: currentUser?.profession ?? "",
     },
   });
 
@@ -87,7 +90,7 @@ export function ProfileContent() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: (data: UpdateProfileDto) => profileService.update(data),
+    mutationFn: (data: UpdateProfileDto) => profileService.update(user!.id, data),
     onSuccess: (updated) => {
       updateUser(updated);
       toast.success("Perfil actualizado correctamente");
@@ -241,6 +244,15 @@ export function ProfileContent() {
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
                 />
               </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-gray-700">Profesión</label>
+              <input
+                {...registerProfile("profession")}
+                placeholder="Ej: Contador, Ingeniero, Diseñador..."
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+              />
             </div>
 
             <div className="flex justify-end pt-2">

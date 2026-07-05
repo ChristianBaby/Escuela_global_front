@@ -147,16 +147,22 @@ function SessionForm({
             onChange={(e) => setYoutube(e.target.value)}
             placeholder="https://www.youtube.com/watch?v=..."
           />
+          <p className="text-xs text-gray-400">
+            La duración se detecta automáticamente desde YouTube.
+          </p>
         </div>
         <div className="space-y-1.5">
-          <Label className="text-xs">Duración (minutos) *</Label>
+          <Label className="text-xs">
+            Duración (minutos){" "}
+            <span className="text-gray-400 font-normal">(respaldo si falla la detección)</span>
+          </Label>
           <Input
             type="number"
             min="1"
             step="1"
             value={duration}
             onChange={(e) => setDuration(e.target.value)}
-            placeholder="45"
+            placeholder="Automático"
           />
         </div>
         <div className="space-y-1.5">
@@ -181,7 +187,7 @@ function SessionForm({
         <button
           type="button"
           onClick={() => onSubmit({ title, desc, youtube, duration })}
-          disabled={!title.trim() || !youtube.trim() || !duration || loading}
+          disabled={!title.trim() || !youtube.trim() || loading}
           className="px-3 py-1.5 text-xs bg-[#2B55A3] text-white rounded-lg hover:bg-[#2B55A3]/90 disabled:opacity-50 flex items-center gap-1"
         >
           {loading && <Loader2 size={12} className="animate-spin" />}
@@ -276,7 +282,7 @@ export default function ContenidoPage() {
         title,
         description: desc || undefined,
         youtube_url: youtube,
-        duration_minutes: parseFloat(duration) || 0,
+        duration_minutes: duration ? parseFloat(duration) : undefined,
       }),
     onSuccess: () => {
       toast.success("Sesión creada");
@@ -296,7 +302,7 @@ export default function ContenidoPage() {
         title,
         description: desc || undefined,
         youtube_url: youtube,
-        duration_minutes: parseFloat(duration) || 0,
+        duration_minutes: duration ? parseFloat(duration) : undefined,
       }),
     onSuccess: () => {
       toast.success("Sesión actualizada");
@@ -537,7 +543,6 @@ export default function ContenidoPage() {
                       onSubmit={({ title, desc, youtube, duration }) => {
                         if (!title.trim()) { toast.error("El título es obligatorio"); return; }
                         if (!youtube.trim()) { toast.error("La URL de YouTube es obligatoria"); return; }
-                        if (!duration) { toast.error("La duración es obligatoria"); return; }
                         createSessionMutation.mutate({ title: title.trim(), desc: desc.trim(), youtube: youtube.trim(), duration });
                       }}
                       onCancel={() => setShowAddSession(false)}
@@ -570,7 +575,6 @@ export default function ContenidoPage() {
                             onSubmit={({ title, desc, youtube, duration }) => {
                               if (!title.trim()) { toast.error("El título es obligatorio"); return; }
                               if (!youtube.trim()) { toast.error("La URL de YouTube es obligatoria"); return; }
-                              if (!duration) { toast.error("La duración es obligatoria"); return; }
                               updateSessionMutation.mutate({ sessionId: sess.id, title: title.trim(), desc: desc.trim(), youtube: youtube.trim(), duration });
                             }}
                             onCancel={() => setEditingSessionId(null)}

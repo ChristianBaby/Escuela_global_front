@@ -14,7 +14,7 @@ export type PaymentStatus = "pending" | "paid" | "failed" | "refunded";
 export type SliderType = "courses" | "banner";
 export type SliderPosition = "top" | "middle" | "bottom";
 export type PromotionStatus = "active" | "inactive";
-export type NotificationType = "nuevo_curso" | "completado" | "recordatorio" | "matriculacion" | "certificado" | "personalizada";
+export type NotificationType = "nuevo_curso" | "completado" | "recordatorio" | "matriculacion" | "certificado" | "personalizada" | "descuento" | "anuncio";
 export type ReviewStatus = "approved" | "hidden";
 export type AuditAction = "create" | "update" | "delete";
 
@@ -27,6 +27,7 @@ export interface User {
   email: string;
   phone: string;
   country?: string;
+  profession?: string;
   role: UserRole;
   profile_photo_url?: string;
   email_verified: boolean;
@@ -80,6 +81,7 @@ export interface Course {
   review_count: number;
   enrolled_count: number;
   total_duration_minutes: number;
+  academic_hours: number;
   instructors: Instructor[];
   created_by: string;
   created_at: string;

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { dashboardService } from "@/lib/services/dashboard";
 import { categoriasService } from "@/lib/services/categories";
 import {
@@ -19,7 +20,16 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import { TrendingUp, TrendingDown, Users, BookOpen, Award, DollarSign } from "lucide-react";
+import { TrendingUp, TrendingDown, Users, BookOpen, Award, DollarSign, Download, Loader2 } from "lucide-react";
+
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 const CHART_COLORS = [
   "#2B55A3",
@@ -155,6 +165,15 @@ export default function AdminDashboardPage() {
 
   const hasFilters = desde || hasta || categoriaId;
 
+  const exportMutation = useMutation({
+    mutationFn: () => dashboardService.exportDashboard(filters),
+    onSuccess: (blob) => {
+      downloadBlob(blob, "dashboard-escuela-global.xlsx");
+      toast.success("Excel exportado correctamente");
+    },
+    onError: () => toast.error("Error al exportar el Excel"),
+  });
+
   return (
     <div>
       {/* Header + Filtros */}
@@ -209,6 +228,18 @@ export default function AdminDashboardPage() {
               Limpiar
             </button>
           )}
+          <button
+            onClick={() => exportMutation.mutate()}
+            disabled={exportMutation.isPending}
+            className="self-end flex items-center gap-2 px-4 py-2 text-sm bg-[#2B55A3] text-white rounded-lg hover:bg-[#2B55A3]/90 disabled:opacity-50 transition-colors"
+          >
+            {exportMutation.isPending ? (
+              <Loader2 size={15} className="animate-spin" />
+            ) : (
+              <Download size={15} />
+            )}
+            Exportar Excel
+          </button>
         </div>
       </div>
 

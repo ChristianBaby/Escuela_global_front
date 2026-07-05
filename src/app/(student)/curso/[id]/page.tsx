@@ -203,7 +203,7 @@ export default function CourseViewerPage() {
       <div className="flex flex-col lg:flex-row h-[calc(100vh-113px)]">
 
         {/* ── Columna izquierda (70%) ── */}
-        <div className="flex-1 min-w-0 overflow-y-auto bg-gray-950">
+        <div className="flex-1 min-w-0 overflow-y-auto bg-gray-50">
 
           {/* Video */}
           {allSessions.length === 0 ? (

@@ -205,4 +205,14 @@ export const dashboardService = {
     api
       .get<ActividadEstudiante>(`/admin/estudiantes/${userId}/cursos/${courseId}/actividad`)
       .then((r) => r.data),
+
+  exportMatriculadosCurso: (cursoId: string) =>
+    api
+      .get(`/admin/cursos/${cursoId}/matriculados/export`, { responseType: "blob" })
+      .then((r) => r.data as Blob),
+
+  exportDashboard: (params?: DashboardFilters) =>
+    api
+      .get("/admin/export", { params, responseType: "blob" })
+      .then((r) => r.data as Blob),
 };

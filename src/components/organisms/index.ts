@@ -5,4 +5,5 @@ export { PromoBanners } from "./PromoBanners";
 export { CourseGrid } from "./CourseGrid";
 export { CourseFilters } from "./CourseFilters";
 export { Footer } from "./Footer";
+export { CartModal } from "./CartModal";
 export type { FiltersState } from "./CourseFilters";
