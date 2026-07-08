@@ -50,7 +50,7 @@ export function PayPalButtonComponent({ orderId, totalAmount }: PayPalButtonProp
 
       if (response.data.success) {
         toast.success("¡Pago internacional con PayPal aprobado!");
-        router.push("/checkout/success");
+        router.push(`/checkout/success?order=${orderId}`);
       } else {
         toast.error("El pago no pudo ser verificado por el servidor.");
       }

@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { PublicLayout } from "@/components/templates";
-import { HeroSlider, PromoBanners, CourseGrid } from "@/components/organisms";
+import { HeroSlider, PromoBanners, UpcomingLaunches, StaffCarousel, CourseGrid } from "@/components/organisms";
 import { cursosService } from "@/lib/services/courses";
 import { BookOpen, Globe, TrendingUp, Award } from "lucide-react";
 
@@ -45,6 +45,9 @@ export default function HomePage() {
 
       {/* Publicaciones / Promociones activas */}
       <PromoBanners />
+
+      {/* Próximos Lanzamientos */}
+      <UpcomingLaunches />
 
       {/* Cursos destacados */}
       <section className="py-16 bg-white">
@@ -103,6 +106,9 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Nuestros Docentes */}
+      <StaffCarousel />
 
       {/* CTA Banner */}
       <section className="bg-[#0f1f4d] py-20 relative overflow-hidden">

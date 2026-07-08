@@ -23,6 +23,8 @@ import {
   TrendingUp,
   Menu,
   X,
+  Rocket,
+  GraduationCap,
 } from "lucide-react";
 
 interface NavItem {
@@ -102,6 +104,18 @@ const NAV_SECTIONS: NavSection[] = [
         label: "Sliders",
         href: "/panel/marketing/sliders",
         icon: <Images size={18} />,
+        roles: ["admin", "marketing"],
+      },
+      {
+        label: "Próximos Lanzamientos",
+        href: "/panel/marketing/lanzamientos",
+        icon: <Rocket size={18} />,
+        roles: ["admin", "marketing"],
+      },
+      {
+        label: "Docentes",
+        href: "/panel/marketing/docentes",
+        icon: <GraduationCap size={18} />,
         roles: ["admin", "marketing"],
       },
       {

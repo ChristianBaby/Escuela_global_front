@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -15,33 +16,18 @@ import {
   Star,
   Plus,
   Check,
-  LogIn,
-  Sparkles, // Ícono para el botón de la demo
 } from "lucide-react";
 import { PublicLayout } from "@/components/templates";
 import { cartService } from "@/lib/services/cart";
 import { cursosService } from "@/lib/services/courses";
 import { useCartStore } from "@/store/cartStore";
 import { useAuthStore } from "@/store/authStore";
+import { getGuestSessionToken } from "@/lib/session";
 import type { Course } from "@/types";
 
 // ─── Query keys ───────────────────────────────────────────────────────────────
 const CART_KEY = ["cart"];
 const COURSES_KEY = ["catalog-for-cart"];
-
-// ─── OBJETO DE PRUEBA PARA TU DEMOSTRACIÓN ─────────────────────────────────────
-const MOCK_COURSE_DEMO: any = {
-  id: "curso-demo-1234",
-  title: "Modelado Arquitectónico con AutoCAD Avanzado y Automatización",
-  slug: "autocad-avanzado-automatizacion",
-  thumbnail_url: "", 
-  price: 149.00,
-  discount_price: 99.00,
-  currency: "PEN",
-  avg_rating: 4.8,
-  total_duration_minutes: 2400, // 40 horas
-  category: { name: "Ingeniería y Arquitectura" }
-};
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function formatPrice(price: number, currency: string) {
@@ -59,8 +45,9 @@ export default function CarritoPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { isAuthenticated } = useAuthStore();
+  const [guestSessionToken] = useState(() => getGuestSessionToken());
 
-  // Guest cart (localStorage)
+  // Espejo local (localStorage) para feedback instantáneo en la UI
   const {
     items: localItems,
     removeItem: removeLocalItem,
@@ -69,11 +56,10 @@ export default function CarritoPage() {
     total: localTotal,
   } = useCartStore();
 
-  // Server cart (only when authenticated)
-  const { data: serverCart, isLoading: loadingServerCart } = useQuery({
-    queryKey: CART_KEY,
-    queryFn: () => cartService.get(),
-    enabled: isAuthenticated,
+  // Carrito real en el backend: logueado (cookie) o invitado (session_token)
+  const { data: serverCart, isLoading } = useQuery({
+    queryKey: [...CART_KEY, isAuthenticated ? "auth" : guestSessionToken],
+    queryFn: () => cartService.get(isAuthenticated ? undefined : guestSessionToken),
   });
 
   // Available catalog courses
@@ -83,7 +69,7 @@ export default function CarritoPage() {
     staleTime: 60_000,
   });
 
-  // ── Mutations for server cart (authenticated) ──
+  // ── Mutations del carrito real (invitado o logueado) ──
   const serverRemoveMutation = useMutation({
     mutationFn: (itemId: string) => cartService.remove(itemId),
     onSuccess: () => {
@@ -94,7 +80,7 @@ export default function CarritoPage() {
   });
 
   const serverClearMutation = useMutation({
-    mutationFn: () => cartService.clear(),
+    mutationFn: () => cartService.clear(isAuthenticated ? undefined : guestSessionToken),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: CART_KEY });
       toast.success("Carrito vaciado");
@@ -103,7 +89,8 @@ export default function CarritoPage() {
   });
 
   const serverAddMutation = useMutation({
-    mutationFn: (courseId: string) => cartService.add(courseId),
+    mutationFn: (courseId: string) =>
+      cartService.add(courseId, isAuthenticated ? undefined : guestSessionToken),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: CART_KEY });
       toast.success("Curso agregado al carrito");
@@ -111,9 +98,7 @@ export default function CarritoPage() {
     onError: () => toast.error("No se pudo agregar el curso"),
   });
 
-  // ── Derived data (Desempaquetador Universal contra Mismatches de Base de Datos) ──
-  // ── Derived data (Estrategia de Contingencia Híbrida para la Sustentación) ──
-  const isLoading = isAuthenticated ? loadingServerCart : false;
+  // ── Derived data ──
   const allCourses: Course[] = catalogData?.data ?? [];
 
   const serverCartAny = serverCart as any;
@@ -160,20 +145,17 @@ export default function CarritoPage() {
     currency: e.course.currency,
   }));
 
-  // 🛡️ EL ESCUDO: Si estás autenticado pero el servidor responde vacío por un desfase de sesión,
-  // usamos de inmediato los datos locales de Zustand para asegurar que la Demo no falle.
-  const displayItems: DisplayItem[] = isAuthenticated
-    ? (serverNormalizedItems.length > 0 ? serverNormalizedItems : localNormalizedItems)
-    : localNormalizedItems;
+  // El carrito real (backend) manda siempre que tenga datos; si aún no cargó
+  // o quedó vacío por un desfase momentáneo, mostramos el espejo local.
+  const displayItems: DisplayItem[] =
+    serverNormalizedItems.length > 0 ? serverNormalizedItems : localNormalizedItems;
 
   const cartCourseIds = new Set(displayItems.map((i) => i.courseId));
 
-  // Cálculo seguro de subtotal sincronizado al escudo híbrido
-  const subtotal = isAuthenticated
-    ? (serverNormalizedItems.length > 0 
-        ? (serverCartAny?.subtotal ?? serverCartAny?.data?.subtotal ?? serverNormalizedItems.reduce((acc, item) => acc + (item.discount_price ?? item.price), 0))
-        : localTotal())
-    : localTotal();
+  const subtotal =
+    serverNormalizedItems.length > 0
+      ? (serverCartAny?.subtotal ?? serverCartAny?.data?.subtotal ?? serverNormalizedItems.reduce((acc, item) => acc + (item.discount_price ?? item.price), 0))
+      : localTotal();
 
   const currency = displayItems[0]?.currency ?? "PEN";
   const symbol = currency === "PEN" ? "S/" : "$";
@@ -181,92 +163,30 @@ export default function CarritoPage() {
   // Courses NOT already in cart
   const suggestedCourses = allCourses.filter((c) => !cartCourseIds.has(c.id));
 
-  // Función exclusiva de la demo para forzar la inserción
-  // Cambia esta función dentro de tu archivo page.tsx
-  function handleInjectDemoCourse() {
-    // 1. Siempre lo inyectamos en Zustand para que sobreviva la navegación de páginas 🚀
-    addLocalItem(MOCK_COURSE_DEMO as Course);
-
-    // 2. Si está logueado, lo metemos también en React Query para pintar la interfaz inmediata
-    if (isAuthenticated) {
-      queryClient.setQueryData(CART_KEY, {
-        items: [
-          {
-            id: "item-demo-authenticated-id",
-            course: MOCK_COURSE_DEMO,
-          },
-        ],
-        subtotal: MOCK_COURSE_DEMO.discount_price ?? MOCK_COURSE_DEMO.price,
-        item_count: 1,
-      });
-    }
-
-    toast.success("¡Curso de prueba inyectado para la Demo!", {
-      icon: "🚀",
-    });
-  }
-
   function handleRemove(item: DisplayItem) {
-    if (isAuthenticated && item.serverId) {
+    if (item.serverId) {
       serverRemoveMutation.mutate(item.serverId);
-    } else {
-      removeLocalItem(item.courseId);
-      toast.success("Curso eliminado del carrito");
     }
+    removeLocalItem(item.courseId);
   }
 
-  // Corregido: Si está autenticado, también limpiamos el store local para mantener sincronía
   function handleClear() {
-    if (isAuthenticated) {
-      serverClearMutation.mutate();
-      clearLocalCart();
-    } else {
-      clearLocalCart();
-      toast.success("Carrito vaciado");
-    }
+    serverClearMutation.mutate();
+    clearLocalCart();
   }
 
   function handleAddFromCatalog(course: Course) {
-    if (isAuthenticated) {
-      serverAddMutation.mutate(course.id);
-      addLocalItem(course);
-    } else {
-      addLocalItem(course);
-      toast.success("Curso agregado al carrito");
-    }
+    serverAddMutation.mutate(course.id);
+    addLocalItem(course);
   }
 
   function handleCheckout() {
-    if (!isAuthenticated) {
-      // Redirección limpia guardando la intención de compra
-      router.push("/auth/login?redirect=/checkout");
-      return;
-    }
     router.push("/checkout");
   }
 
   return (
     <PublicLayout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
-        
-        {/* BOTÓN FLOTANTE DE ASISTENCIA PARA TU EXPOSICIÓN */}
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-[#2B55A3] text-white rounded-lg">
-              <Sparkles size={18} />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-gray-900">Entorno de Pruebas de Escuela Global</p>
-              <p className="text-xs text-gray-500">Usa esta herramienta para simular flujos financieros si tu catálogo está vacío.</p>
-            </div>
-          </div>
-          <button
-            onClick={handleInjectDemoCourse}
-            className="px-4 py-2 bg-[#2B55A3] hover:bg-[#2B55A3]/90 text-white text-xs font-semibold rounded-lg shadow-sm transition-colors flex items-center gap-1.5 shrink-0"
-          >
-            <Plus size={14} /> Inyectar Curso de Prueba
-          </button>
-        </div>
 
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -302,7 +222,7 @@ export default function CarritoPage() {
             {isLoading ? (
               <CartSkeleton />
             ) : displayItems.length === 0 ? (
-              <EmptyCart onInject={handleInjectDemoCourse} />
+              <EmptyCart />
             ) : (
               displayItems.map((item) => (
                 <CartItemRow
@@ -352,14 +272,13 @@ export default function CarritoPage() {
                     onClick={handleCheckout}
                     className="mt-4 w-full flex items-center justify-center gap-2 bg-[#2B55A3] hover:bg-[#2B55A3]/90 text-white font-medium py-3 rounded-xl shadow-sm transition-colors"
                   >
-                    {!isAuthenticated && <LogIn size={16} />}
                     Proceder al pago
-                    {isAuthenticated && <ArrowRight size={16} />}
+                    <ArrowRight size={16} />
                   </button>
 
                   {!isAuthenticated && (
                     <p className="text-xs text-gray-400 text-center mt-2">
-                      Se te pedirá iniciar sesión para completar el pago
+                      Podrás crear tu cuenta o iniciar sesión al finalizar la compra
                     </p>
                   )}
                 </>
@@ -575,20 +494,14 @@ function CatalogCourseCard({
 }
 
 // ─── Empty Cart ────────────────────────────────────────────────────────────────
-function EmptyCart({ onInject }: { onInject: () => void }) {
+function EmptyCart() {
   return (
     <div className="bg-white rounded-xl border border-dashed border-gray-300 py-16 text-center shadow-sm px-4">
       <ShoppingCart size={40} className="text-gray-300 mx-auto mb-3" />
       <p className="text-gray-500 font-medium">Tu carrito está vacío</p>
       <p className="text-gray-400 text-sm mt-1 max-w-xs mx-auto mb-5">
-        No hay cursos en tu pedido. Puedes inyectar datos ficticios para probar las pasarelas de pago inmediatamente.
+        Explora el catálogo y agrega los cursos que te interesen.
       </p>
-      <button
-        onClick={onInject}
-        className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-lg transition-colors inline-flex items-center gap-1.5"
-      >
-        <Sparkles size={14} className="text-[#2B55A3]" /> Inyectar curso de prueba
-      </button>
     </div>
   );
 }

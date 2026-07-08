@@ -1,5 +1,5 @@
 import { api } from "@/lib/http/api";
-import type { EventType, Promotion, Slider } from "@/types";
+import type { EventType, Promotion, Slider, UpcomingLaunch, StaffMember } from "@/types";
 
 export interface CreatePromocionDto {
   title: string;
@@ -104,6 +104,82 @@ export const notificacionesMktService = {
 
   send: (data: SendNotificationDto) =>
     api.post<{ success: boolean; sent: number }>("/marketing/notifications/send", data).then((r) => r.data),
+};
+
+// ── Próximos Lanzamientos ───────────────────────────────────────────────────
+
+export interface CreateUpcomingLaunchDto {
+  category_label: string;
+  title: string;
+  start_date: string;
+  image?: File;
+  link_url?: string;
+  display_order?: number;
+  status: "active" | "inactive";
+}
+
+function buildLaunchFormData(data: Partial<CreateUpcomingLaunchDto>): FormData {
+  const formData = new FormData();
+  if (data.category_label !== undefined) formData.append("category_label", data.category_label);
+  if (data.title !== undefined) formData.append("title", data.title);
+  if (data.start_date !== undefined) formData.append("start_date", data.start_date);
+  if (data.image) formData.append("image", data.image);
+  if (data.link_url) formData.append("link_url", data.link_url);
+  if (data.display_order !== undefined) formData.append("display_order", String(data.display_order));
+  if (data.status !== undefined) formData.append("status", data.status);
+  return formData;
+}
+
+export const lanzamientosService = {
+  list: (vigente?: boolean) =>
+    api.get<UpcomingLaunch[]>("/lanzamientos", { params: vigente !== undefined ? { vigente } : {} }).then((r) => r.data),
+
+  create: (data: CreateUpcomingLaunchDto) =>
+    api.post<UpcomingLaunch>("/lanzamientos", buildLaunchFormData(data), {
+      headers: { "Content-Type": "multipart/form-data" },
+    }).then((r) => r.data),
+
+  update: (id: string, data: Partial<CreateUpcomingLaunchDto>) =>
+    api.patch<UpcomingLaunch>(`/lanzamientos/${id}`, buildLaunchFormData(data), {
+      headers: { "Content-Type": "multipart/form-data" },
+    }).then((r) => r.data),
+
+  delete: (id: string) =>
+    api.delete(`/lanzamientos/${id}`).then((r) => r.data),
+};
+
+// ── Nuestros Docentes ───────────────────────────────────────────────────────
+
+export interface CreateStaffMemberDto {
+  image?: File;
+  display_order?: number;
+  status: "active" | "inactive";
+}
+
+function buildStaffFormData(data: Partial<CreateStaffMemberDto>): FormData {
+  const formData = new FormData();
+  if (data.image) formData.append("image", data.image);
+  if (data.display_order !== undefined) formData.append("display_order", String(data.display_order));
+  if (data.status !== undefined) formData.append("status", data.status);
+  return formData;
+}
+
+export const docentesService = {
+  list: (vigente?: boolean) =>
+    api.get<StaffMember[]>("/docentes", { params: vigente !== undefined ? { vigente } : {} }).then((r) => r.data),
+
+  create: (data: CreateStaffMemberDto) =>
+    api.post<StaffMember>("/docentes", buildStaffFormData(data), {
+      headers: { "Content-Type": "multipart/form-data" },
+    }).then((r) => r.data),
+
+  update: (id: string, data: Partial<CreateStaffMemberDto>) =>
+    api.patch<StaffMember>(`/docentes/${id}`, buildStaffFormData(data), {
+      headers: { "Content-Type": "multipart/form-data" },
+    }).then((r) => r.data),
+
+  delete: (id: string) =>
+    api.delete(`/docentes/${id}`).then((r) => r.data),
 };
 
 export const slidersService = {

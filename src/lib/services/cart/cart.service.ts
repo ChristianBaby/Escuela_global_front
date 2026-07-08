@@ -35,8 +35,8 @@ export const cartService = {
     api.delete(`/cart/remove/${itemId}`).then((r) => r.data),
 
   // 🚀 CORREGIDO: Tu backend mapea "/cart/clear"
-  clear: (): Promise<{ success: boolean; message: string }> =>
-    api.delete("/cart/clear").then((r) => r.data),
+  clear: (sessionToken?: string): Promise<{ success: boolean; message: string }> =>
+    api.delete("/cart/clear", { params: sessionToken ? { session_token: sessionToken } : {} }).then((r) => r.data),
 
   // 🟢 Mapped {/api/cart/merge, POST} -> Impecable
   merge: (sessionToken: string): Promise<{ success: boolean; item_count: number }> =>

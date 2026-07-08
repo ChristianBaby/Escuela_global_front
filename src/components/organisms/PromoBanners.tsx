@@ -1,6 +1,10 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Autoplay, Navigation } from "swiper/modules";
+import "swiper/css";
+import "swiper/css/navigation";
 import { promocionesService } from "@/lib/services/marketing";
 import { ExternalLink, Tag } from "lucide-react";
 import Link from "next/link";
@@ -18,7 +22,7 @@ const FALLBACK_GRADIENTS = [
 function PromoCard({ promo, index }: { promo: Promotion; index: number }) {
   const gradient = FALLBACK_GRADIENTS[index % FALLBACK_GRADIENTS.length];
   const content = (
-    <div className="group relative flex-shrink-0 w-72 sm:w-80 rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer">
+    <div className="group relative rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer">
       {/* Image or gradient background */}
       <div className="relative h-44">
         {promo.image_url ? (
@@ -77,7 +81,7 @@ function PromoCard({ promo, index }: { promo: Promotion; index: number }) {
 
 function PromoCardSkeleton() {
   return (
-    <div className="flex-shrink-0 w-72 sm:w-80 rounded-2xl overflow-hidden shadow-sm animate-pulse">
+    <div className="rounded-2xl overflow-hidden shadow-sm animate-pulse">
       <div className="h-44 bg-gray-200" />
       <div className="bg-white p-4 space-y-2">
         <div className="h-4 bg-gray-200 rounded w-3/4" />
@@ -110,23 +114,31 @@ export function PromoBanners() {
           </div>
         </div>
 
-        {/* Horizontal scroll container */}
-        <div className="relative">
-          {/* Left fade */}
-          <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-gray-50 to-transparent z-10 pointer-events-none" />
-          {/* Right fade */}
-          <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-gray-50 to-transparent z-10 pointer-events-none" />
-
-          <div className="flex gap-5 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory px-1">
-            {isLoading
-              ? Array.from({ length: 4 }).map((_, i) => <PromoCardSkeleton key={i} />)
-              : activePromos.map((promo, i) => (
-                  <div key={promo.id} className="snap-start">
-                    <PromoCard promo={promo} index={i} />
-                  </div>
-                ))}
+        {isLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {Array.from({ length: 4 }).map((_, i) => <PromoCardSkeleton key={i} />)}
           </div>
-        </div>
+        ) : (
+          <Swiper
+            modules={[Autoplay, Navigation]}
+            autoplay={{ delay: 4000, disableOnInteraction: false }}
+            navigation
+            loop={activePromos.length > 4}
+            spaceBetween={20}
+            slidesPerView={1}
+            breakpoints={{
+              640: { slidesPerView: 2 },
+              1024: { slidesPerView: 4 },
+            }}
+            className="!pb-2"
+          >
+            {activePromos.map((promo, i) => (
+              <SwiperSlide key={promo.id}>
+                <PromoCard promo={promo} index={i} />
+              </SwiperSlide>
+            ))}
+          </Swiper>
+        )}
       </div>
     </section>
   );

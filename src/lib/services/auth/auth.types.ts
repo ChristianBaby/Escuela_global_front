@@ -18,7 +18,18 @@ export interface RegisterDto {
   email: string;
   phone: string;
   country?: string;
+  profession?: string;
   password: string;
+}
+
+export interface RegisterResponse {
+  success: boolean;
+  message?: string;
+  user: User;
+}
+
+export interface CheckEmailResponse {
+  available: boolean;
 }
 
 export interface ForgotPasswordDto {

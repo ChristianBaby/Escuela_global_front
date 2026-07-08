@@ -292,6 +292,26 @@ export interface Slider {
   created_at: string;
 }
 
+export interface UpcomingLaunch {
+  id: string;
+  category_label: string;
+  title: string;
+  start_date: string;
+  image_url?: string;
+  link_url?: string;
+  display_order: number;
+  status: PromotionStatus;
+  created_at: string;
+}
+
+export interface StaffMember {
+  id: string;
+  image_url: string;
+  display_order: number;
+  status: PromotionStatus;
+  created_at: string;
+}
+
 export interface Notification {
   id: string;
   user_id: string;

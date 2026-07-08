@@ -94,7 +94,7 @@ export function MercadoPagoBrick({ orderId, totalAmount, currency }: MercadoPago
 
       if (data.success) {
         toast.success("¡Matrícula procesada y aprobada con éxito!");
-        router.push("/checkout/success");
+        router.push(`/checkout/success?order=${orderId}`);
       } else {
         toast.error("La transacción no pudo ser validada.");
       }

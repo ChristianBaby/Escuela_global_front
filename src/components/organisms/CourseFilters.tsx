@@ -92,8 +92,9 @@ export function CourseFilters({ filters, onChange, categories, softwares }: Cour
             onClick={() => onChange(EMPTY_FILTERS)}
             className="flex items-center gap-1 text-xs text-brand-primary hover:text-brand-secondary transition-colors"
           >
+    
             <RotateCcw size={11} />
-            Limpiar
+            Limpiar          
           </button>
         )}
       </div>
