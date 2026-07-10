@@ -1,0 +1,43 @@
+# =============================================================
+# Escuela Global Frontend — docker-compose
+# Stack independiente para Coolify. Se conecta al backend por
+# la red compartida `lms-net` (la crea el stack del backend).
+#
+# Comunicacion interna: http://lms-backend:4000 (HTTP plano)
+# Comunicacion externa: Traefik (Coolify) -> https://tu-dominio
+# =============================================================
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # Build-time. Se embebe en el bundle JS.
+        # Por defecto usa el nombre del servicio del backend en el
+        # otro stack ("lms-backend") para hablarle por la red interna.
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://lms-backend:4000}
+    image: escuela-global-frontend:latest
+    container_name: lms-frontend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
+      # Para serverApi.ts (server-side rendering de Next.js)
+      API_URL: ${NEXT_PUBLIC_API_URL:-http://lms-backend:4000}
+      BACKEND_API_URL: ${NEXT_PUBLIC_API_URL:-http://lms-backend:4000}
+    networks:
+      - lms-net
+    expose:
+      - "3000"
+
+# =============================================================
+# Red compartida con el stack del backend.
+# La red la CREA el stack del backend (lms-backend/docker-compose.yml).
+# Acá la declaramos como `external: true` para unirse.
+# =============================================================
+networks:
+  lms-net:
+    name: lms-net
+    external: true

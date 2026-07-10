@@ -1,0 +1,65 @@
+# --- Dependencias y build (se reinstalan dentro del contenedor) ---
+node_modules
+.next
+out
+build
+dist
+coverage
+
+# --- Entorno (secretos, no deben ir al contexto) ---
+.env
+.env.local
+.env.*.local
+.env.production
+.env.prod
+.env.staging
+.env.development
+.env.development.local
+
+# --- Control de versiones ---
+.git
+.gitignore
+.gitattributes
+
+# --- IDEs y editores ---
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# --- Logs ---
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# --- Tests / mocks ---
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+test
+tests
+__tests__
+playwright-report
+test-results
+
+# --- CI / Docker meta ---
+docker-compose*.yml
+Dockerfile
+.dockerignore
+.github
+.gitlab-ci.yml
+
+# --- Documentacion ---
+*.md
+!README.md
+LICENSE
+.eslintrc*
+.eslintrc.json
+.prettierrc
+.editorconfig
