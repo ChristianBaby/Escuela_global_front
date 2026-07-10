@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, Suspense } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
 import { studentService } from "@/lib/services/student";
@@ -39,7 +39,7 @@ function formatRelative(iso: string) {
   return formatDate(iso);
 }
 
-export default function MisCursosPage() {
+function MisCursosContent() {
   const searchParams = useSearchParams();
   const initialTab = (searchParams.get("tab") as Tab) ?? "progreso";
 
@@ -135,6 +135,14 @@ export default function MisCursosPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function MisCursosPage() {
+  return (
+    <Suspense fallback={null}>
+      <MisCursosContent />
+    </Suspense>
   );
 }
 
