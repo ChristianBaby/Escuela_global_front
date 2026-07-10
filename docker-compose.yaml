@@ -16,7 +16,7 @@ services:
         # Build-time. Se embebe en el bundle JS.
         # Por defecto usa el nombre del servicio del backend en el
         # otro stack ("lms-backend") para hablarle por la red interna.
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://lms-backend:4000}
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://lms-backend:4000/api}
     image: escuela-global-frontend:latest
     container_name: lms-frontend
     restart: unless-stopped
@@ -25,8 +25,8 @@ services:
       PORT: 3000
       HOSTNAME: 0.0.0.0
       # Para serverApi.ts (server-side rendering de Next.js)
-      API_URL: ${NEXT_PUBLIC_API_URL:-http://lms-backend:4000}
-      BACKEND_API_URL: ${NEXT_PUBLIC_API_URL:-http://lms-backend:4000}
+      API_URL: ${NEXT_PUBLIC_API_URL:-http://lms-backend:4000/api}
+      BACKEND_API_URL: ${NEXT_PUBLIC_API_URL:-http://lms-backend:4000/api}
     networks:
       - lms-net
     ports:
