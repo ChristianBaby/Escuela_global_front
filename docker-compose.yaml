@@ -30,7 +30,7 @@ services:
     networks:
       - lms-net
     ports:
-      - "3000":"3000"
+      - "3000:3000"
 
 # =============================================================
 # Red compartida con el stack del backend.
