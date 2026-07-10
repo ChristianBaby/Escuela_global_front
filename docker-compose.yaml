@@ -29,8 +29,8 @@ services:
       BACKEND_API_URL: ${NEXT_PUBLIC_API_URL:-http://lms-backend:4000}
     networks:
       - lms-net
-    expose:
-      - "3000"
+    ports:
+      - "3000":"3000"
 
 # =============================================================
 # Red compartida con el stack del backend.
