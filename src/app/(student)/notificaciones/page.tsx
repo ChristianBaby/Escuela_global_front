@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { notificacionesService } from "@/lib/services/notifications";
+import { cursosService } from "@/lib/services/courses";
 import {
   Bell, CheckCheck, BookOpen, Award, Clock, UserCheck,
   ChevronRight, X, PlayCircle, ExternalLink, MessageSquare, Percent, Megaphone,
@@ -126,7 +127,7 @@ function NotifPanel({
 }: {
   notif: Notification;
   onClose: () => void;
-  onRedirect: (url: string) => void;
+  onRedirect: (notif: Notification) => void;
 }) {
   const cfg = PANEL_CONFIG[notif.type] ?? DEFAULT_PANEL;
   const { BtnIcon } = cfg;
@@ -174,7 +175,7 @@ function NotifPanel({
         {/* Botón de acción (solo si tiene redirect) */}
         {notif.redirect_url && (
           <button
-            onClick={() => onRedirect(notif.redirect_url!)}
+            onClick={() => onRedirect(notif)}
             className="mt-5 w-full flex items-center justify-center gap-2 bg-[#2B55A3] hover:bg-[#2B55A3]/90 text-white font-semibold py-2.5 rounded-xl transition-colors"
           >
             <BtnIcon size={16} />
@@ -227,9 +228,25 @@ export default function NotificacionesPage() {
     setSelected(n);
   }
 
-  function handleRedirect(url: string) {
+  async function handleRedirect(notif: Notification) {
     setSelected(null);
-    router.push(url);
+
+    // La notificación de matrícula trae el link público de venta (/cursos/[slug]);
+    // como ya está matriculado, lo llevamos directo al visor del curso (/curso/[id]).
+    if (notif.type === "matriculacion" && notif.redirect_url) {
+      const match = notif.redirect_url.match(/^\/cursos\/([^/?#]+)/);
+      if (match) {
+        try {
+          const curso = await cursosService.getBySlug(match[1]);
+          router.push(`/curso/${curso.id}`);
+          return;
+        } catch {
+          // si falla la búsqueda, cae al comportamiento original
+        }
+      }
+    }
+
+    router.push(notif.redirect_url!);
   }
 
   return (
