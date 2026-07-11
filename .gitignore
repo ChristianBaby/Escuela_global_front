@@ -42,3 +42,6 @@ next-env.d.ts
 
 # claude code (config local de permisos, no debe subirse)
 .claude/settings.local.json
+
+# lock file — cada dev genera el suyo localmente
+package-lock.json
