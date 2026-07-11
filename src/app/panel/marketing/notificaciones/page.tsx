@@ -104,6 +104,10 @@ export default function NotificacionesMarketingPage() {
     enabled: recipientsEnabled,
   });
 
+  const recipientsOrdenados = [...recipients].sort((a, b) =>
+    `${a.first_name} ${a.last_name}`.localeCompare(`${b.first_name} ${b.last_name}`, "es", { sensitivity: "base" })
+  );
+
   const sendMutation = useMutation({
     mutationFn: notificacionesMktService.send,
     onSuccess: (data) => {
@@ -359,10 +363,10 @@ export default function NotificacionesMarketingPage() {
                 </p>
               ) : loadingRecipients ? (
                 <p className="text-center text-sm text-gray-400 py-4">Buscando...</p>
-              ) : recipients.length === 0 ? (
+              ) : recipientsOrdenados.length === 0 ? (
                 <p className="text-center text-sm text-gray-400 py-4">Sin resultados</p>
               ) : (
-                recipients.map((u) => (
+                recipientsOrdenados.map((u) => (
                   <label key={u.id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0">
                     <input
                       type="checkbox"
