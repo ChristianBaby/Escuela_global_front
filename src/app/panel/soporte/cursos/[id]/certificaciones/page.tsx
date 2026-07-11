@@ -23,12 +23,11 @@ import type { CertificateTemplate } from "@/types";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
-
 function resolveUrl(url: string): string {
   if (!url) return "";
   if (url.startsWith("http")) return url;
-  return `${API_URL}${url}`;
+  if (url.startsWith("/")) return url;
+  return `/${url}`;
 }
 
 function downloadBlob(blob: Blob, filename: string) {

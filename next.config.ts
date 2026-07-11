@@ -2,17 +2,15 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   async rewrites() {
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
-    const internalBackendUrl = process.env.BACKEND_INTERNAL_URL ?? backendUrl;
-
+    const internalBackendUrl = process.env.BACKEND_INTERNAL_URL ?? "http://lms-backend:4000";
     return [
-      {
-        source: "/uploads/:path*",
-        destination: `${backendUrl}/uploads/:path*`,
-      },
       {
         source: "/api/:path*",
         destination: `${internalBackendUrl}/api/:path*`,
+      },
+      {
+        source: "/uploads/:path*",
+        destination: `${internalBackendUrl}/uploads/:path*`,
       },
     ];
   },
