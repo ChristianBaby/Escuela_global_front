@@ -8,8 +8,7 @@ import { usuariosService } from "@/lib/services/users";
 import { toast } from "sonner";
 import {
   Search, X, BookOpen, CheckCircle2, UserCheck, Users,
-  ArrowRight, ArrowLeft, Info, Gavel, TrendingUp, Code,
-  Megaphone, ClipboardList, Award, PlusCircle,
+  ArrowRight, ArrowLeft, Info, PlusCircle,
 } from "lucide-react";
 
 /* ─── tipos ──────────────────────────────────────────────────────────── */
@@ -19,13 +18,23 @@ interface Estudiante {
   last_name: string;
   email: string;
   matriculado: boolean;
-};
+}
+
+type EstadoFiltro = "todos" | "sin_matricular" | "matriculados";
+
+const ESTUDIANTES_PAGE_SIZES = [15, 50, 100, 200];
 
 const METODOS: { value: CreateMatriculasDto["offline_payment_method"]; label: string }[] = [
   { value: "transferencia", label: "Transferencia bancaria" },
   { value: "efectivo",      label: "Efectivo"               },
   { value: "cortesia",      label: "Cortesía"               },
   { value: "otro",          label: "Otro"                   },
+];
+
+const ESTADO_TABS: { value: EstadoFiltro; label: string }[] = [
+  { value: "todos",          label: "Todos"          },
+  { value: "sin_matricular", label: "Sin matricular" },
+  { value: "matriculados",   label: "Matriculados"   },
 ];
 
 /* ─── helpers ────────────────────────────────────────────────────────── */
@@ -49,7 +58,7 @@ function Avatar({ first_name, last_name }: { first_name: string; last_name: stri
 
 /* Quita tildes y diacríticos para búsqueda tolerante */
 function normalize(str: string) {
-  return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  return str.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 }
 
 function StepPill({ step, label, state }: { step: number; label: string; state: "idle" | "active" | "done" }) {
@@ -81,13 +90,17 @@ export default function MatriculasPage() {
   const [step, setStep] = useState<1 | 2>(1);
 
   /* step 1 – selección de cursos */
-  const [cursosBusqueda,  setCursosBusqueda]  = useState("");
+  const [cursosBusqueda,      setCursosBusqueda]      = useState("");
   const [cursosSeleccionados, setCursosSeleccionados] = useState<string[]>([]);
 
   /* step 2 – selección de estudiantes */
-  const [busqueda,      setBusqueda]      = useState("");
-  const [seleccionados, setSeleccionados] = useState<string[]>([]);
-  const [searchFocused, setSearchFocused] = useState(false);
+  const [busqueda,          setBusqueda]          = useState("");
+  const [debouncedBusqueda, setDebouncedBusqueda] = useState("");
+  const [estadoFiltro,      setEstadoFiltro]      = useState<EstadoFiltro>("todos");
+  const [seleccionados,     setSeleccionados]     = useState<string[]>([]);
+  const [searchFocused,     setSearchFocused]     = useState(false);
+  const [estudiantesPage,   setEstudiantesPage]   = useState(1);
+  const [estudiantesLimit,  setEstudiantesLimit]  = useState(50);
 
   /* pago */
   const [metodo, setMetodo] = useState<CreateMatriculasDto["offline_payment_method"]>("transferencia");
@@ -99,6 +112,15 @@ export default function MatriculasPage() {
   const [lastTotal, setLastTotal] = useState(0);
 
   const searchRef = useRef<HTMLDivElement>(null);
+
+  /* Debounce de 300ms; al cambiar búsqueda vuelve a página 1 */
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedBusqueda(busqueda);
+      setEstudiantesPage(1);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [busqueda]);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -115,14 +137,24 @@ export default function MatriculasPage() {
     queryFn:  () => cursosService.list({ status: "published", limit: 100 }),
   });
 
-  const { data: todosEstudiantes } = useQuery({
-    queryKey: ["estudiantes-todos"],
-    queryFn: () => usuariosService.list({ role: "estudiante", limit: 500 }),
+  /* Lista paginada de estudiantes: carga todos al entrar al paso 2;
+     cuando hay búsqueda activa filtra server-side y vuelve a p. 1 */
+  const { data: estudiantesData, isLoading: loadingEstudiantes } = useQuery({
+    queryKey: ["estudiantes-matriculas", estudiantesPage, estudiantesLimit, debouncedBusqueda],
+    queryFn:  () =>
+      usuariosService.list({
+        role:   "estudiante",
+        search: debouncedBusqueda || undefined,
+        page:   estudiantesPage,
+        limit:  estudiantesLimit,
+        sort:   "first_name",
+      }),
+    enabled: step === 2,
   });
 
   const { data: enrollmentsPorCurso } = useQuery({
     queryKey: ["enrollments-por-cursos", cursosSeleccionados],
-    queryFn: () =>
+    queryFn:  () =>
       Promise.all(
         cursosSeleccionados.map((id) =>
           matriculasService.list({ curso_id: id, limit: 10000 })
@@ -135,32 +167,44 @@ export default function MatriculasPage() {
     mutationFn: matriculasService.create,
   });
 
-  /* ── estudiantes con estado de matrícula derivado ── */
+  /* ── estudiantes con estado de matrícula derivado, ordenados A-Z ── */
   const estudiantesConMatriculado = useMemo<Estudiante[]>(() => {
     const matriculados = new Set(
       (enrollmentsPorCurso ?? []).flatMap((r) => r.data.map((e) => e.user_id))
     );
-    return (todosEstudiantes?.data ?? []).map((u) => ({
-      id: u.id,
-      first_name: u.first_name,
-      last_name: u.last_name,
-      email: u.email,
-      matriculado: matriculados.has(u.id),
-    }));
-  }, [todosEstudiantes, enrollmentsPorCurso]);
+    return (estudiantesData?.data ?? [])
+      .map((u) => ({
+        id:          u.id,
+        first_name:  u.first_name,
+        last_name:   u.last_name,
+        email:       u.email,
+        matriculado: matriculados.has(u.id),
+      }))
+      .sort((a, b) =>
+        `${a.first_name} ${a.last_name}`.localeCompare(
+          `${b.first_name} ${b.last_name}`,
+          "es",
+          { sensitivity: "base" }
+        )
+      );
+  }, [estudiantesData, enrollmentsPorCurso]);
 
-  /* ── filtros ── */
-  const cursosFiltrados = (cursosData?.data ?? []).filter((c) =>
-    normalize(c.title).includes(normalize(cursosBusqueda))
-  );
+  /* ── filtro de estado (aplica sobre los resultados de la búsqueda) ── */
+  const estudiantesFiltrados = useMemo(() => {
+    if (estadoFiltro === "matriculados")   return estudiantesConMatriculado.filter(e => e.matriculado);
+    if (estadoFiltro === "sin_matricular") return estudiantesConMatriculado.filter(e => !e.matriculado);
+    return estudiantesConMatriculado;
+  }, [estudiantesConMatriculado, estadoFiltro]);
 
-  const estudiantesFiltrados = estudiantesConMatriculado.filter((e) =>
-    normalize(`${e.first_name} ${e.last_name}`).includes(normalize(busqueda)) ||
-    normalize(e.email).includes(normalize(busqueda))
-  );
+  /* ── filtros de cursos ── */
+  const cursosFiltrados = (cursosData?.data ?? [])
+    .filter((c) => normalize(c.title).includes(normalize(cursosBusqueda)))
+    .sort((a, b) => a.title.localeCompare(b.title, "es", { sensitivity: "base" }));
 
-  const noMatriculados     = estudiantesFiltrados.filter((e) => !e.matriculado);
-  const todosSeleccionados = noMatriculados.length > 0 && noMatriculados.every((e) => seleccionados.includes(e.id));
+  /* ── select-all: opera solo sobre los visibles y no matriculados ── */
+  const noMatriculadosVisibles = estudiantesFiltrados.filter(e => !e.matriculado);
+  const todosSeleccionados     = noMatriculadosVisibles.length > 0
+    && noMatriculadosVisibles.every(e => seleccionados.includes(e.id));
 
   /* ── handlers ── */
   const toggleCurso = (id: string) =>
@@ -177,9 +221,9 @@ export default function MatriculasPage() {
   };
 
   const toggleTodos = () => {
-    const ids = noMatriculados.map((e) => e.id);
+    const ids = noMatriculadosVisibles.map(e => e.id);
     setSeleccionados(todosSeleccionados
-      ? seleccionados.filter((id) => !ids.includes(id))
+      ? seleccionados.filter(id => !ids.includes(id))
       : [...new Set([...seleccionados, ...ids])]
     );
   };
@@ -192,6 +236,9 @@ export default function MatriculasPage() {
     setStep(2);
     setSeleccionados([]);
     setBusqueda("");
+    setDebouncedBusqueda("");
+    setEstadoFiltro("todos");
+    setEstudiantesPage(1);
   };
 
   const goBack = () => {
@@ -205,7 +252,6 @@ export default function MatriculasPage() {
       return;
     }
 
-    // Llama una vez por cada estudiante pasando todos los cursos
     const results = await Promise.allSettled(
       seleccionados.map((userId) =>
         matricularMutation.mutateAsync({
@@ -218,7 +264,7 @@ export default function MatriculasPage() {
       )
     );
 
-    const failed = results.filter((r) => r.status === "rejected").length;
+    const failed    = results.filter((r) => r.status === "rejected").length;
     const succeeded = results.length - failed;
 
     queryClient.invalidateQueries({ queryKey: ["matriculas"] });
@@ -227,9 +273,7 @@ export default function MatriculasPage() {
     queryClient.invalidateQueries({ queryKey: ["admin-stats"] });
     queryClient.invalidateQueries({ queryKey: ["admin-top-cursos"] });
 
-    if (failed > 0) {
-      toast.error(`${failed} matrícula(s) fallaron`);
-    }
+    if (failed > 0) toast.error(`${failed} matrícula(s) fallaron`);
     if (succeeded > 0) {
       setLastTotal(succeeded * cursosSeleccionados.length);
       setJustFinished(true);
@@ -242,6 +286,9 @@ export default function MatriculasPage() {
     setSeleccionados([]);
     setCursosBusqueda("");
     setBusqueda("");
+    setDebouncedBusqueda("");
+    setEstadoFiltro("todos");
+    setEstudiantesPage(1);
     setMetodo("transferencia");
     setMonto("");
     setNotas("");
@@ -250,34 +297,28 @@ export default function MatriculasPage() {
 
   const totalMatriculas = seleccionados.length * cursosSeleccionados.length;
 
+  /* ── contadores para las tabs ── */
+  const cuentas = {
+    todos:          estudiantesConMatriculado.length,
+    sin_matricular: estudiantesConMatriculado.filter(e => !e.matriculado).length,
+    matriculados:   estudiantesConMatriculado.filter(e => e.matriculado).length,
+  };
+
   return (
     <div className="space-y-5 max-w-5xl mx-auto">
 
-      {/* ── Header ────────────────────────────────────────────────── */}
+      {/* ── Header ────────────────────────────────────────────── */}
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Matriculas</h1>
           <p className="text-sm text-gray-500 mt-0.5">Gestión manual de matrículas por curso</p>
-        </div>
-        <div className="hidden sm:flex items-center gap-4">
-          <div className="text-center">
-            <p className="text-2xl font-bold text-[#2B55A3]">{estudiantesConMatriculado.length}</p>
-            <p className="text-xs text-gray-400">Estudiantes</p>
-          </div>
-          <div className="w-px h-8 bg-gray-200" />
-          <div className="text-center">
-            <p className="text-2xl font-bold text-emerald-500">
-              {estudiantesConMatriculado.filter((e) => e.matriculado).length}
-            </p>
-            <p className="text-xs text-gray-400">Matriculados</p>
-          </div>
         </div>
       </div>
 
       {/* ── Step pills ────────────────────────────────────────────── */}
       {!justFinished && (
         <div className="flex items-center gap-2">
-          <StepPill step={1} label="Cursos"       state={step === 1 ? "active" : "done"} />
+          <StepPill step={1} label="Cursos"                state={step === 1 ? "active" : "done"} />
           <div className="w-6 h-px bg-gray-300" />
           <StepPill step={2} label="Estudiantes &amp; pago" state={step === 2 ? "active" : "idle"} />
         </div>
@@ -440,7 +481,7 @@ export default function MatriculasPage() {
           {/* Panel de estudiantes */}
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
 
-            {/* Cabecera */}
+            {/* Cabecera: título + buscador */}
             <div className="px-5 py-4 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center gap-3">
               <div className="flex items-center gap-2 flex-1">
                 <Users className="size-4 text-[#2B55A3]" />
@@ -457,7 +498,7 @@ export default function MatriculasPage() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Buscar estudiante..."
+                  placeholder="Buscar por nombre o email..."
                   value={busqueda}
                   onChange={(e) => { setBusqueda(e.target.value); setSearchFocused(true); }}
                   onFocus={() => setSearchFocused(true)}
@@ -472,15 +513,17 @@ export default function MatriculasPage() {
                   </button>
                 )}
 
-                {/* Dropdown sugerencias */}
-                {searchFocused && busqueda.length > 0 && (
+                {/* Dropdown sugerencias (solo con texto activo) */}
+                {searchFocused && busqueda.length >= 2 && (
                   <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-20 overflow-hidden">
-                    {estudiantesFiltrados.length === 0 ? (
+                    {loadingEstudiantes ? (
+                      <div className="px-4 py-3 text-sm text-gray-400 text-center">Buscando...</div>
+                    ) : estudiantesConMatriculado.length === 0 ? (
                       <div className="px-4 py-3 text-sm text-gray-400 text-center">
                         Sin resultados para &ldquo;{busqueda}&rdquo;
                       </div>
                     ) : (
-                      estudiantesFiltrados.slice(0, 5).map((e) => (
+                      estudiantesConMatriculado.slice(0, 5).map((e) => (
                         <button
                           key={e.id}
                           type="button"
@@ -502,15 +545,41 @@ export default function MatriculasPage() {
                         </button>
                       ))
                     )}
-                    {estudiantesFiltrados.length > 5 && (
+                    {estudiantesConMatriculado.length > 5 && (
                       <div className="px-4 py-2 text-xs text-gray-400 text-center bg-gray-50">
-                        +{estudiantesFiltrados.length - 5} resultados más — escribe más para filtrar
+                        +{estudiantesConMatriculado.length - 5} resultados más — escribe más para filtrar
                       </div>
                     )}
                   </div>
                 )}
               </div>
             </div>
+
+            {/* Tabs: Todos / Sin matricular / Matriculados */}
+            {estudiantesConMatriculado.length > 0 && (
+              <div className="flex items-center gap-1 px-5 py-3 border-b border-gray-100">
+                {ESTADO_TABS.map((tab) => (
+                  <button
+                    key={tab.value}
+                    onClick={() => setEstadoFiltro(tab.value)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                      estadoFiltro === tab.value
+                        ? "bg-[#2B55A3] text-white"
+                        : "text-gray-500 hover:bg-gray-100"
+                    }`}
+                  >
+                    {tab.label}
+                    <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                      estadoFiltro === tab.value
+                        ? "bg-white/25 text-white"
+                        : "bg-gray-100 text-gray-500"
+                    }`}>
+                      {cuentas[tab.value]}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
 
             {/* Banner resumen de matrículas */}
             {seleccionados.length > 0 && (
@@ -531,7 +600,8 @@ export default function MatriculasPage() {
                         type="checkbox"
                         checked={todosSeleccionados}
                         onChange={toggleTodos}
-                        className="rounded border-gray-300 cursor-pointer accent-[#2B55A3]"
+                        disabled={noMatriculadosVisibles.length === 0}
+                        className="rounded border-gray-300 cursor-pointer accent-[#2B55A3] disabled:cursor-not-allowed"
                         title="Seleccionar todos"
                       />
                     </th>
@@ -541,6 +611,36 @@ export default function MatriculasPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
+                  {/* Cargando */}
+                  {loadingEstudiantes && (
+                    <tr>
+                      <td colSpan={4} className="text-center py-8 text-gray-400 text-sm">
+                        Cargando estudiantes...
+                      </td>
+                    </tr>
+                  )}
+
+                  {/* Sin resultados */}
+                  {!loadingEstudiantes && estudiantesConMatriculado.length === 0 && (
+                    <tr>
+                      <td colSpan={4} className="text-center py-8 text-gray-400 text-sm">
+                        {debouncedBusqueda
+                          ? `Sin resultados para "${debouncedBusqueda}"`
+                          : "Sin estudiantes registrados"}
+                      </td>
+                    </tr>
+                  )}
+
+                  {/* Sin resultados por filtro de estado */}
+                  {!loadingEstudiantes && estudiantesConMatriculado.length > 0 && estudiantesFiltrados.length === 0 && (
+                    <tr>
+                      <td colSpan={4} className="text-center py-8 text-gray-400 text-sm">
+                        No hay estudiantes en esta categoría
+                      </td>
+                    </tr>
+                  )}
+
+                  {/* Filas de estudiantes */}
                   {estudiantesFiltrados.map((estudiante) => {
                     const isSelected    = seleccionados.includes(estudiante.id);
                     const isMatriculado = estudiante.matriculado;
@@ -595,6 +695,45 @@ export default function MatriculasPage() {
                 </tbody>
               </table>
             </div>
+
+            {/* Paginación */}
+            {estudiantesData && estudiantesData.total > 0 && (
+              <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100 text-xs text-gray-500">
+                <div className="flex items-center gap-3">
+                  <span>
+                    Página {estudiantesPage} de {estudiantesData.total_pages} — {estudiantesData.total} estudiantes
+                  </span>
+                  <label className="flex items-center gap-1.5">
+                    Por página
+                    <select
+                      value={estudiantesLimit}
+                      onChange={(e) => { setEstudiantesLimit(Number(e.target.value)); setEstudiantesPage(1); }}
+                      className="border border-gray-300 rounded-lg px-2 py-1 text-xs focus:outline-none"
+                    >
+                      {ESTUDIANTES_PAGE_SIZES.map((size) => (
+                        <option key={size} value={size}>{size}</option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setEstudiantesPage(p => Math.max(1, p - 1))}
+                    disabled={estudiantesPage === 1}
+                    className="px-3 py-1 border rounded-lg disabled:opacity-40 hover:bg-gray-50 text-xs"
+                  >
+                    Anterior
+                  </button>
+                  <button
+                    onClick={() => setEstudiantesPage(p => Math.min(estudiantesData.total_pages, p + 1))}
+                    disabled={estudiantesPage === estudiantesData.total_pages}
+                    className="px-3 py-1 border rounded-lg disabled:opacity-40 hover:bg-gray-50 text-xs"
+                  >
+                    Siguiente
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Panel de pago y acción */}
             {seleccionados.length > 0 && (
