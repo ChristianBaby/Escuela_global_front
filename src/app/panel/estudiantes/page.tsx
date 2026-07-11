@@ -22,6 +22,8 @@ const STATUS_LABELS: Record<string, string> = {
   deleted: "Eliminado",
 };
 
+const PAGE_SIZES = [15, 50, 100, 200];
+
 const empty: CreateUsuarioDto = {
   first_name: "",
   last_name: "",
@@ -38,6 +40,7 @@ export default function EstudiantesPage() {
   const isAdmin = me?.role === "admin";
 
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(15);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("estudiante");
   const [showModal, setShowModal] = useState(false);
@@ -45,15 +48,25 @@ export default function EstudiantesPage() {
   const [showPassword, setShowPassword] = useState(false);
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["usuarios", page, search, roleFilter],
+    queryKey: ["usuarios", page, limit, search, roleFilter],
     queryFn: () =>
       usuariosService.list({
         page,
-        limit: 15,
+        limit,
         search: search || undefined,
         role: (roleFilter as UserRole) || undefined,
+        sort: "first_name",
       }),
   });
+
+  // Orden alfabético por nombre dentro de la página actual
+  const usuarios = [...(data?.data ?? [])].sort((a, b) =>
+    `${a.first_name} ${a.last_name}`.localeCompare(
+      `${b.first_name} ${b.last_name}`,
+      "es",
+      { sensitivity: "base" }
+    )
+  );
 
   const createMutation = useMutation({
     mutationFn: usuariosService.create,
@@ -148,12 +161,12 @@ export default function EstudiantesPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {data?.data.length === 0 ? (
+              {usuarios.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="text-center py-8 text-gray-400">Sin usuarios encontrados</td>
                 </tr>
               ) : (
-                data?.data.map((u) => (
+                usuarios.map((u) => (
                   <tr key={u.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3 font-medium text-gray-900">{u.first_name} {u.last_name}</td>
                     <td className="px-4 py-3 text-gray-600">{u.email}</td>
@@ -206,9 +219,23 @@ export default function EstudiantesPage() {
         )}
 
         {/* Paginación */}
-        {data && data.total_pages > 1 && (
+        {data && data.total > 0 && (
           <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 text-sm text-gray-500">
-            <span>Página {page} de {data.total_pages} — {data.total} usuarios</span>
+            <div className="flex items-center gap-3">
+              <span>Página {page} de {data.total_pages} — {data.total} usuarios</span>
+              <label className="flex items-center gap-1.5 text-xs">
+                Por página
+                <select
+                  value={limit}
+                  onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}
+                  className="border border-gray-300 rounded-lg px-2 py-1 text-xs focus:outline-none"
+                >
+                  {PAGE_SIZES.map((size) => (
+                    <option key={size} value={size}>{size}</option>
+                  ))}
+                </select>
+              </label>
+            </div>
             <div className="flex gap-2">
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
