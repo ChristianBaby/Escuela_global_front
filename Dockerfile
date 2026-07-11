@@ -14,6 +14,12 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 
+# `lightningcss` (usado por Tailwind v4) tiene un binding nativo por
+# plataforma. `npm ci` con la libc del host no resuelve correctamente
+# la variante musl cuando la imagen es Alpine, asi que el build de
+# Next.js falla. Lo instalamos explicito.
+RUN npm install --no-save lightningcss-linux-x64-musl@1.32.0
+
 # -------------------------------------------------------------
 # Stage 2: builder
 # Compila Next.js. `output: "standalone"` (en next.config.ts)
