@@ -104,10 +104,10 @@ export default function LanzamientosPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Próximos Lanzamientos</h1>
+          <h1 className="text-2xl font-bold text-brand-primary">Próximos Lanzamientos</h1>
           <p className="text-gray-500 text-sm">Tarjetas de nuevos programas, visibles en el homepage</p>
         </div>
-        <button onClick={openCreate} className="bg-[#2B55A3] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#2B55A3]/90">
+        <button onClick={openCreate} className="bg-[#084D95] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#084D95]/90">
           + Nuevo lanzamiento
         </button>
       </div>
@@ -161,7 +161,7 @@ export default function LanzamientosPage() {
                       </button>
                     </td>
                     <td className="px-4 py-3 text-right space-x-3">
-                      <button onClick={() => openEdit(l)} className="text-[#2B55A3] hover:underline text-xs">Editar</button>
+                      <button onClick={() => openEdit(l)} className="text-[#084D95] hover:underline text-xs">Editar</button>
                       <button onClick={() => setConfirmDelete(l.id)} className="text-red-500 hover:underline text-xs">Eliminar</button>
                     </td>
                   </tr>
@@ -176,7 +176,7 @@ export default function LanzamientosPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl w-full max-w-md shadow-xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-              <h2 className="font-semibold text-gray-900">{editing ? "Editar lanzamiento" : "Nuevo lanzamiento"}</h2>
+              <h2 className="font-semibold text-brand-primary">{editing ? "Editar lanzamiento" : "Nuevo lanzamiento"}</h2>
               <button onClick={closeModal} className="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
@@ -188,7 +188,7 @@ export default function LanzamientosPage() {
                   placeholder="Ej: Programa de Especialización Ejecutiva"
                   value={form.category_label}
                   onChange={(e) => setForm({ ...form, category_label: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#084D95]/30"
                 />
               </div>
 
@@ -200,7 +200,7 @@ export default function LanzamientosPage() {
                   placeholder="Ej: Gestión de Costos y Presupuestos con IA"
                   value={form.title}
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#084D95]/30"
                 />
               </div>
 
@@ -212,7 +212,7 @@ export default function LanzamientosPage() {
                   accept="image/*"
                   required={!editing}
                   onChange={handleFileChange}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30 file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-[#2B55A3] file:text-white file:cursor-pointer"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#084D95]/30 file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-[#084D95] file:text-white file:cursor-pointer"
                 />
                 <p className="text-xs text-gray-400">Sube la imagen del flyer ya diseñada — se muestra tal cual, sin efectos.</p>
               </div>
@@ -224,7 +224,7 @@ export default function LanzamientosPage() {
                   required
                   value={form.start_date}
                   onChange={(e) => setForm({ ...form, start_date: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#084D95]/30"
                 />
               </div>
 
@@ -235,7 +235,7 @@ export default function LanzamientosPage() {
                   placeholder="https://wa.link/..."
                   value={form.link_url}
                   onChange={(e) => setForm({ ...form, link_url: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#084D95]/30"
                 />
               </div>
 
@@ -266,7 +266,7 @@ export default function LanzamientosPage() {
                 <button type="button" onClick={closeModal} className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">
                   Cancelar
                 </button>
-                <button type="submit" disabled={isPending} className="px-4 py-2 text-sm bg-[#2B55A3] text-white rounded-lg hover:bg-[#2B55A3]/90 disabled:opacity-50">
+                <button type="submit" disabled={isPending} className="px-4 py-2 text-sm bg-[#084D95] text-white rounded-lg hover:bg-[#084D95]/90 disabled:opacity-50">
                   {isPending ? "Guardando..." : editing ? "Guardar" : "Crear"}
                 </button>
               </div>
@@ -278,7 +278,7 @@ export default function LanzamientosPage() {
       {confirmDelete && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-6 w-full max-w-sm shadow-xl">
-            <h2 className="font-semibold text-gray-900 mb-2">¿Eliminar este lanzamiento?</h2>
+            <h2 className="font-semibold text-brand-primary mb-2">¿Eliminar este lanzamiento?</h2>
             <p className="text-sm text-gray-500 mb-4">Esta acción no se puede deshacer.</p>
             <div className="flex justify-end gap-3">
               <button onClick={() => setConfirmDelete(null)} className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">Cancelar</button>

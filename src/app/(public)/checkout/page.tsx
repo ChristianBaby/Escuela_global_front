@@ -162,9 +162,9 @@ export default function CheckoutPage() {
     return (
       <PublicLayout>
         <div className="max-w-md mx-auto text-center py-20 bg-white border border-gray-200 rounded-2xl p-8 mt-10 shadow-sm">
-          <h2 className="text-xl font-bold text-gray-900">Tu carrito está vacío</h2>
+          <h2 className="text-xl font-bold text-brand-primary">Tu carrito está vacío</h2>
           <p className="text-sm text-gray-500 mt-2">Agrega cursos al carrito para continuar con la compra.</p>
-          <Link href="/carrito" className="mt-5 inline-flex items-center gap-2 px-4 py-2 bg-[#2B55A3] text-white rounded-lg text-sm font-medium">
+          <Link href="/carrito" className="mt-5 inline-flex items-center gap-2 px-4 py-2 bg-[#084D95] text-white rounded-lg text-sm font-medium">
             <ArrowLeft size={16} /> Volver al Carrito
           </Link>
         </div>
@@ -179,7 +179,7 @@ export default function CheckoutPage() {
     <PublicLayout>
       <div className="max-w-6xl mx-auto px-4 py-10">
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-brand-primary flex items-center gap-2">
             <ShieldCheck size={26} className="text-emerald-600" />
             Finalizar compra
           </h1>
@@ -192,7 +192,7 @@ export default function CheckoutPage() {
           <div className="lg:col-span-2 space-y-6">
             {!isAuthenticated ? (
               <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
-                <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4">Tus datos</h3>
+                <h3 className="text-sm font-bold text-brand-primary uppercase tracking-wider mb-4">Tus datos</h3>
                 <form onSubmit={handleSubmit(onSubmitGuestForm)} className="space-y-4" noValidate>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <FormField
@@ -330,14 +330,14 @@ export default function CheckoutPage() {
             ) : (
               <>
                 <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
-                  <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4">1. Selecciona tu método de pago</h3>
+                  <h3 className="text-sm font-bold text-brand-primary uppercase tracking-wider mb-4">1. Selecciona tu método de pago</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <button
                       type="button"
                       onClick={() => setPaymentMethod("mercado_pago")}
                       className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all text-center gap-2 ${
                         paymentMethod === "mercado_pago"
-                          ? "border-[#2B55A3] bg-blue-50/40 text-[#2B55A3]"
+                          ? "border-[#084D95] bg-blue-50/40 text-[#084D95]"
                           : "border-gray-200 text-gray-600 hover:border-gray-300"
                       }`}
                     >
@@ -351,7 +351,7 @@ export default function CheckoutPage() {
                       onClick={() => setPaymentMethod("paypal")}
                       className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all text-center gap-2 ${
                         paymentMethod === "paypal"
-                          ? "border-[#2B55A3] bg-blue-50/40 text-[#2B55A3]"
+                          ? "border-[#084D95] bg-blue-50/40 text-[#084D95]"
                           : "border-gray-200 text-gray-600 hover:border-gray-300"
                       }`}
                     >
@@ -363,11 +363,11 @@ export default function CheckoutPage() {
                 </div>
 
                 <div className="space-y-4">
-                  <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider px-1">2. Procesar transacción</h3>
+                  <h3 className="text-sm font-bold text-brand-primary uppercase tracking-wider px-1">2. Procesar transacción</h3>
 
                   {creatingOrder || !order ? (
                     <div className="flex flex-col items-center justify-center py-12 space-y-2 bg-white rounded-xl border border-gray-200">
-                      <Loader2 size={28} className="animate-spin text-[#2B55A3]" />
+                      <Loader2 size={28} className="animate-spin text-[#084D95]" />
                       <p className="text-xs text-gray-400">Preparando tu orden de compra…</p>
                     </div>
                   ) : paymentMethod === "mercado_pago" ? (
@@ -387,7 +387,7 @@ export default function CheckoutPage() {
           {/* COLUMNA DERECHA: RESUMEN */}
           <div className="lg:col-span-1 space-y-4">
             <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm space-y-4">
-              <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider border-b border-gray-100 pb-2">Resumen de Matrícula</h3>
+              <h3 className="text-xs font-bold text-brand-primary uppercase tracking-wider border-b border-gray-100 pb-2">Resumen de Matrícula</h3>
 
               <div className="space-y-3">
                 {displayItems.map((item: any) => (
@@ -403,7 +403,7 @@ export default function CheckoutPage() {
 
               <div className="border-t border-gray-100 pt-3 flex justify-between font-bold text-sm text-gray-900">
                 <span>Total:</span>
-                <span className="text-[#2B55A3] text-base">{formatPrice(total, currency)}</span>
+                <span className="text-[#084D95] text-base">{formatPrice(total, currency)}</span>
               </div>
 
               {isAuthenticated && (
@@ -420,7 +420,7 @@ export default function CheckoutPage() {
 
             <Link
               href="/cursos"
-              className="w-full flex items-center justify-center gap-2 border border-gray-300 hover:border-[#2B55A3] text-gray-700 hover:text-[#2B55A3] font-medium py-3 rounded-xl transition-colors text-sm bg-white shadow-sm"
+              className="w-full flex items-center justify-center gap-2 border border-gray-300 hover:border-[#084D95] text-gray-700 hover:text-[#084D95] font-medium py-3 rounded-xl transition-colors text-sm bg-white shadow-sm"
             >
               <ShoppingBag size={15} />
               Seguir comprando / Ver más cursos

@@ -1,5 +1,5 @@
 import { api } from "@/lib/http/api";
-import type { EventType, Promotion, Slider, UpcomingLaunch, StaffMember } from "@/types";
+import type { EventType, Promotion, Slider, UpcomingLaunch, StaffMember, Software, ScrollPopup, Alliance } from "@/types";
 
 export interface CreatePromocionDto {
   title: string;
@@ -28,6 +28,7 @@ export interface CreateSliderDto {
   position_on_page: "top" | "middle" | "bottom";
   display_order?: number;
   status: "active" | "inactive";
+  show_content?: boolean;
   course_ids?: string[];
 }
 
@@ -206,4 +207,110 @@ export const slidersService = {
       )
       .then((r) => r.data);
   },
+};
+
+// ── Domina los siguientes softwares ─────────────────────────────────────────
+
+export interface CreateSoftwareDto {
+  image?: File;
+  name: string;
+  display_order?: number;
+  status: "active" | "inactive";
+}
+
+function buildSoftwareFormData(data: Partial<CreateSoftwareDto>): FormData {
+  const formData = new FormData();
+  if (data.image) formData.append("image", data.image);
+  if (data.name !== undefined) formData.append("name", data.name);
+  if (data.display_order !== undefined) formData.append("display_order", String(data.display_order));
+  if (data.status !== undefined) formData.append("status", data.status);
+  return formData;
+}
+
+export const softwaresService = {
+  list: (vigente?: boolean) =>
+    api.get<Software[]>("/softwares", { params: vigente !== undefined ? { vigente } : {} }).then((r) => r.data),
+
+  create: (data: CreateSoftwareDto) =>
+    api.post<Software>("/softwares", buildSoftwareFormData(data), {
+      headers: { "Content-Type": "multipart/form-data" },
+    }).then((r) => r.data),
+
+  update: (id: string, data: Partial<CreateSoftwareDto>) =>
+    api.patch<Software>(`/softwares/${id}`, buildSoftwareFormData(data), {
+      headers: { "Content-Type": "multipart/form-data" },
+    }).then((r) => r.data),
+
+  delete: (id: string) =>
+    api.delete(`/softwares/${id}`).then((r) => r.data),
+};
+
+// ── Popup promocional (al hacer scroll en el index) ─────────────────────────
+
+export interface CreateScrollPopupDto {
+  image?: File;
+  destination_url?: string;
+  display_order?: number;
+  status: "active" | "inactive";
+}
+
+function buildScrollPopupFormData(data: Partial<CreateScrollPopupDto>): FormData {
+  const formData = new FormData();
+  if (data.image) formData.append("image", data.image);
+  if (data.destination_url !== undefined) formData.append("destination_url", data.destination_url);
+  if (data.display_order !== undefined) formData.append("display_order", String(data.display_order));
+  if (data.status !== undefined) formData.append("status", data.status);
+  return formData;
+}
+
+export const scrollPopupsService = {
+  list: (vigente?: boolean) =>
+    api.get<ScrollPopup[]>("/scroll-popups", { params: vigente !== undefined ? { vigente } : {} }).then((r) => r.data),
+
+  create: (data: CreateScrollPopupDto) =>
+    api.post<ScrollPopup>("/scroll-popups", buildScrollPopupFormData(data), {
+      headers: { "Content-Type": "multipart/form-data" },
+    }).then((r) => r.data),
+
+  update: (id: string, data: Partial<CreateScrollPopupDto>) =>
+    api.patch<ScrollPopup>(`/scroll-popups/${id}`, buildScrollPopupFormData(data), {
+      headers: { "Content-Type": "multipart/form-data" },
+    }).then((r) => r.data),
+
+  delete: (id: string) =>
+    api.delete(`/scroll-popups/${id}`).then((r) => r.data),
+};
+
+// ── Alianzas estratégicas ────────────────────────────────────────────────────
+
+export interface CreateAllianceDto {
+  image?: File;
+  display_order?: number;
+  status: "active" | "inactive";
+}
+
+function buildAllianceFormData(data: Partial<CreateAllianceDto>): FormData {
+  const formData = new FormData();
+  if (data.image) formData.append("image", data.image);
+  if (data.display_order !== undefined) formData.append("display_order", String(data.display_order));
+  if (data.status !== undefined) formData.append("status", data.status);
+  return formData;
+}
+
+export const alianzasService = {
+  list: (vigente?: boolean) =>
+    api.get<Alliance[]>("/alianzas", { params: vigente !== undefined ? { vigente } : {} }).then((r) => r.data),
+
+  create: (data: CreateAllianceDto) =>
+    api.post<Alliance>("/alianzas", buildAllianceFormData(data), {
+      headers: { "Content-Type": "multipart/form-data" },
+    }).then((r) => r.data),
+
+  update: (id: string, data: Partial<CreateAllianceDto>) =>
+    api.patch<Alliance>(`/alianzas/${id}`, buildAllianceFormData(data), {
+      headers: { "Content-Type": "multipart/form-data" },
+    }).then((r) => r.data),
+
+  delete: (id: string) =>
+    api.delete(`/alianzas/${id}`).then((r) => r.data),
 };

@@ -55,8 +55,8 @@ export default function MarketingDashboardPage() {
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-1">
-          <TrendingUp size={22} className="text-[#2B55A3]" />
-          <h1 className="text-2xl font-bold text-gray-900">Panel de Marketing</h1>
+          <TrendingUp size={22} className="text-[#084D95]" />
+          <h1 className="text-2xl font-bold text-brand-primary">Panel de Marketing</h1>
         </div>
         <p className="text-sm text-gray-500">
           Gestiona las publicaciones y sliders del homepage de Escuela Global.
@@ -91,7 +91,7 @@ export default function MarketingDashboardPage() {
             label="Sliders activos"
             value={activeSliders.length}
             sub={`de ${sliders.length} en total`}
-            color="text-[#2B55A3]"
+            color="text-[#084D95]"
           />
           <StatCard
             label="Vencen en 7 días"
@@ -106,7 +106,7 @@ export default function MarketingDashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
         <Link
           href="/panel/marketing/publicaciones"
-          className="bg-white rounded-xl border border-gray-200 p-6 hover:border-[#2B55A3]/40 hover:shadow-sm transition-all group"
+          className="bg-white rounded-xl border border-gray-200 p-6 hover:border-[#084D95]/40 hover:shadow-sm transition-all group"
         >
           <div className="flex items-start justify-between">
             <div className="w-10 h-10 rounded-lg bg-orange-50 flex items-center justify-center mb-4">
@@ -114,10 +114,10 @@ export default function MarketingDashboardPage() {
             </div>
             <ArrowRight
               size={16}
-              className="text-gray-300 group-hover:text-[#2B55A3] transition-colors mt-1"
+              className="text-gray-300 group-hover:text-[#084D95] transition-colors mt-1"
             />
           </div>
-          <h2 className="font-semibold text-gray-900 mb-1">Publicaciones</h2>
+          <h2 className="font-semibold text-brand-primary mb-1">Publicaciones</h2>
           <p className="text-sm text-gray-500 leading-relaxed">
             Banners e imágenes promocionales que aparecen en el homepage. Controla vigencia y
             visibilidad.
@@ -133,7 +133,7 @@ export default function MarketingDashboardPage() {
 
         <Link
           href="/panel/marketing/sliders"
-          className="bg-white rounded-xl border border-gray-200 p-6 hover:border-[#2B55A3]/40 hover:shadow-sm transition-all group"
+          className="bg-white rounded-xl border border-gray-200 p-6 hover:border-[#084D95]/40 hover:shadow-sm transition-all group"
         >
           <div className="flex items-start justify-between">
             <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center mb-4">
@@ -141,10 +141,10 @@ export default function MarketingDashboardPage() {
             </div>
             <ArrowRight
               size={16}
-              className="text-gray-300 group-hover:text-[#2B55A3] transition-colors mt-1"
+              className="text-gray-300 group-hover:text-[#084D95] transition-colors mt-1"
             />
           </div>
-          <h2 className="font-semibold text-gray-900 mb-1">Sliders</h2>
+          <h2 className="font-semibold text-brand-primary mb-1">Sliders</h2>
           <p className="text-sm text-gray-500 leading-relaxed">
             Carruseles de cursos destacados o banners con imagen. Configura posición y tipo de
             contenido.
@@ -160,7 +160,7 @@ export default function MarketingDashboardPage() {
 
         <Link
           href="/panel/marketing/notificaciones"
-          className="bg-white rounded-xl border border-gray-200 p-6 hover:border-[#2B55A3]/40 hover:shadow-sm transition-all group"
+          className="bg-white rounded-xl border border-gray-200 p-6 hover:border-[#084D95]/40 hover:shadow-sm transition-all group"
         >
           <div className="flex items-start justify-between">
             <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center mb-4">
@@ -168,10 +168,10 @@ export default function MarketingDashboardPage() {
             </div>
             <ArrowRight
               size={16}
-              className="text-gray-300 group-hover:text-[#2B55A3] transition-colors mt-1"
+              className="text-gray-300 group-hover:text-[#084D95] transition-colors mt-1"
             />
           </div>
-          <h2 className="font-semibold text-gray-900 mb-1">Notificaciones</h2>
+          <h2 className="font-semibold text-brand-primary mb-1">Notificaciones</h2>
           <p className="text-sm text-gray-500 leading-relaxed">
             Envía mensajes personalizados a todos los estudiantes, a los matriculados en un
             curso o a usuarios específicos.
@@ -214,7 +214,7 @@ export default function MarketingDashboardPage() {
             <h3 className="text-sm font-semibold text-gray-700">Publicaciones activas</h3>
             <Link
               href="/panel/marketing/publicaciones"
-              className="text-xs text-[#2B55A3] hover:underline"
+              className="text-xs text-[#084D95] hover:underline"
             >
               Ver todas →
             </Link>

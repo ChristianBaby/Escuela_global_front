@@ -84,7 +84,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
                 href={href}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                   active
-                    ? "bg-[#2B55A3] text-white"
+                    ? "bg-[#084D95] text-white"
                     : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                 }`}
               >
@@ -92,7 +92,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
                 <span className="relative shrink-0">
                   <Icon size={18} />
                   {isNotif && badgeLabel && (
-                    <span className="absolute -top-2 -right-2 min-w-[16px] h-4 px-0.5 rounded-full bg-[#2B55A3] text-white text-[10px] font-bold flex items-center justify-center leading-none">
+                    <span className="absolute -top-2 -right-2 min-w-[16px] h-4 px-0.5 rounded-full bg-[#084D95] text-white text-[10px] font-bold flex items-center justify-center leading-none">
                       {badgeLabel}
                     </span>
                   )}
@@ -106,7 +106,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
         {/* Usuario + logout */}
         <div className="px-3 py-4 border-t border-gray-100">
           <div className="flex items-center gap-3 px-3 py-2 mb-1">
-            <div className="w-8 h-8 rounded-full bg-[#2B55A3] flex items-center justify-center text-white text-xs font-bold shrink-0">
+            <div className="w-8 h-8 rounded-full bg-[#084D95] flex items-center justify-center text-white text-xs font-bold shrink-0">
               {initials}
             </div>
             <div className="flex-1 min-w-0">
@@ -131,7 +131,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
           <div className="text-sm text-gray-500">
             Bienvenido de vuelta, <span className="font-medium text-gray-900">{user?.first_name ?? "Estudiante"}</span>
           </div>
-          <Link href="/cursos" className="text-sm font-medium text-[#2B55A3] hover:text-[#3FB1E5] transition-colors">
+          <Link href="/cursos" className="text-sm font-medium text-[#084D95] hover:text-[#23AFE5] transition-colors">
             Explorar cursos →
           </Link>
         </header>

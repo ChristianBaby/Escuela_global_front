@@ -11,38 +11,35 @@ import type { Slider } from "@/types";
 function FallbackHero() {
   return (
     <section
-      className="relative w-full h-screen min-h-[600px] flex items-center overflow-hidden"
-      style={{ background: "linear-gradient(135deg, #0f1f4d 0%, #1a3a7a 60%, #2B55A3 100%)" }}
+      className="relative w-full h-screen min-h-[600px] overflow-hidden"
+      style={{ background: "linear-gradient(135deg, #052E59 0%, #084D95 65%, #23AFE5 100%)" }}
     >
-      <div className="relative z-10 max-w-7xl mx-auto px-8 lg:px-16 w-full">
-        <div className="max-w-xl">
-          <span className="inline-block text-xs font-bold uppercase tracking-widest text-[#3FB1E5] mb-5 border border-[#3FB1E5]/40 rounded-full px-4 py-1.5">
+      {/* Acentos decorativos — motivo circular de marca */}
+      <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-white/5 blur-2xl pointer-events-none" />
+      <div className="absolute bottom-10 right-1/4 w-40 h-40 rounded-full bg-[#23AFE5]/20 blur-2xl pointer-events-none" />
+
+      <div className="absolute inset-x-0 bottom-16 md:bottom-20 z-10 px-6">
+        <div className="max-w-2xl mx-auto text-center">
+          <span className="inline-block text-xs font-bold uppercase tracking-widest text-[#23AFE5] mb-5 border border-[#23AFE5]/40 rounded-full px-4 py-1.5">
             Escuela Global
           </span>
           <h1 className="text-5xl lg:text-6xl font-extrabold text-white leading-tight mb-5">
             Programas de<br />
-            <span className="text-[#3FB1E5]">Alta Especialización</span>
+            <span className="text-[#23AFE5]">Alta Especialización</span>
           </h1>
           <p className="text-white/75 text-lg leading-relaxed mb-8">
             Formación de alto nivel con los mejores especialistas para impulsar tu carrera profesional.
           </p>
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap justify-center gap-3">
             <Link
               href="/cursos"
-              className="inline-flex items-center bg-[#2B55A3] hover:bg-[#3FB1E5] text-white font-bold px-7 py-3.5 rounded-xl transition-all hover:scale-105 gap-2 shadow-lg"
+              className="inline-flex items-center bg-[#084D95] hover:bg-[#23AFE5] text-white font-bold px-7 py-3.5 rounded-xl transition-all hover:scale-105 gap-2 shadow-lg"
             >
               <BookOpen size={18} />
               Ver programas
             </Link>
           </div>
         </div>
-      </div>
-
-      {/* Bottom wave */}
-      <div className="absolute bottom-0 left-0 right-0 z-10 pointer-events-none">
-        <svg viewBox="0 0 1440 60" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full">
-          <path d="M0 60L60 50C120 40 240 20 360 15C480 10 600 20 720 25C840 30 960 30 1080 25C1200 20 1320 10 1380 5L1440 0V60H0Z" fill="white" />
-        </svg>
       </div>
     </section>
   );
@@ -53,7 +50,7 @@ function CourseSlide({ slider }: { slider: Slider }) {
   const hasImage = !!slider.image_url;
 
   return (
-    <div className="relative w-full h-full flex items-center">
+    <div className="relative w-full h-full">
       {/* Background image */}
       {hasImage ? (
         <img
@@ -65,62 +62,64 @@ function CourseSlide({ slider }: { slider: Slider }) {
       ) : (
         <div
           className="absolute inset-0"
-          style={{ background: "linear-gradient(135deg, #0f1f4d 0%, #1a3a7a 55%, #2B55A3 100%)" }}
+          style={{ background: "linear-gradient(135deg, #052E59 0%, #084D95 55%, #23AFE5 100%)" }}
         />
       )}
 
-      {/* Content */}
-      <div className="relative z-10 max-w-7xl mx-auto px-8 lg:px-16 w-full">
-        <div className="max-w-xl">
-          {slider.event_type && (
-            <span className="inline-block text-xs font-bold uppercase tracking-widest text-[#3FB1E5] mb-5 border border-[#3FB1E5]/40 rounded-full px-4 py-1.5 backdrop-blur-sm">
-              {slider.event_type.name}
-            </span>
-          )}
-
-          <h2 className="text-4xl lg:text-5xl xl:text-6xl font-extrabold text-white leading-tight mb-4 drop-shadow-lg">
-            {slider.title}
-          </h2>
-
-          {slider.subtitle && (
-            <p className="text-white/80 text-base lg:text-lg leading-relaxed mb-8 drop-shadow max-w-md">
-              {slider.subtitle}
-            </p>
-          )}
-
-          <div className="flex flex-wrap gap-3 mt-6">
-            {/* Botón principal — asesor comercial */}
-            {slider.contact_url ? (
-              <a
-                href={slider.contact_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center bg-[#2B55A3] hover:bg-[#3FB1E5] text-white font-bold px-7 py-3.5 rounded-xl transition-all duration-200 hover:scale-105 gap-2 shadow-lg shadow-black/30"
-              >
-                <MessageCircle size={18} />
-                Más Información
-              </a>
-            ) : (
-              <Link
-                href={slider.destination_url ?? "/cursos"}
-                className="inline-flex items-center bg-[#2B55A3] hover:bg-[#3FB1E5] text-white font-bold px-7 py-3.5 rounded-xl transition-all duration-200 hover:scale-105 gap-2 shadow-lg shadow-black/30"
-              >
-                <MessageCircle size={18} />
-                Más Información
-              </Link>
+      {/* Content — solo si el slider tiene el contenido de texto activado; si no, se ve solo la imagen */}
+      {slider.show_content && (
+        <div className="absolute inset-x-0 bottom-16 md:bottom-20 z-10 px-6">
+          <div className="max-w-2xl mx-auto text-center">
+            {slider.event_type && (
+              <span className="inline-block text-xs font-bold uppercase tracking-widest text-[#23AFE5] mb-5 border border-[#23AFE5]/40 rounded-full px-4 py-1.5 backdrop-blur-sm">
+                {slider.event_type.name}
+              </span>
             )}
 
-            {/* Botón secundario — página del curso si está configurada, si no catálogo general */}
-            <Link
-              href={slider.contact_url && slider.destination_url ? slider.destination_url : "/cursos"}
-              className="inline-flex items-center border-2 border-white/40 text-white hover:bg-white/10 font-semibold px-6 py-3.5 rounded-xl transition-all backdrop-blur-sm gap-2"
-            >
-              <BookOpen size={16} />
-              {slider.contact_url && slider.destination_url ? "Ver curso" : "Ver catálogo"}
-            </Link>
+            <h2 className="text-4xl lg:text-5xl xl:text-6xl font-extrabold text-white leading-tight mb-4 drop-shadow-lg">
+              {slider.title}
+            </h2>
+
+            {slider.subtitle && (
+              <p className="text-white/80 text-base lg:text-lg leading-relaxed mb-8 drop-shadow max-w-md mx-auto">
+                {slider.subtitle}
+              </p>
+            )}
+
+            <div className="flex flex-wrap justify-center gap-3 mt-6">
+              {/* Botón principal — asesor comercial */}
+              {slider.contact_url ? (
+                <a
+                  href={slider.contact_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center bg-[#084D95] hover:bg-[#23AFE5] text-white font-bold px-7 py-3.5 rounded-xl transition-all duration-200 hover:scale-105 gap-2 shadow-lg shadow-black/30"
+                >
+                  <MessageCircle size={18} />
+                  Más Información
+                </a>
+              ) : (
+                <Link
+                  href={slider.destination_url ?? "/cursos"}
+                  className="inline-flex items-center bg-[#084D95] hover:bg-[#23AFE5] text-white font-bold px-7 py-3.5 rounded-xl transition-all duration-200 hover:scale-105 gap-2 shadow-lg shadow-black/30"
+                >
+                  <MessageCircle size={18} />
+                  Más Información
+                </Link>
+              )}
+
+              {/* Botón secundario — página del curso si está configurada, si no catálogo general */}
+              <Link
+                href={slider.contact_url && slider.destination_url ? slider.destination_url : "/cursos"}
+                className="inline-flex items-center border-2 border-white/40 text-white hover:bg-white/10 font-semibold px-6 py-3.5 rounded-xl transition-all backdrop-blur-sm gap-2"
+              >
+                <BookOpen size={16} />
+                {slider.contact_url && slider.destination_url ? "Ver curso" : "Ver catálogo"}
+              </Link>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
@@ -169,17 +168,14 @@ export function HeroSlider() {
 
   if (isLoading) {
     return (
-      <section
-        className="relative w-full h-screen min-h-[600px] animate-pulse"
-        style={{ background: "#0f1f4d" }}
-      />
+      <section className="relative w-full h-screen min-h-[600px] animate-pulse bg-brand-dark" />
     );
   }
 
   if (activeSliders.length === 0) return <FallbackHero />;
 
   return (
-    <section className="relative w-full h-screen min-h-[600px] overflow-hidden bg-[#0f1f4d]">
+    <section className="relative w-full h-screen min-h-[600px] overflow-hidden bg-brand-dark">
       {/* Slides con transición de opacidad */}
       {activeSliders.map((slider, i) => (
         <div
@@ -221,7 +217,7 @@ export function HeroSlider() {
               aria-label={`Ir al slide ${i + 1}`}
               className={`rounded-full transition-all duration-300 ${
                 i === current
-                  ? "w-8 h-2.5 bg-[#3FB1E5]"
+                  ? "w-8 h-2.5 bg-[#23AFE5]"
                   : "w-2.5 h-2.5 bg-white/30 hover:bg-white/60"
               }`}
             />
@@ -235,13 +231,6 @@ export function HeroSlider() {
           {current + 1} / {activeSliders.length}
         </div>
       )}
-
-      {/* Ola inferior */}
-      <div className="absolute bottom-0 left-0 right-0 z-10 pointer-events-none">
-        <svg viewBox="0 0 1440 60" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full">
-          <path d="M0 60L60 50C120 40 240 20 360 15C480 10 600 20 720 25C840 30 960 30 1080 25C1200 20 1320 10 1380 5L1440 0V60H0Z" fill="white" />
-        </svg>
-      </div>
     </section>
   );
 }

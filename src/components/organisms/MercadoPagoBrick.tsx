@@ -50,7 +50,7 @@ export function MercadoPagoBrick({ orderId, totalAmount, currency }: MercadoPago
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-12 space-y-2 bg-white rounded-xl border border-gray-200">
-        <Loader2 size={28} className="animate-spin text-[#2B55A3]" />
+        <Loader2 size={28} className="animate-spin text-[#084D95]" />
         <p className="text-xs text-gray-400">Generando pasarela segura con Mercado Pago...</p>
       </div>
     );

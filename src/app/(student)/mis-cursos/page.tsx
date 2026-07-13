@@ -79,7 +79,7 @@ function MisCursosContent() {
     <div className="space-y-6">
       {/* Cabecera */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Mis cursos</h1>
+        <h1 className="text-2xl font-bold text-brand-primary">Mis cursos</h1>
         <p className="text-gray-500 mt-1">
           {enrollments.length} {enrollments.length === 1 ? "curso matriculado" : "cursos matriculados"}
         </p>
@@ -93,7 +93,7 @@ function MisCursosContent() {
           placeholder="Buscar curso..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3] focus:border-transparent"
+          className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#084D95] focus:border-transparent"
         />
       </div>
 
@@ -105,13 +105,13 @@ function MisCursosContent() {
             onClick={() => { setTab(key); setSearch(""); }}
             className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
               tab === key
-                ? "border-[#2B55A3] text-[#2B55A3]"
+                ? "border-[#084D95] text-[#084D95]"
                 : "border-transparent text-gray-500 hover:text-gray-700"
             }`}
           >
             {icon}
             {label}
-            <span className={`text-xs px-1.5 py-0.5 rounded-full ${tab === key ? "bg-[#2B55A3] text-white" : "bg-gray-100 text-gray-500"}`}>
+            <span className={`text-xs px-1.5 py-0.5 rounded-full ${tab === key ? "bg-[#084D95] text-white" : "bg-gray-100 text-gray-500"}`}>
               {count}
             </span>
           </button>
@@ -157,17 +157,17 @@ function EnrollmentRow({ enrollment }: { enrollment: Enrollment }) {
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-5 flex gap-5 hover:shadow-sm transition-shadow">
       {/* Thumbnail */}
-      <div className="w-28 h-20 rounded-lg bg-[#2B55A3]/10 flex items-center justify-center shrink-0 overflow-hidden">
+      <div className="w-28 h-20 rounded-lg bg-[#084D95]/10 flex items-center justify-center shrink-0 overflow-hidden">
         {course.thumbnail_url
           ? <img src={course.thumbnail_url} alt="" className="w-full h-full object-cover" />
-          : <BookOpen size={28} className="text-[#2B55A3]/40" />
+          : <BookOpen size={28} className="text-[#084D95]/40" />
         }
       </div>
 
       {/* Info */}
       <div className="flex-1 min-w-0">
         <div className="flex items-start gap-2 flex-wrap">
-          <h3 className="font-semibold text-gray-900 leading-snug">{course.title}</h3>
+          <h3 className="font-semibold text-brand-primary leading-snug">{course.title}</h3>
           {level && (
             <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${LEVEL_COLOR[level] ?? "bg-gray-100 text-gray-600"}`}>
               {LEVEL_LABEL[level] ?? level}
@@ -191,7 +191,7 @@ function EnrollmentRow({ enrollment }: { enrollment: Enrollment }) {
         <div className="flex items-center gap-3 mt-2">
           <div className="flex-1 h-1.5 bg-gray-200 rounded-full max-w-xs">
             <div
-              className={`h-1.5 rounded-full transition-all ${isCompleted ? "bg-emerald-500" : "bg-[#2B55A3]"}`}
+              className={`h-1.5 rounded-full transition-all ${isCompleted ? "bg-emerald-500" : "bg-[#084D95]"}`}
               style={{ width: `${enrollment.progress_percent}%` }}
             />
           </div>
@@ -222,7 +222,7 @@ function EnrollmentRow({ enrollment }: { enrollment: Enrollment }) {
               ? "bg-amber-500 text-white hover:bg-amber-600"
               : isCompleted
               ? "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              : "bg-[#2B55A3] text-white hover:bg-[#2B55A3]/90"
+              : "bg-[#084D95] text-white hover:bg-[#084D95]/90"
           }`}
         >
           {needsReview ? <Star size={14} /> : isCompleted ? <BookOpen size={14} /> : <PlayCircle size={14} />}
@@ -263,7 +263,7 @@ function EmptyState({ search, tab }: { search: string; tab: Tab }) {
       {tab !== "completados" && (
         <Link
           href="/cursos"
-          className="inline-block mt-4 bg-[#2B55A3] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#2B55A3]/90 transition-colors"
+          className="inline-block mt-4 bg-[#084D95] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#084D95]/90 transition-colors"
         >
           Explorar catálogo
         </Link>

@@ -64,14 +64,14 @@ function normalize(str: string) {
 function StepPill({ step, label, state }: { step: number; label: string; state: "idle" | "active" | "done" }) {
   const base = "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all border";
   const cls =
-    state === "active" ? `${base} bg-blue-50 text-[#2B55A3] border-blue-200` :
+    state === "active" ? `${base} bg-blue-50 text-[#084D95] border-blue-200` :
     state === "done"   ? `${base} bg-emerald-50 text-emerald-700 border-emerald-200` :
                          `${base} bg-gray-50 text-gray-400 border-gray-200`;
   return (
     <div className={cls}>
       <span
         className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold
-          ${state === "active" ? "bg-[#2B55A3] text-white" :
+          ${state === "active" ? "bg-[#084D95] text-white" :
             state === "done"   ? "bg-emerald-600 text-white" :
                                  "bg-gray-300 text-white"}`}
       >
@@ -310,7 +310,7 @@ export default function MatriculasPage() {
       {/* ── Header ────────────────────────────────────────────── */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Matriculas</h1>
+          <h1 className="text-2xl font-bold text-brand-primary">Matriculas</h1>
           <p className="text-sm text-gray-500 mt-0.5">Gestión manual de matrículas por curso</p>
         </div>
       </div>
@@ -331,7 +331,7 @@ export default function MatriculasPage() {
             <CheckCircle2 className="size-7 text-emerald-600" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">
+            <h2 className="text-lg font-semibold text-brand-primary">
               {lastTotal} matrícula(s) creada(s) correctamente
             </h2>
             <p className="text-sm text-gray-500 mt-1">
@@ -340,7 +340,7 @@ export default function MatriculasPage() {
           </div>
           <button
             onClick={resetWizard}
-            className="flex items-center gap-2 px-5 py-2.5 bg-[#2B55A3] text-white text-sm font-semibold rounded-lg hover:bg-[#1e3d7a] transition-colors mt-2"
+            className="flex items-center gap-2 px-5 py-2.5 bg-[#084D95] text-white text-sm font-semibold rounded-lg hover:bg-[#1e3d7a] transition-colors mt-2"
           >
             <PlusCircle className="size-4" />
             Nueva matrícula
@@ -353,7 +353,7 @@ export default function MatriculasPage() {
         <div className="space-y-4">
           <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
             <div className="flex items-center gap-2 mb-3">
-              <BookOpen className="size-4 text-[#2B55A3]" />
+              <BookOpen className="size-4 text-[#084D95]" />
               <h2 className="font-semibold text-gray-800 text-sm">Selecciona los cursos</h2>
               {cursosData?.data && (
                 <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
@@ -361,7 +361,7 @@ export default function MatriculasPage() {
                 </span>
               )}
               {cursosSeleccionados.length > 0 && (
-                <span className="text-xs bg-[#2B55A3] text-white px-2 py-0.5 rounded-full font-medium ml-auto">
+                <span className="text-xs bg-[#084D95] text-white px-2 py-0.5 rounded-full font-medium ml-auto">
                   {cursosSeleccionados.length} seleccionado(s)
                 </span>
               )}
@@ -375,7 +375,7 @@ export default function MatriculasPage() {
                 placeholder="Buscar curso por nombre..."
                 value={cursosBusqueda}
                 onChange={(e) => setCursosBusqueda(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg pl-9 pr-8 h-10 text-sm outline-none focus:ring-2 focus:ring-[#2B55A3]/30 focus:border-[#2B55A3]"
+                className="w-full border border-gray-300 rounded-lg pl-9 pr-8 h-10 text-sm outline-none focus:ring-2 focus:ring-[#084D95]/30 focus:border-[#084D95]"
               />
               {cursosBusqueda && (
                 <button
@@ -398,25 +398,25 @@ export default function MatriculasPage() {
                     onClick={() => toggleCurso(c.id)}
                     className={`text-left p-3 rounded-xl border-2 transition-all ${
                       isSel
-                        ? "border-[#2B55A3] bg-blue-50"
-                        : "border-gray-200 hover:border-[#2B55A3]/40 hover:bg-gray-50"
+                        ? "border-[#084D95] bg-blue-50"
+                        : "border-gray-200 hover:border-[#084D95]/40 hover:bg-gray-50"
                     }`}
                   >
                     <div className="flex items-start gap-3">
                       <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
-                        isSel ? "bg-[#2B55A3]" : "bg-gray-100"
+                        isSel ? "bg-[#084D95]" : "bg-gray-100"
                       }`}>
                         <BookOpen className={`size-4 ${isSel ? "text-white" : "text-gray-500"}`} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className={`text-sm font-medium truncate ${isSel ? "text-[#2B55A3]" : "text-gray-900"}`}>
+                        <p className={`text-sm font-medium truncate ${isSel ? "text-[#084D95]" : "text-gray-900"}`}>
                           {c.title}
                         </p>
                         <p className="text-xs text-gray-400 mt-0.5">
                           {c.currency} {c.price} · {c.enrolled_count} matriculados
                         </p>
                       </div>
-                      {isSel && <CheckCircle2 className="size-4 text-[#2B55A3] shrink-0 mt-0.5" />}
+                      {isSel && <CheckCircle2 className="size-4 text-[#084D95] shrink-0 mt-0.5" />}
                     </div>
                   </button>
                 );
@@ -434,7 +434,7 @@ export default function MatriculasPage() {
             <button
               onClick={goToStep2}
               disabled={cursosSeleccionados.length === 0}
-              className="flex items-center gap-2 px-5 py-2.5 bg-[#2B55A3] text-white text-sm font-semibold rounded-lg hover:bg-[#1e3d7a] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 px-5 py-2.5 bg-[#084D95] text-white text-sm font-semibold rounded-lg hover:bg-[#1e3d7a] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Siguiente: elegir estudiantes
               <ArrowRight className="size-4" />
@@ -451,12 +451,12 @@ export default function MatriculasPage() {
           <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <BookOpen className="size-4 text-[#2B55A3]" />
+                <BookOpen className="size-4 text-[#084D95]" />
                 <span className="text-sm font-semibold text-gray-800">Cursos seleccionados</span>
               </div>
               <button
                 onClick={goBack}
-                className="flex items-center gap-1 text-xs text-[#2B55A3] hover:underline"
+                className="flex items-center gap-1 text-xs text-[#084D95] hover:underline"
               >
                 <ArrowLeft className="size-3" /> Cambiar cursos
               </button>
@@ -468,7 +468,7 @@ export default function MatriculasPage() {
                 return (
                   <span
                     key={id}
-                    className="inline-flex items-center gap-1.5 text-xs bg-blue-50 text-[#2B55A3] border border-blue-200 px-2.5 py-1 rounded-full font-medium"
+                    className="inline-flex items-center gap-1.5 text-xs bg-blue-50 text-[#084D95] border border-blue-200 px-2.5 py-1 rounded-full font-medium"
                   >
                     <BookOpen className="size-3" />
                     {c.title}
@@ -484,10 +484,10 @@ export default function MatriculasPage() {
             {/* Cabecera: título + buscador */}
             <div className="px-5 py-4 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center gap-3">
               <div className="flex items-center gap-2 flex-1">
-                <Users className="size-4 text-[#2B55A3]" />
+                <Users className="size-4 text-[#084D95]" />
                 <h2 className="font-semibold text-gray-800 text-sm">Estudiantes</h2>
                 {seleccionados.length > 0 && (
-                  <span className="bg-[#2B55A3] text-white text-xs px-2 py-0.5 rounded-full font-medium">
+                  <span className="bg-[#084D95] text-white text-xs px-2 py-0.5 rounded-full font-medium">
                     {seleccionados.length} seleccionado(s)
                   </span>
                 )}
@@ -502,7 +502,7 @@ export default function MatriculasPage() {
                   value={busqueda}
                   onChange={(e) => { setBusqueda(e.target.value); setSearchFocused(true); }}
                   onFocus={() => setSearchFocused(true)}
-                  className="w-full border border-gray-300 rounded-lg pl-9 pr-8 h-9 text-sm outline-none focus:ring-2 focus:ring-[#2B55A3]/30 focus:border-[#2B55A3]"
+                  className="w-full border border-gray-300 rounded-lg pl-9 pr-8 h-9 text-sm outline-none focus:ring-2 focus:ring-[#084D95]/30 focus:border-[#084D95]"
                 />
                 {busqueda && (
                   <button
@@ -539,7 +539,7 @@ export default function MatriculasPage() {
                           {e.matriculado
                             ? <span className="text-xs text-emerald-600 font-medium shrink-0">Ya matriculado</span>
                             : seleccionados.includes(e.id)
-                              ? <CheckCircle2 className="size-4 text-[#2B55A3] shrink-0" />
+                              ? <CheckCircle2 className="size-4 text-[#084D95] shrink-0" />
                               : null
                           }
                         </button>
@@ -564,7 +564,7 @@ export default function MatriculasPage() {
                     onClick={() => setEstadoFiltro(tab.value)}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                       estadoFiltro === tab.value
-                        ? "bg-[#2B55A3] text-white"
+                        ? "bg-[#084D95] text-white"
                         : "text-gray-500 hover:bg-gray-100"
                     }`}
                   >
@@ -583,7 +583,7 @@ export default function MatriculasPage() {
 
             {/* Banner resumen de matrículas */}
             {seleccionados.length > 0 && (
-              <div className="flex items-center gap-2 px-5 py-2.5 bg-blue-50 border-b border-blue-100 text-xs text-[#2B55A3]">
+              <div className="flex items-center gap-2 px-5 py-2.5 bg-blue-50 border-b border-blue-100 text-xs text-[#084D95]">
                 <Info className="size-3.5 shrink-0" />
                 Se crearán <strong>{totalMatriculas} matrícula(s)</strong>:&nbsp;
                 {seleccionados.length} estudiante(s) × {cursosSeleccionados.length} curso(s)
@@ -601,7 +601,7 @@ export default function MatriculasPage() {
                         checked={todosSeleccionados}
                         onChange={toggleTodos}
                         disabled={noMatriculadosVisibles.length === 0}
-                        className="rounded border-gray-300 cursor-pointer accent-[#2B55A3] disabled:cursor-not-allowed"
+                        className="rounded border-gray-300 cursor-pointer accent-[#084D95] disabled:cursor-not-allowed"
                         title="Seleccionar todos"
                       />
                     </th>
@@ -663,7 +663,7 @@ export default function MatriculasPage() {
                             onChange={() => toggleEstudiante(estudiante.id)}
                             disabled={isMatriculado}
                             onClick={(e) => e.stopPropagation()}
-                            className="rounded border-gray-300 cursor-pointer disabled:cursor-not-allowed accent-[#2B55A3]"
+                            className="rounded border-gray-300 cursor-pointer disabled:cursor-not-allowed accent-[#084D95]"
                           />
                         </td>
                         <td className="px-3 py-3">
@@ -745,7 +745,7 @@ export default function MatriculasPage() {
                       <select
                         value={metodo}
                         onChange={(e) => setMetodo(e.target.value as CreateMatriculasDto["offline_payment_method"])}
-                        className="w-full border border-gray-300 rounded-lg px-3 h-9 text-sm outline-none focus:ring-2 focus:ring-[#2B55A3]/30 bg-white"
+                        className="w-full border border-gray-300 rounded-lg px-3 h-9 text-sm outline-none focus:ring-2 focus:ring-[#084D95]/30 bg-white"
                       >
                         {METODOS.map((m) => (
                           <option key={m.value} value={m.value}>{m.label}</option>
@@ -759,7 +759,7 @@ export default function MatriculasPage() {
                         value={monto}
                         onChange={(e) => setMonto(e.target.value)}
                         placeholder="0.00"
-                        className="w-full border border-gray-300 rounded-lg px-3 h-9 text-sm outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+                        className="w-full border border-gray-300 rounded-lg px-3 h-9 text-sm outline-none focus:ring-2 focus:ring-[#084D95]/30"
                       />
                     </div>
                     <div>
@@ -769,7 +769,7 @@ export default function MatriculasPage() {
                         value={notas}
                         onChange={(e) => setNotas(e.target.value)}
                         placeholder="Observaciones..."
-                        className="w-full border border-gray-300 rounded-lg px-3 h-9 text-sm outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+                        className="w-full border border-gray-300 rounded-lg px-3 h-9 text-sm outline-none focus:ring-2 focus:ring-[#084D95]/30"
                       />
                     </div>
                   </div>
@@ -777,7 +777,7 @@ export default function MatriculasPage() {
                   <button
                     onClick={handleMatricular}
                     disabled={matricularMutation.isPending}
-                    className="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#2B55A3] text-white text-sm font-semibold rounded-lg hover:bg-[#1e3d7a] transition-colors disabled:opacity-50 shrink-0 h-9"
+                    className="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#084D95] text-white text-sm font-semibold rounded-lg hover:bg-[#1e3d7a] transition-colors disabled:opacity-50 shrink-0 h-9"
                   >
                     <UserCheck className="size-4" />
                     {matricularMutation.isPending

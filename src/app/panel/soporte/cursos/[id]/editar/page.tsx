@@ -238,7 +238,7 @@ export default function EditarCursoPage() {
   if (loadingCourse) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 size={24} className="animate-spin text-[#2B55A3]" />
+        <Loader2 size={24} className="animate-spin text-[#084D95]" />
       </div>
     );
   }
@@ -247,7 +247,7 @@ export default function EditarCursoPage() {
     return (
       <div className="text-center py-16 text-gray-500">
         Curso no encontrado.{" "}
-        <Link href="/panel/soporte/cursos" className="text-[#2B55A3] hover:underline">
+        <Link href="/panel/soporte/cursos" className="text-[#084D95] hover:underline">
           Volver a cursos
         </Link>
       </div>
@@ -264,7 +264,7 @@ export default function EditarCursoPage() {
           <ArrowLeft size={20} />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Editar curso</h1>
+          <h1 className="text-2xl font-bold text-brand-primary">Editar curso</h1>
           <p className="text-gray-500 text-sm truncate max-w-lg">{course.title}</p>
         </div>
       </div>
@@ -338,7 +338,7 @@ export default function EditarCursoPage() {
                   id="categoria"
                   value={categoryId}
                   onChange={(e) => setCategoryId(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#084D95]/30"
                 >
                   <option value="">Seleccionar categoría</option>
                   {categorias?.map((c) => (
@@ -354,7 +354,7 @@ export default function EditarCursoPage() {
                   id="nivel"
                   value={level}
                   onChange={(e) => setLevel(e.target.value as typeof level)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#084D95]/30"
                 >
                   <option value="principiante">Principiante</option>
                   <option value="intermedio">Intermedio</option>
@@ -400,7 +400,7 @@ export default function EditarCursoPage() {
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="flex items-center gap-1.5 text-sm text-[#2B55A3] hover:underline"
+                    className="flex items-center gap-1.5 text-sm text-[#084D95] hover:underline"
                   >
                     <Upload size={14} />
                     {thumbnailPreview ? "Cambiar imagen" : "Subir imagen"}
@@ -518,7 +518,7 @@ export default function EditarCursoPage() {
                   id="moneda"
                   value={currency}
                   onChange={(e) => setCurrency(e.target.value as "USD" | "PEN")}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#084D95]/30"
                 >
                   <option value="USD">USD — Dólar americano</option>
                   <option value="PEN">PEN — Sol peruano</option>
@@ -530,7 +530,7 @@ export default function EditarCursoPage() {
                   id="acceso"
                   value={accessDuration}
                   onChange={(e) => setAccessDuration(e.target.value as "1_year" | "lifetime")}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#084D95]/30"
                 >
                   <option value="lifetime">De por vida</option>
                   <option value="1_year">1 año</option>
@@ -561,7 +561,7 @@ export default function EditarCursoPage() {
               <button
                 type="button"
                 onClick={() => setInstructors((p) => [...p, { ...EMPTY_INSTRUCTOR }])}
-                className="flex items-center gap-1.5 text-sm text-[#2B55A3] hover:underline"
+                className="flex items-center gap-1.5 text-sm text-[#084D95] hover:underline"
               >
                 <Plus size={15} />
                 Agregar docente
@@ -571,7 +571,7 @@ export default function EditarCursoPage() {
             {instructors.map((ins, i) => (
               <div key={i} className="border border-gray-200 rounded-xl p-4 space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-medium text-gray-900">Docente {i + 1}</h3>
+                  <h3 className="text-sm font-medium text-brand-primary">Docente {i + 1}</h3>
                   {instructors.length > 1 && (
                     <button
                       type="button"
@@ -621,7 +621,7 @@ export default function EditarCursoPage() {
             {/* Requisitos previos */}
             <div className="space-y-3">
               <div>
-                <h3 className="font-medium text-gray-900">Requisitos previos</h3>
+                <h3 className="font-medium text-brand-primary">Requisitos previos</h3>
                 <p className="text-sm text-gray-500 mt-0.5">¿Qué debe saber el estudiante antes de empezar?</p>
               </div>
               <div className="flex gap-2">
@@ -646,7 +646,7 @@ export default function EditarCursoPage() {
                 <ul className="space-y-2">
                   {prerequisites.map((p, i) => (
                     <li key={i} className="flex items-center gap-2 text-sm text-gray-700">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#2B55A3] shrink-0" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#084D95] shrink-0" />
                       <span className="flex-1">{p}</span>
                       <button
                         type="button"
@@ -666,7 +666,7 @@ export default function EditarCursoPage() {
             {/* Lo que aprenderás */}
             <div className="space-y-3">
               <div>
-                <h3 className="font-medium text-gray-900">Lo que aprenderás</h3>
+                <h3 className="font-medium text-brand-primary">Lo que aprenderás</h3>
                 <p className="text-sm text-gray-500 mt-0.5">
                   Habilidades o conocimientos que obtendrá el estudiante al terminar el curso
                 </p>
@@ -739,7 +739,7 @@ export default function EditarCursoPage() {
                     key={value}
                     className={`flex items-start gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
                       status === value
-                        ? "border-[#2B55A3] bg-blue-50"
+                        ? "border-[#084D95] bg-blue-50"
                         : "border-gray-200 hover:bg-gray-50"
                     }`}
                   >
@@ -749,7 +749,7 @@ export default function EditarCursoPage() {
                       value={value}
                       checked={status === value}
                       onChange={() => setStatus(value)}
-                      className="mt-0.5 accent-[#2B55A3]"
+                      className="mt-0.5 accent-[#084D95]"
                     />
                     <div>
                       <p className="text-sm font-medium text-gray-900">{label}</p>
@@ -763,7 +763,7 @@ export default function EditarCursoPage() {
             {/* ── Certificación ──────────────────────────────────────────── */}
             <div className="space-y-4 pt-5 border-t border-gray-200">
               <div>
-                <h3 className="font-medium text-gray-900">Modo de certificación</h3>
+                <h3 className="font-medium text-brand-primary">Modo de certificación</h3>
                 <p className="text-sm text-gray-500 mt-0.5">
                   Define cómo se emitirán los certificados a los estudiantes de este curso.
                 </p>
@@ -817,7 +817,7 @@ export default function EditarCursoPage() {
                     id="plantilla"
                     value={certTemplateId}
                     onChange={(e) => setCertTemplateId(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#084D95]/30"
                   >
                     <option value="">Sin plantilla asignada</option>
                     {plantillas?.map((t) => (
@@ -841,7 +841,7 @@ export default function EditarCursoPage() {
                     id="plantilla-constancia"
                     value={constanciaTemplateId}
                     onChange={(e) => setConstanciaTemplateId(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#084D95]/30"
                   >
                     <option value="">Sin plantilla asignada</option>
                     {plantillas?.map((t) => (
@@ -869,7 +869,7 @@ export default function EditarCursoPage() {
                 type="button"
                 onClick={handleSave}
                 disabled={updateMutation.isPending}
-                className="px-4 py-2 text-sm bg-[#2B55A3] text-white rounded-lg hover:bg-[#2B55A3]/90 disabled:opacity-50 transition-colors flex items-center gap-2"
+                className="px-4 py-2 text-sm bg-[#084D95] text-white rounded-lg hover:bg-[#084D95]/90 disabled:opacity-50 transition-colors flex items-center gap-2"
               >
                 {updateMutation.isPending && <Loader2 size={14} className="animate-spin" />}
                 {updateMutation.isPending ? "Guardando..." : "Guardar cambios"}

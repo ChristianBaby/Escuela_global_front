@@ -32,7 +32,7 @@ function downloadBlob(blob: Blob, filename: string) {
 }
 
 const CHART_COLORS = [
-  "#2B55A3",
+  "#084D95",
   "#10b981",
   "#f59e0b",
   "#ef4444",
@@ -179,7 +179,7 @@ export default function AdminDashboardPage() {
       {/* Header + Filtros */}
       <div className="flex flex-wrap items-start justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+          <h1 className="text-2xl font-bold text-brand-primary">Dashboard</h1>
           <p className="text-gray-500 text-sm">Resumen general de la plataforma</p>
         </div>
         <div className="flex flex-wrap gap-3">
@@ -189,7 +189,7 @@ export default function AdminDashboardPage() {
               type="date"
               value={desde}
               onChange={(e) => setDesde(e.target.value)}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#084D95]/30"
             />
           </div>
           <div className="flex flex-col gap-0.5">
@@ -198,7 +198,7 @@ export default function AdminDashboardPage() {
               type="date"
               value={hasta}
               onChange={(e) => setHasta(e.target.value)}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#084D95]/30"
             />
           </div>
           <div className="flex flex-col gap-0.5">
@@ -231,7 +231,7 @@ export default function AdminDashboardPage() {
           <button
             onClick={() => exportMutation.mutate()}
             disabled={exportMutation.isPending}
-            className="self-end flex items-center gap-2 px-4 py-2 text-sm bg-[#2B55A3] text-white rounded-lg hover:bg-[#2B55A3]/90 disabled:opacity-50 transition-colors"
+            className="self-end flex items-center gap-2 px-4 py-2 text-sm bg-[#084D95] text-white rounded-lg hover:bg-[#084D95]/90 disabled:opacity-50 transition-colors"
           >
             {exportMutation.isPending ? (
               <Loader2 size={15} className="animate-spin" />
@@ -307,7 +307,7 @@ export default function AdminDashboardPage() {
                 <Line
                   type="monotone"
                   dataKey="total"
-                  stroke="#2B55A3"
+                  stroke="#084D95"
                   strokeWidth={2}
                   dot={false}
                   name="Total"
@@ -385,7 +385,7 @@ export default function AdminDashboardPage() {
               <Tooltip />
               <Bar
                 dataKey="enrolled_count"
-                fill="#2B55A3"
+                fill="#084D95"
                 name="Matriculados"
                 radius={[0, 3, 3, 0]}
               />
@@ -406,7 +406,7 @@ export default function AdminDashboardPage() {
               <YAxis tick={{ fontSize: 11 }} />
               <Tooltip />
               <Legend iconSize={10} />
-              <Bar dataKey="activos" stackId="a" fill="#2B55A3" name="Activos" />
+              <Bar dataKey="activos" stackId="a" fill="#084D95" name="Activos" />
               <Bar
                 dataKey="inactivos"
                 stackId="a"

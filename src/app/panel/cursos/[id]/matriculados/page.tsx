@@ -42,7 +42,7 @@ function StatCard({
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-5">
       <div className="flex items-center gap-2 mb-2">
-        <span className="text-[#2B55A3]">{icon}</span>
+        <span className="text-[#084D95]">{icon}</span>
         <p className="text-xs text-gray-500">{label}</p>
       </div>
       <p className="text-2xl font-bold text-gray-900">{value}</p>
@@ -97,7 +97,7 @@ export default function MatriculadosCursoPage() {
         >
           <ArrowLeft size={14} /> Volver a cursos
         </Link>
-        <h1 className="text-2xl font-bold text-gray-900">
+        <h1 className="text-2xl font-bold text-brand-primary">
           Matriculados{curso ? ` — ${curso.title}` : ""}
         </h1>
         <p className="text-gray-500 text-sm">Reporte detallado de estudiantes matriculados</p>
@@ -137,7 +137,7 @@ export default function MatriculadosCursoPage() {
             setSearch(e.target.value);
             setPage(1);
           }}
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm w-64 focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+          className="border border-gray-300 rounded-lg px-3 py-2 text-sm w-64 focus:outline-none focus:ring-2 focus:ring-[#084D95]/30"
         />
         <select
           value={statusFilter}
@@ -167,7 +167,7 @@ export default function MatriculadosCursoPage() {
         <button
           onClick={() => exportMutation.mutate()}
           disabled={!data?.data?.length || exportMutation.isPending}
-          className="ml-auto flex items-center gap-2 px-4 py-2 text-sm bg-[#2B55A3] text-white rounded-lg hover:bg-[#2B55A3]/90 disabled:opacity-40 transition-colors"
+          className="ml-auto flex items-center gap-2 px-4 py-2 text-sm bg-[#084D95] text-white rounded-lg hover:bg-[#084D95]/90 disabled:opacity-40 transition-colors"
         >
           {exportMutation.isPending ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />}
           Exportar Excel
@@ -216,7 +216,7 @@ export default function MatriculadosCursoPage() {
                       <div className="flex items-center gap-2">
                         <div className="w-20 h-1.5 bg-gray-200 rounded-full overflow-hidden">
                           <div
-                            className="h-full bg-[#2B55A3] rounded-full"
+                            className="h-full bg-[#084D95] rounded-full"
                             style={{ width: `${m.progress_percent}%` }}
                           />
                         </div>
@@ -249,7 +249,7 @@ export default function MatriculadosCursoPage() {
                     <td className="px-4 py-3 text-right">
                       <Link
                         href={`/panel/estudiantes/${m.user.id}/cursos/${courseId}`}
-                        className="text-[#2B55A3] hover:underline text-xs"
+                        className="text-[#084D95] hover:underline text-xs"
                       >
                         Ver actividad
                       </Link>

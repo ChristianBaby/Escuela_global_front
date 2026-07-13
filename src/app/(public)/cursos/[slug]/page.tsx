@@ -107,7 +107,7 @@ function ModuleItem({ module }: { module: ModuleListItem }) {
               ))
             : sessions.map((s) => (
                 <li key={s.id} className="flex items-center gap-3 px-4 py-3 bg-white">
-                  <PlayCircle size={14} className="shrink-0 text-[#2B55A3]" />
+                  <PlayCircle size={14} className="shrink-0 text-[#084D95]" />
                   <span className="flex-1 text-sm text-gray-700">{s.title}</span>
                   <span className="text-xs text-gray-400 shrink-0">{formatDuration(s.duration_minutes)}</span>
                 </li>
@@ -146,7 +146,7 @@ function AddToCartButton({
     return (
       <Link
         href="/carrito"
-        className="flex items-center justify-center gap-2 w-full bg-[#2B55A3] hover:bg-[#2B55A3]/90 text-white font-semibold py-3 rounded-xl transition-colors"
+        className="flex items-center justify-center gap-2 w-full bg-[#084D95] hover:bg-[#084D95]/90 text-white font-semibold py-3 rounded-xl transition-colors"
       >
         <CheckCircle2 size={16} />
         Ver carrito
@@ -159,8 +159,8 @@ function AddToCartButton({
       onClick={handleClick}
       className={
         variant === "solid"
-          ? "flex items-center justify-center gap-2 w-full bg-[#3FB1E5] hover:bg-[#3FB1E5]/90 text-white font-semibold py-3 rounded-xl transition-colors"
-          : "flex items-center justify-center gap-2 w-full border-2 border-[#2B55A3] text-[#2B55A3] font-semibold py-3 rounded-xl hover:bg-[#2B55A3]/5 transition-colors"
+          ? "flex items-center justify-center gap-2 w-full bg-[#23AFE5] hover:bg-[#23AFE5]/90 text-white font-semibold py-3 rounded-xl transition-colors"
+          : "flex items-center justify-center gap-2 w-full border-2 border-[#084D95] text-[#084D95] font-semibold py-3 rounded-xl hover:bg-[#084D95]/5 transition-colors"
       }
     >
       <ShoppingCart size={16} />
@@ -183,7 +183,7 @@ function BuyNowButton({ course }: { course: Course }) {
   return (
     <button
       onClick={handleClick}
-      className="flex items-center justify-center gap-2 w-full bg-[#2B55A3] hover:bg-[#2B55A3]/90 text-white font-semibold py-3 rounded-xl transition-colors"
+      className="flex items-center justify-center gap-2 w-full bg-[#084D95] hover:bg-[#084D95]/90 text-white font-semibold py-3 rounded-xl transition-colors"
     >
       <CreditCard size={16} />
       Comprar ahora
@@ -196,18 +196,18 @@ function BuyNowButton({ course }: { course: Course }) {
 function InstructorCard({ instructor }: { instructor: Instructor }) {
   return (
     <div className="flex items-start gap-4 bg-white rounded-xl border border-gray-200 p-4">
-      <div className="w-14 h-14 rounded-full bg-[#2B55A3]/10 flex items-center justify-center shrink-0 overflow-hidden">
+      <div className="w-14 h-14 rounded-full bg-[#084D95]/10 flex items-center justify-center shrink-0 overflow-hidden">
         {instructor.photo_url ? (
           <img src={instructor.photo_url} alt={instructor.full_name} className="w-full h-full object-cover" />
         ) : (
-          <span className="text-xl font-bold text-[#2B55A3]">
+          <span className="text-xl font-bold text-[#084D95]">
             {instructor.full_name?.[0]}
           </span>
         )}
       </div>
       <div>
         <p className="font-semibold text-gray-900">{instructor.full_name}</p>
-        <p className="text-sm text-[#3FB1E5] font-medium">{instructor.title}</p>
+        <p className="text-sm text-[#23AFE5] font-medium">{instructor.title}</p>
         {instructor.description && (
           <p className="text-sm text-gray-500 mt-1 leading-relaxed">{instructor.description}</p>
         )}
@@ -230,11 +230,11 @@ function ReviewCard({ review }: { review: ReviewPreview }) {
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-4">
       <div className="flex items-start gap-3">
-        <div className="w-9 h-9 rounded-full bg-[#2B55A3]/10 flex items-center justify-center shrink-0 overflow-hidden">
+        <div className="w-9 h-9 rounded-full bg-[#084D95]/10 flex items-center justify-center shrink-0 overflow-hidden">
           {review.profile_photo_url ? (
             <img src={review.profile_photo_url} alt="" className="w-full h-full object-cover" />
           ) : (
-            <span className="text-sm font-bold text-[#2B55A3]">
+            <span className="text-sm font-bold text-[#084D95]">
               {review.user_name?.[0]?.toUpperCase() ?? "?"}
             </span>
           )}
@@ -265,7 +265,7 @@ function ReviewCard({ review }: { review: ReviewPreview }) {
 function LoadingSkeleton() {
   return (
     <PublicLayout>
-      <div className="bg-[#2B55A3] py-12">
+      <div className="bg-[#084D95] py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <Skeleton className="h-4 w-40 mb-5 bg-white/10" />
           <Skeleton className="h-9 w-2/3 mb-3 bg-white/10" />
@@ -298,11 +298,11 @@ function CourseNotFound() {
     <PublicLayout>
       <div className="max-w-7xl mx-auto px-4 py-24 text-center">
         <BookOpen size={48} className="text-gray-300 mx-auto mb-4" />
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Curso no encontrado</h1>
+        <h1 className="text-2xl font-bold text-brand-primary mb-2">Curso no encontrado</h1>
         <p className="text-gray-500 mb-6">El curso que buscas no existe o no está disponible.</p>
         <Link
           href="/cursos"
-          className="inline-flex items-center gap-2 bg-[#2B55A3] text-white px-6 py-3 rounded-xl font-medium hover:bg-[#2B55A3]/90 transition-colors"
+          className="inline-flex items-center gap-2 bg-[#084D95] text-white px-6 py-3 rounded-xl font-medium hover:bg-[#084D95]/90 transition-colors"
         >
           <ArrowLeft size={16} />
           Volver al catálogo
@@ -348,11 +348,11 @@ export default function CourseDetailPage({
   // ── Sidebar card (reutilizado en hero desktop y content desktop) ────────────
   const SidebarCard = (
     <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-      <div className="h-44 bg-[#2B55A3]/10 flex items-center justify-center overflow-hidden">
+      <div className="h-44 bg-[#084D95]/10 flex items-center justify-center overflow-hidden">
         {course.thumbnail_url ? (
           <img src={course.thumbnail_url} alt={course.title} className="w-full h-full object-cover" />
         ) : (
-          <BookOpen size={40} className="text-[#2B55A3]/30" />
+          <BookOpen size={40} className="text-[#084D95]/30" />
         )}
       </div>
 
@@ -367,7 +367,7 @@ export default function CourseDetailPage({
               <span className="text-lg text-gray-400 line-through">
                 {symbol} {course.price.toFixed(2)}
               </span>
-              <span className="text-sm font-semibold text-[#3FB1E5] ml-auto">
+              <span className="text-sm font-semibold text-[#23AFE5] ml-auto">
                 {discountPct}% dto.
               </span>
             </>
@@ -433,7 +433,7 @@ export default function CourseDetailPage({
   return (
     <PublicLayout>
       {/* ── Hero full-width ───────────────────────────────────────────────── */}
-      <div className="bg-[#2B55A3] text-white">
+      <div className="bg-[#084D95] text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
           <div className="space-y-4">
 
@@ -457,7 +457,7 @@ export default function CourseDetailPage({
 
               {/* Categoría */}
               {course.category && (
-                <span className="inline-block bg-[#3FB1E5] text-white text-xs font-semibold px-3 py-1 rounded-full">
+                <span className="inline-block bg-[#23AFE5] text-white text-xs font-semibold px-3 py-1 rounded-full">
                   {course.category.name}
                 </span>
               )}
@@ -491,7 +491,7 @@ export default function CourseDetailPage({
                 <p className="text-sm text-white/55">
                   {course.instructors.length === 1 ? "Docente" : "Docentes"}:{" "}
                   {course.instructors.map((inst, idx) => (
-                    <span key={inst.id} className="text-[#3FB1E5] font-medium">
+                    <span key={inst.id} className="text-[#23AFE5] font-medium">
                       {inst.full_name}{idx < course.instructors.length - 1 ? ", " : ""}
                     </span>
                   ))}
@@ -536,11 +536,11 @@ export default function CourseDetailPage({
             {/* Lo que aprenderás */}
             {course.outcomes.length > 0 && (
               <section className="bg-white rounded-xl border border-gray-200 p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Lo que aprenderás</h2>
+                <h2 className="text-lg font-semibold text-brand-primary mb-4">Lo que aprenderás</h2>
                 <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {course.outcomes.map((o, i) => (
                     <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
-                      <CheckCircle2 size={16} className="text-[#2B55A3] shrink-0 mt-0.5" />
+                      <CheckCircle2 size={16} className="text-[#084D95] shrink-0 mt-0.5" />
                       {o}
                     </li>
                   ))}
@@ -551,11 +551,11 @@ export default function CourseDetailPage({
             {/* Requisitos */}
             {course.prerequisites.length > 0 && (
               <section>
-                <h2 className="text-lg font-semibold text-gray-900 mb-3">Requisitos previos</h2>
+                <h2 className="text-lg font-semibold text-brand-primary mb-3">Requisitos previos</h2>
                 <ul className="space-y-2">
                   {course.prerequisites.map((p, i) => (
                     <li key={i} className="flex items-start gap-2 text-sm text-gray-600">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#2B55A3] shrink-0 mt-1.5" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#084D95] shrink-0 mt-1.5" />
                       {p}
                     </li>
                   ))}
@@ -566,23 +566,23 @@ export default function CourseDetailPage({
             {/* Descripción */}
             {course.description && (
               <section>
-                <h2 className="text-lg font-semibold text-gray-900 mb-3">Acerca del curso</h2>
+                <h2 className="text-lg font-semibold text-brand-primary mb-3">Acerca del curso</h2>
                 <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">
                   {course.description}
                 </p>
                 <div className="mt-4 flex flex-wrap gap-4 text-sm text-gray-600">
                   <span className="flex items-center gap-1.5">
-                    <Clock size={15} className="text-[#2B55A3]" />
+                    <Clock size={15} className="text-[#084D95]" />
                     {formatDuration(course.total_duration_minutes)} de contenido
                   </span>
                   <span className="flex items-center gap-1.5">
-                    <BookOpen size={15} className="text-[#2B55A3]" />
+                    <BookOpen size={15} className="text-[#084D95]" />
                     {modules.length} módulos · {totalSessions} clases
                   </span>
                   <span className="flex items-center gap-1.5">
                     {course.access_duration === "lifetime"
-                      ? <InfinityIcon size={15} className="text-[#2B55A3]" />
-                      : <CalendarDays size={15} className="text-[#2B55A3]" />
+                      ? <InfinityIcon size={15} className="text-[#084D95]" />
+                      : <CalendarDays size={15} className="text-[#084D95]" />
                     }
                     {ACCESS_LABEL[course.access_duration] ?? course.access_duration}
                   </span>
@@ -592,7 +592,7 @@ export default function CourseDetailPage({
 
             {/* Curriculum */}
             <section>
-              <h2 className="text-lg font-semibold text-gray-900 mb-1">Contenido del curso</h2>
+              <h2 className="text-lg font-semibold text-brand-primary mb-1">Contenido del curso</h2>
               {!modulesLoading && modules.length > 0 && (
                 <p className="text-sm text-gray-500 mb-4">
                   {modules.length} módulos · {totalSessions} clases · {formatDuration(course.total_duration_minutes)} en total
@@ -620,7 +620,7 @@ export default function CourseDetailPage({
             {/* Instructores */}
             {course.instructors.length > 0 && (
               <section>
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                <h2 className="text-lg font-semibold text-brand-primary mb-4">
                   {course.instructors.length === 1 ? "Docente" : "Docentes"}
                 </h2>
                 <div className="space-y-4">

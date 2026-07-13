@@ -16,16 +16,28 @@ export function Logo({ className, variant = "full", size = "md", theme = "light"
   const height = heights[size];
   const width = variant === "icon" ? height : widths[size];
 
+  // El PNG del isotipo trae fondo blanco sólido (no transparente), así que en
+  // fondos oscuros se envuelve en una placa blanca en vez de invertir colores.
+  const image = (
+    <Image
+      src="/Logo_escuela_global.png"
+      alt="Escuela Global"
+      width={width}
+      height={height}
+      className="object-contain"
+      priority
+    />
+  );
+
   return (
     <Link href="/" className={cn("inline-flex items-center hover:opacity-90 transition-opacity", className)}>
-      <Image
-        src="/Logo_escuela_global.png"
-        alt="Escuela Global"
-        width={width}
-        height={height}
-        className={cn("object-contain", theme === "dark" && "brightness-0 invert")}
-        priority
-      />
+      {theme === "dark" ? (
+        <span className="inline-flex items-center justify-center rounded-full bg-white p-1.5 shadow-sm">
+          {image}
+        </span>
+      ) : (
+        image
+      )}
     </Link>
   );
 }

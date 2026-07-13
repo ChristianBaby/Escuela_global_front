@@ -17,6 +17,7 @@ const empty: CreateSliderDto = {
   contact_url: "",
   position_on_page: "top",
   status: "inactive",
+  show_content: true,
 };
 
 // ── Image uploader reutilizable ────────────────────────────────────────────────
@@ -95,7 +96,7 @@ function ImageUploader({
           onDrop={handleDrop}
           onClick={() => fileRef.current?.click()}
           className={`relative border-2 border-dashed rounded-xl cursor-pointer transition-all flex flex-col items-center justify-center gap-3 text-sm
-            ${dragging ? "border-[#2B55A3] bg-[#2B55A3]/5" : "border-gray-300 hover:border-[#2B55A3]/50 hover:bg-gray-50"}`}
+            ${dragging ? "border-[#084D95] bg-[#084D95]/5" : "border-gray-300 hover:border-[#084D95]/50 hover:bg-gray-50"}`}
           style={{ aspectRatio, minHeight: "120px" }}
         >
           <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
@@ -128,7 +129,7 @@ function ImageUploader({
             placeholder="https://..."
             value={value.startsWith("data:") ? "" : value}
             onChange={(e) => onChange(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#084D95]/30"
           />
         </>
       )}
@@ -217,6 +218,7 @@ export default function SlidersPage() {
       contact_url: s.contact_url ?? "",
       position_on_page: "top",
       status: s.status,
+      show_content: s.show_content,
     });
     setImageFile(null);
     setImagePreview(s.image_url ?? "");
@@ -260,10 +262,10 @@ export default function SlidersPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Sliders</h1>
+          <h1 className="text-2xl font-bold text-brand-primary">Sliders</h1>
           <p className="text-gray-500 text-sm">Carruseles del homepage — hero y secciones</p>
         </div>
-        <button onClick={openCreate} className="bg-[#2B55A3] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#2B55A3]/90">
+        <button onClick={openCreate} className="bg-[#084D95] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#084D95]/90">
           + Nuevo slider
         </button>
       </div>
@@ -293,8 +295,8 @@ export default function SlidersPage() {
                       {s.image_url ? (
                         <img src={s.image_url} alt="" className="w-16 h-10 object-cover rounded-lg bg-gray-100" />
                       ) : (
-                        <div className="w-16 h-10 rounded-lg bg-gradient-to-br from-[#2B55A3]/20 to-[#3FB1E5]/20 flex items-center justify-center">
-                          <ImageIcon size={14} className="text-[#2B55A3]/50" />
+                        <div className="w-16 h-10 rounded-lg bg-gradient-to-br from-[#084D95]/20 to-[#23AFE5]/20 flex items-center justify-center">
+                          <ImageIcon size={14} className="text-[#084D95]/50" />
                         </div>
                       )}
                     </td>
@@ -310,7 +312,7 @@ export default function SlidersPage() {
                       </button>
                     </td>
                     <td className="px-4 py-3 text-right space-x-3">
-                      <button onClick={() => openEdit(s)} className="text-[#2B55A3] hover:underline text-xs">Editar</button>
+                      <button onClick={() => openEdit(s)} className="text-[#084D95] hover:underline text-xs">Editar</button>
                       <button onClick={() => setConfirmDelete(s.id)} className="text-red-500 hover:underline text-xs">Eliminar</button>
                     </td>
                   </tr>
@@ -326,7 +328,7 @@ export default function SlidersPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl w-full max-w-lg shadow-xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 sticky top-0 bg-white z-10">
-              <h2 className="font-semibold text-gray-900">{editing ? "Editar slider" : "Nuevo slider"}</h2>
+              <h2 className="font-semibold text-brand-primary">{editing ? "Editar slider" : "Nuevo slider"}</h2>
               <button onClick={closeModal} className="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-5">
@@ -337,7 +339,7 @@ export default function SlidersPage() {
                   required
                   value={form.title}
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#084D95]/30"
                   placeholder="Ej: Derecho Laboral Avanzado"
                 />
               </div>
@@ -349,7 +351,7 @@ export default function SlidersPage() {
                   rows={2}
                   value={form.subtitle ?? ""}
                   onChange={(e) => setForm({ ...form, subtitle: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30 resize-none"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#084D95]/30 resize-none"
                   placeholder="Ej: Domina la legislación laboral con casos reales del sector."
                 />
               </div>
@@ -383,8 +385,8 @@ export default function SlidersPage() {
                       onClick={() => setForm({ ...form, event_type_id: et.id })}
                       className={`text-xs font-bold uppercase tracking-wide px-3 py-1.5 rounded-full border transition-all flex items-center gap-1.5 ${
                         form.event_type_id === et.id
-                          ? "bg-[#3FB1E5] text-white border-[#3FB1E5]"
-                          : "border-[#3FB1E5]/40 text-[#3FB1E5] hover:bg-[#3FB1E5]/10"
+                          ? "bg-[#23AFE5] text-white border-[#23AFE5]"
+                          : "border-[#23AFE5]/40 text-[#23AFE5] hover:bg-[#23AFE5]/10"
                       }`}
                     >
                       {form.event_type_id === et.id && <Check size={10} />}
@@ -397,7 +399,7 @@ export default function SlidersPage() {
                     <button
                       type="button"
                       onClick={() => setShowNewTypeInput(true)}
-                      className="text-xs px-3 py-1.5 rounded-full border border-dashed border-gray-300 text-gray-400 hover:border-[#2B55A3] hover:text-[#2B55A3] transition-all flex items-center gap-1"
+                      className="text-xs px-3 py-1.5 rounded-full border border-dashed border-gray-300 text-gray-400 hover:border-[#084D95] hover:text-[#084D95] transition-all flex items-center gap-1"
                     >
                       <Plus size={11} /> Nuevo tipo
                     </button>
@@ -413,13 +415,13 @@ export default function SlidersPage() {
                       onChange={(e) => setNewTypeName(e.target.value)}
                       onKeyDown={(e) => { if (e.key === "Escape") { setShowNewTypeInput(false); setNewTypeName(""); } }}
                       placeholder="Ej: Foro, Taller, Ponencia..."
-                      className="flex-1 border border-[#2B55A3]/40 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+                      className="flex-1 border border-[#084D95]/40 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#084D95]/30"
                     />
                     <button
                       type="button"
                       onClick={handleCreateEventType}
                       disabled={!newTypeName.trim() || createEventTypeMutation.isPending}
-                      className="bg-[#2B55A3] text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-[#2B55A3]/90 disabled:opacity-50 shrink-0"
+                      className="bg-[#084D95] text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-[#084D95]/90 disabled:opacity-50 shrink-0"
                     >
                       {createEventTypeMutation.isPending ? "..." : "Crear"}
                     </button>
@@ -456,7 +458,7 @@ export default function SlidersPage() {
                   type="url"
                   value={form.contact_url ?? ""}
                   onChange={(e) => setForm({ ...form, contact_url: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#084D95]/30"
                   placeholder="https://wa.me/51999000111?text=Hola, me interesa..."
                 />
                 <p className="text-xs text-gray-400">Pega el link de WhatsApp del asesor asignado a este programa.</p>
@@ -490,11 +492,27 @@ export default function SlidersPage() {
                 </select>
               </div>
 
+              {/* Mostrar u ocultar el texto sobre la imagen */}
+              <label className="flex items-start gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={form.show_content ?? true}
+                  onChange={(e) => setForm({ ...form, show_content: e.target.checked })}
+                  className="mt-0.5 h-4 w-4 rounded border-gray-300 text-[#084D95] focus:ring-[#084D95]/30"
+                />
+                <span className="text-sm text-gray-700">
+                  Mostrar título, subtítulo y botones sobre la imagen
+                  <span className="block text-xs text-gray-400 font-normal">
+                    Desactívalo para mostrar solo la imagen del banner, sin texto encima.
+                  </span>
+                </span>
+              </label>
+
               <div className="flex justify-end gap-3 pt-2">
                 <button type="button" onClick={closeModal} className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">
                   Cancelar
                 </button>
-                <button type="submit" disabled={isPending} className="px-4 py-2 text-sm bg-[#2B55A3] text-white rounded-lg hover:bg-[#2B55A3]/90 disabled:opacity-50">
+                <button type="submit" disabled={isPending} className="px-4 py-2 text-sm bg-[#084D95] text-white rounded-lg hover:bg-[#084D95]/90 disabled:opacity-50">
                   {isPending ? "Guardando..." : editing ? "Guardar" : "Crear"}
                 </button>
               </div>
@@ -507,7 +525,7 @@ export default function SlidersPage() {
       {confirmDelete && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-6 w-full max-w-sm shadow-xl">
-            <h2 className="font-semibold text-gray-900 mb-2">¿Eliminar este slider?</h2>
+            <h2 className="font-semibold text-brand-primary mb-2">¿Eliminar este slider?</h2>
             <p className="text-sm text-gray-500 mb-4">Esta acción no se puede deshacer.</p>
             <div className="flex justify-end gap-3">
               <button onClick={() => setConfirmDelete(null)} className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">Cancelar</button>

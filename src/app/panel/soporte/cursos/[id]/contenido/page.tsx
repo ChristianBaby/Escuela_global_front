@@ -45,7 +45,7 @@ function ModuleForm({ initialTitle = "", initialDesc = "", onSubmit, onCancel, l
   const [desc, setDesc] = useState(initialDesc);
 
   return (
-    <div className="border border-[#2B55A3]/30 bg-blue-50/30 rounded-lg p-4 space-y-3">
+    <div className="border border-[#084D95]/30 bg-blue-50/30 rounded-lg p-4 space-y-3">
       <div className="space-y-1.5">
         <Label className="text-xs">Título del módulo *</Label>
         <Input
@@ -85,7 +85,7 @@ function ModuleForm({ initialTitle = "", initialDesc = "", onSubmit, onCancel, l
           type="button"
           onClick={() => onSubmit(title, desc)}
           disabled={!title.trim() || loading}
-          className="px-3 py-1.5 text-xs bg-[#2B55A3] text-white rounded-lg hover:bg-[#2B55A3]/90 disabled:opacity-50 flex items-center gap-1"
+          className="px-3 py-1.5 text-xs bg-[#084D95] text-white rounded-lg hover:bg-[#084D95]/90 disabled:opacity-50 flex items-center gap-1"
         >
           {loading && <Loader2 size={12} className="animate-spin" />}
           Guardar
@@ -129,7 +129,7 @@ function SessionForm({
   const [duration, setDuration] = useState(initialDuration);
 
   return (
-    <div className="border border-[#2B55A3]/30 bg-blue-50/30 rounded-lg p-4 space-y-3">
+    <div className="border border-[#084D95]/30 bg-blue-50/30 rounded-lg p-4 space-y-3">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div className="space-y-1.5 md:col-span-2">
           <Label className="text-xs">Título de la sesión *</Label>
@@ -188,7 +188,7 @@ function SessionForm({
           type="button"
           onClick={() => onSubmit({ title, desc, youtube, duration })}
           disabled={!title.trim() || !youtube.trim() || loading}
-          className="px-3 py-1.5 text-xs bg-[#2B55A3] text-white rounded-lg hover:bg-[#2B55A3]/90 disabled:opacity-50 flex items-center gap-1"
+          className="px-3 py-1.5 text-xs bg-[#084D95] text-white rounded-lg hover:bg-[#084D95]/90 disabled:opacity-50 flex items-center gap-1"
         >
           {loading && <Loader2 size={12} className="animate-spin" />}
           Guardar
@@ -384,7 +384,7 @@ export default function ContenidoPage() {
           <ArrowLeft size={20} />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Contenido del curso</h1>
+          <h1 className="text-2xl font-bold text-brand-primary">Contenido del curso</h1>
           {course && <p className="text-gray-500 text-sm truncate max-w-lg">{course.title}</p>}
         </div>
       </div>
@@ -396,7 +396,7 @@ export default function ContenidoPage() {
         <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 overflow-hidden flex flex-col">
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
             <div className="flex items-center gap-2">
-              <BookOpen size={16} className="text-[#2B55A3]" />
+              <BookOpen size={16} className="text-[#084D95]" />
               <span className="font-medium text-gray-900 text-sm">Módulos</span>
               {modules && <span className="text-xs text-gray-400">({modules.length})</span>}
             </div>
@@ -405,7 +405,7 @@ export default function ContenidoPage() {
                 setShowAddModule(true);
                 setEditingModuleId(null);
               }}
-              className="flex items-center gap-1 text-xs text-[#2B55A3] hover:underline"
+              className="flex items-center gap-1 text-xs text-[#084D95] hover:underline"
             >
               <Plus size={14} />
               Agregar
@@ -430,7 +430,7 @@ export default function ContenidoPage() {
 
             {loadingModules ? (
               <div className="flex items-center justify-center p-8">
-                <Loader2 size={20} className="animate-spin text-[#2B55A3]" />
+                <Loader2 size={20} className="animate-spin text-[#084D95]" />
               </div>
             ) : modules?.length === 0 ? (
               <div className="p-6 text-center text-gray-400 text-sm">
@@ -463,11 +463,11 @@ export default function ContenidoPage() {
                         onClick={() => setSelectedModuleId(mod.id)}
                         onKeyDown={(e) => e.key === "Enter" && setSelectedModuleId(mod.id)}
                         className={`w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-gray-50 transition-colors cursor-pointer ${
-                          selectedModuleId === mod.id ? "bg-blue-50 border-l-2 border-[#2B55A3]" : ""
+                          selectedModuleId === mod.id ? "bg-blue-50 border-l-2 border-[#084D95]" : ""
                         }`}
                       >
                         <div className="flex-1 min-w-0">
-                          <p className={`text-sm font-medium truncate ${selectedModuleId === mod.id ? "text-[#2B55A3]" : "text-gray-900"}`}>
+                          <p className={`text-sm font-medium truncate ${selectedModuleId === mod.id ? "text-[#084D95]" : "text-gray-900"}`}>
                             {mod.title}
                           </p>
                           <p className="text-xs text-gray-400 mt-0.5">
@@ -478,7 +478,7 @@ export default function ContenidoPage() {
                         <div className="flex items-center gap-1 shrink-0 mt-0.5" onClick={(e) => e.stopPropagation()}>
                           <button
                             onClick={() => setEditingModuleId(mod.id)}
-                            className="p-1 text-gray-400 hover:text-[#2B55A3] rounded transition-colors"
+                            className="p-1 text-gray-400 hover:text-[#084D95] rounded transition-colors"
                             title="Editar módulo"
                           >
                             <Pencil size={13} />
@@ -516,7 +516,7 @@ export default function ContenidoPage() {
             <>
               <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
                 <div className="flex items-center gap-2">
-                  <Video size={16} className="text-[#2B55A3]" />
+                  <Video size={16} className="text-[#084D95]" />
                   <span className="font-medium text-gray-900 text-sm">
                     {selectedModule?.title ?? "Sesiones"}
                   </span>
@@ -527,7 +527,7 @@ export default function ContenidoPage() {
                     setShowAddSession(true);
                     setEditingSessionId(null);
                   }}
-                  className="flex items-center gap-1 text-xs text-[#2B55A3] hover:underline"
+                  className="flex items-center gap-1 text-xs text-[#084D95] hover:underline"
                 >
                   <Plus size={14} />
                   Agregar sesión
@@ -553,7 +553,7 @@ export default function ContenidoPage() {
 
                 {loadingSessions ? (
                   <div className="flex items-center justify-center p-8">
-                    <Loader2 size={20} className="animate-spin text-[#2B55A3]" />
+                    <Loader2 size={20} className="animate-spin text-[#084D95]" />
                   </div>
                 ) : sessions?.length === 0 ? (
                   <div className="p-6 text-center text-gray-400 text-sm">
@@ -596,7 +596,7 @@ export default function ContenidoPage() {
                                       href={sess.youtube_url}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="text-xs text-[#2B55A3] hover:underline flex items-center gap-0.5"
+                                      className="text-xs text-[#084D95] hover:underline flex items-center gap-0.5"
                                       onClick={(e) => e.stopPropagation()}
                                     >
                                       <ExternalLink size={11} />
@@ -619,7 +619,7 @@ export default function ContenidoPage() {
                                 </button>
                                 <button
                                   onClick={() => setEditingSessionId(sess.id)}
-                                  className="p-1 text-gray-400 hover:text-[#2B55A3] rounded transition-colors"
+                                  className="p-1 text-gray-400 hover:text-[#084D95] rounded transition-colors"
                                   title="Editar sesión"
                                 >
                                   <Pencil size={13} />
@@ -648,7 +648,7 @@ export default function ContenidoPage() {
                                   </span>
                                   <button
                                     onClick={() => setShowAddMaterial((prev) => ({ ...prev, [sess.id]: !prev[sess.id] }))}
-                                    className="text-xs text-[#2B55A3] hover:underline flex items-center gap-0.5"
+                                    className="text-xs text-[#084D95] hover:underline flex items-center gap-0.5"
                                   >
                                     <Plus size={12} />
                                     Agregar
@@ -706,7 +706,7 @@ export default function ContenidoPage() {
                                           !materialUrl[sess.id]?.trim() ||
                                           createMaterialMutation.isPending
                                         }
-                                        className="text-xs px-2 py-1 bg-[#2B55A3] text-white rounded hover:bg-[#2B55A3]/90 disabled:opacity-50 flex items-center gap-1"
+                                        className="text-xs px-2 py-1 bg-[#084D95] text-white rounded hover:bg-[#084D95]/90 disabled:opacity-50 flex items-center gap-1"
                                       >
                                         {createMaterialMutation.isPending && <Loader2 size={10} className="animate-spin" />}
                                         Guardar
@@ -730,7 +730,7 @@ export default function ContenidoPage() {
                                           href={mat.drive_url}
                                           target="_blank"
                                           rel="noopener noreferrer"
-                                          className="text-[#2B55A3] hover:text-[#2B55A3]/70"
+                                          className="text-[#084D95] hover:text-[#084D95]/70"
                                         >
                                           <ExternalLink size={12} />
                                         </a>

@@ -19,7 +19,7 @@ export default function CheckoutSuccessPage() {
       fallback={
         <PublicLayout>
           <div className="max-w-md mx-auto text-center py-20">
-            <Loader2 size={28} className="animate-spin text-[#2B55A3] mx-auto" />
+            <Loader2 size={28} className="animate-spin text-[#084D95] mx-auto" />
           </div>
         </PublicLayout>
       }
@@ -50,7 +50,7 @@ function CheckoutSuccessContent() {
       <PublicLayout>
         <div className="max-w-md mx-auto text-center py-20">
           <p className="text-gray-500">No se encontró información de la orden.</p>
-          <Link href="/dashboard" className="mt-5 inline-flex items-center gap-2 px-4 py-2 bg-[#2B55A3] text-white rounded-lg text-sm font-medium">
+          <Link href="/dashboard" className="mt-5 inline-flex items-center gap-2 px-4 py-2 bg-[#084D95] text-white rounded-lg text-sm font-medium">
             Ir a mi Aula Virtual
           </Link>
         </div>
@@ -62,7 +62,7 @@ function CheckoutSuccessContent() {
     return (
       <PublicLayout>
         <div className="max-w-md mx-auto text-center py-20">
-          <Loader2 size={28} className="animate-spin text-[#2B55A3] mx-auto" />
+          <Loader2 size={28} className="animate-spin text-[#084D95] mx-auto" />
           <p className="text-gray-400 text-sm mt-3">Cargando comprobante…</p>
         </div>
       </PublicLayout>
@@ -101,7 +101,7 @@ function CheckoutSuccessContent() {
           </div>
 
           <div className="space-y-2">
-            <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
+            <h1 className="text-3xl font-bold text-brand-primary tracking-tight">
               ¡Matrícula Completada con Éxito!
             </h1>
             <p className="text-sm text-gray-500 max-w-md mx-auto">
@@ -141,7 +141,7 @@ function CheckoutSuccessContent() {
           <div className="pt-4 flex flex-col sm:flex-row gap-3 justify-center items-center">
             <Link
               href="/dashboard"
-              className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#2B55A3] hover:bg-[#2B55A3]/90 text-white font-medium px-6 py-3 rounded-xl shadow-sm transition-colors text-sm"
+              className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#084D95] hover:bg-[#084D95]/90 text-white font-medium px-6 py-3 rounded-xl shadow-sm transition-colors text-sm"
             >
               <BookOpen size={16} />
               Ir a mi Aula Virtual
@@ -163,8 +163,8 @@ function CheckoutSuccessContent() {
       <div id="comprobante-factura-a4" className="hidden print:block w-full max-w-4xl mx-auto p-12 text-black bg-white text-left font-sans">
         <div className="flex justify-between items-start border-b-2 border-gray-200 pb-6">
           <div>
-            <div className="flex items-center gap-2 text-[#2B55A3] font-bold text-2xl tracking-tight">
-              <div className="p-1.5 bg-[#2B55A3] text-white rounded-lg">
+            <div className="flex items-center gap-2 text-[#084D95] font-bold text-2xl tracking-tight">
+              <div className="p-1.5 bg-[#084D95] text-white rounded-lg">
                 <FileText size={20} />
               </div>
               ESCUELA GLOBAL
@@ -175,7 +175,7 @@ function CheckoutSuccessContent() {
           </div>
           <div className="border-2 border-black rounded-xl p-5 text-center min-w-[220px] bg-slate-50/50">
             <h2 className="text-xs font-bold uppercase tracking-wider text-gray-700">Comprobante de Pago</h2>
-            <h1 className="text-sm font-black uppercase my-1 text-[#2B55A3]">BOLETA DE VENTA</h1>
+            <h1 className="text-sm font-black uppercase my-1 text-[#084D95]">BOLETA DE VENTA</h1>
             <p className="text-xs font-mono font-bold text-gray-900 mt-1">{order.order_number}</p>
           </div>
         </div>
@@ -224,7 +224,7 @@ function CheckoutSuccessContent() {
             </div>
             <div className="flex justify-between font-bold text-sm text-gray-900 border-t border-gray-200 pt-2">
               <span>Importe Total:</span>
-              <span className="text-[#2B55A3] tabular-nums">{formatPrice(order.total, order.currency)}</span>
+              <span className="text-[#084D95] tabular-nums">{formatPrice(order.total, order.currency)}</span>
             </div>
           </div>
         </div>

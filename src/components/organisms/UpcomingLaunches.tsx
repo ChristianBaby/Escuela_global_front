@@ -11,20 +11,26 @@ import type { UpcomingLaunch } from "@/types";
 
 function LaunchCard({ launch }: { launch: UpcomingLaunch }) {
   return (
-    <div className="rounded-2xl overflow-hidden border border-gray-200 bg-white h-full">
-      {/* Imagen tal cual, sin efectos */}
+    <div className="group rounded-2xl overflow-hidden border border-gray-200 bg-white h-full hover:shadow-lg hover:border-brand-secondary/40 hover:-translate-y-0.5 transition-all duration-300">
       {launch.image_url && (
-        <img src={launch.image_url} alt={launch.title} className="w-full h-auto block" />
+        <div className="relative w-full">
+          <img
+            src={launch.image_url}
+            alt={launch.title}
+            className="w-full h-auto block transition-transform duration-500 group-hover:scale-105"
+          />
+          <span className="absolute top-3 left-3 bg-red-600 text-white text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+            En Vivo
+          </span>
+        </div>
       )}
 
-      <div className="p-4">
-        <span className="text-[#3FB1E5] font-bold text-[11px] uppercase tracking-widest">
-          {launch.category_label}
-        </span>
-        <h3 className="text-gray-900 font-bold text-base leading-snug mt-1 mb-3">
+      <div className="p-3">
+        <h3 className="text-brand-primary font-bold text-base leading-snug mt-1 mb-2 line-clamp-2">
           {launch.title}
         </h3>
-        <p className="flex items-center gap-1.5 text-gray-500 text-xs mb-4">
+        <p className="flex items-center gap-1.5 text-gray-500 text-xs mb-3">
           <Calendar size={14} />
           Fecha de Inicio: {new Date(launch.start_date).toLocaleDateString("es-PE", { day: "numeric", month: "long" })}
         </p>
@@ -34,12 +40,12 @@ function LaunchCard({ launch }: { launch: UpcomingLaunch }) {
             href={launch.link_url}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center gap-1 w-full border-2 border-[#0f1f4d] text-[#0f1f4d] font-semibold text-sm py-2.5 rounded-xl hover:bg-[#0f1f4d] hover:text-white transition-colors"
+            className="flex items-center justify-center gap-1 w-full bg-brand-primary text-white font-semibold text-sm py-2.5 rounded-xl hover:bg-brand-primary/90 transition-colors"
           >
             Más Información <ChevronRight size={16} />
           </a>
         ) : (
-          <span className="flex items-center justify-center gap-1 w-full border-2 border-gray-200 text-gray-400 font-semibold text-sm py-2.5 rounded-xl">
+          <span className="flex items-center justify-center gap-1 w-full bg-brand-primary text-white font-semibold text-sm py-2.5 rounded-xl opacity-90 cursor-default">
             Más Información <ChevronRight size={16} />
           </span>
         )}
@@ -51,8 +57,8 @@ function LaunchCard({ launch }: { launch: UpcomingLaunch }) {
 function LaunchCardSkeleton() {
   return (
     <div className="rounded-2xl overflow-hidden border border-gray-200 bg-white animate-pulse">
-      <div className="h-44 bg-gray-200" />
-      <div className="p-4 space-y-2">
+      <div className="h-72 bg-gray-200" />
+      <div className="p-3 space-y-2">
         <div className="h-3 bg-gray-200 rounded w-1/3" />
         <div className="h-4 bg-gray-200 rounded w-3/4" />
         <div className="h-8 bg-gray-100 rounded w-full mt-3" />
@@ -72,16 +78,17 @@ export function UpcomingLaunches() {
   return (
     <section className="py-16 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-10">
-          <span className="text-[#3FB1E5] font-bold text-xs uppercase tracking-widest">
+        <div className="text-center mb-12">
+          <span className="text-[#23AFE5] font-bold text-sm uppercase tracking-widest">
             Lo Más Reciente
           </span>
-          <h2 className="text-3xl font-bold text-gray-900 mt-1">Top Nuevos Lanzamientos</h2>
+          <h2 className="text-4xl sm:text-5xl font-bold text-brand-primary mt-2">Top Nuevos Lanzamientos</h2>
+          <div className="w-16 h-1 bg-brand-secondary rounded-full mx-auto mt-4" />
         </div>
 
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {Array.from({ length: 3 }).map((_, i) => <LaunchCardSkeleton key={i} />)}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            {Array.from({ length: 2 }).map((_, i) => <LaunchCardSkeleton key={i} />)}
           </div>
         ) : launches.length > 3 ? (
           <Swiper
@@ -93,7 +100,7 @@ export function UpcomingLaunches() {
             slidesPerView={1}
             breakpoints={{
               640: { slidesPerView: 2 },
-              1024: { slidesPerView: 3 },
+              1024: { slidesPerView: 2 },
             }}
             className="!pb-2"
           >
@@ -104,9 +111,11 @@ export function UpcomingLaunches() {
             ))}
           </Swiper>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="flex flex-wrap justify-center gap-6">
             {launches.map((launch) => (
-              <LaunchCard key={launch.id} launch={launch} />
+              <div key={launch.id} className="w-full sm:w-[420px]">
+                <LaunchCard launch={launch} />
+              </div>
             ))}
           </div>
         )}

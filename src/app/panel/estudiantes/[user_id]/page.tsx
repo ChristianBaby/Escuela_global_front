@@ -116,11 +116,11 @@ export default function StudentDetailPage() {
         </Link>
 
         <div className="flex items-start gap-4">
-          <div className="w-14 h-14 rounded-full bg-[#2B55A3] flex items-center justify-center text-white text-xl font-semibold shrink-0">
+          <div className="w-14 h-14 rounded-full bg-[#084D95] flex items-center justify-center text-white text-xl font-semibold shrink-0">
             {user.first_name?.charAt(0).toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
-            <h1 className="text-2xl font-bold text-gray-900">
+            <h1 className="text-2xl font-bold text-brand-primary">
               {user.first_name} {user.last_name}
             </h1>
             <div className="flex flex-wrap items-center gap-3 mt-1 text-sm text-gray-500">
@@ -165,7 +165,7 @@ export default function StudentDetailPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div className="bg-white rounded-xl border border-gray-200 p-5">
           <div className="flex items-center gap-2 mb-2">
-            <BookOpen size={16} className="text-[#2B55A3]" />
+            <BookOpen size={16} className="text-[#084D95]" />
             <p className="text-xs text-gray-500">Matrículas</p>
           </div>
           <p className="text-xl font-bold text-gray-900">{enrollments.length}</p>
@@ -179,14 +179,14 @@ export default function StudentDetailPage() {
         </div>
         <div className="bg-white rounded-xl border border-gray-200 p-5">
           <div className="flex items-center gap-2 mb-2">
-            <Clock size={16} className="text-[#2B55A3]" />
+            <Clock size={16} className="text-[#084D95]" />
             <p className="text-xs text-gray-500">Horas de estudio</p>
           </div>
           <p className="text-xl font-bold text-gray-900">{totalHours}h</p>
         </div>
         <div className="bg-white rounded-xl border border-gray-200 p-5">
           <div className="flex items-center gap-2 mb-2">
-            <Award size={16} className="text-[#2B55A3]" />
+            <Award size={16} className="text-[#084D95]" />
             <p className="text-xs text-gray-500">Certificados</p>
           </div>
           <p className="text-xl font-bold text-gray-900">{certificatesCount}</p>
@@ -259,7 +259,7 @@ export default function StudentDetailPage() {
                       <div className="flex items-center gap-2">
                         <div className="w-20 h-1.5 bg-gray-200 rounded-full overflow-hidden">
                           <div
-                            className="h-full bg-[#2B55A3] rounded-full"
+                            className="h-full bg-[#084D95] rounded-full"
                             style={{ width: `${Math.min(e.progress_percent, 100)}%` }}
                           />
                         </div>
@@ -291,7 +291,7 @@ export default function StudentDetailPage() {
                           <Link
                             href={`/verificar/${e.certificate.verification_code}`}
                             target="_blank"
-                            className="p-1 text-[#2B55A3] hover:text-[#2B55A3]/70 rounded transition-colors"
+                            className="p-1 text-[#084D95] hover:text-[#084D95]/70 rounded transition-colors"
                             title="Ver certificado"
                           >
                             <Award size={13} />
@@ -311,7 +311,7 @@ export default function StudentDetailPage() {
                       <div className="flex items-center justify-end gap-1">
                         <Link
                           href={`/panel/estudiantes/${userId}/cursos/${e.course_id}`}
-                          className="p-1.5 text-gray-400 hover:text-[#2B55A3] rounded transition-colors"
+                          className="p-1.5 text-gray-400 hover:text-[#084D95] rounded transition-colors"
                           title="Ver actividad"
                         >
                           <Eye size={14} />
@@ -338,7 +338,7 @@ export default function StudentDetailPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl w-full max-w-md shadow-xl">
             <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="font-semibold text-gray-900">Confirmar desmatriculación</h2>
+              <h2 className="font-semibold text-brand-primary">Confirmar desmatriculación</h2>
             </div>
             <div className="p-6 space-y-3">
               <p className="text-sm text-gray-600">

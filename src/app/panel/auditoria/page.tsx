@@ -22,7 +22,7 @@ export default function AuditoriaPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Auditoría</h1>
+        <h1 className="text-2xl font-bold text-brand-primary">Auditoría</h1>
         <p className="text-gray-500 text-sm">Registro de cambios realizados en el sistema</p>
       </div>
 

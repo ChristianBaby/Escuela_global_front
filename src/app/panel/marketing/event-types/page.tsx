@@ -97,14 +97,14 @@ export default function EventTypesPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Tipos de Evento</h1>
+          <h1 className="text-2xl font-bold text-brand-primary">Tipos de Evento</h1>
           <p className="text-gray-500 text-sm">
             Etiquetas que aparecen en los sliders del hero (Foro, Taller, Ponencia, etc.)
           </p>
         </div>
         <button
           onClick={openCreate}
-          className="bg-[#2B55A3] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#2B55A3]/90"
+          className="bg-[#084D95] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#084D95]/90"
         >
           + Nuevo tipo
         </button>
@@ -142,7 +142,7 @@ export default function EventTypesPage() {
                       <GripVertical size={14} className="text-gray-300" />
                     </td>
                     <td className="px-4 py-3 font-medium text-gray-900 flex items-center gap-2">
-                      <span className="inline-flex items-center text-xs font-bold uppercase tracking-widest text-[#3FB1E5] border border-[#3FB1E5]/40 rounded-full px-3 py-1">
+                      <span className="inline-flex items-center text-xs font-bold uppercase tracking-widest text-[#23AFE5] border border-[#23AFE5]/40 rounded-full px-3 py-1">
                         {et.name}
                       </span>
                     </td>
@@ -150,7 +150,7 @@ export default function EventTypesPage() {
                     <td className="px-4 py-3 text-right space-x-3">
                       <button
                         onClick={() => openEdit(et)}
-                        className="text-[#2B55A3] hover:text-[#2B55A3]/70 inline-flex items-center gap-1 text-xs"
+                        className="text-[#084D95] hover:text-[#084D95]/70 inline-flex items-center gap-1 text-xs"
                       >
                         <Pencil size={12} /> Editar
                       </button>
@@ -174,7 +174,7 @@ export default function EventTypesPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl w-full max-w-sm shadow-xl">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-              <h2 className="font-semibold text-gray-900">
+              <h2 className="font-semibold text-brand-primary">
                 {editing ? "Editar tipo de evento" : "Nuevo tipo de evento"}
               </h2>
               <button onClick={closeModal} className="text-gray-400 hover:text-gray-600 text-xl leading-none">
@@ -189,7 +189,7 @@ export default function EventTypesPage() {
                   autoFocus
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#084D95]/30"
                   placeholder="Ej: Foro, Taller, Ponencia..."
                 />
                 <p className="text-xs text-gray-400">
@@ -209,7 +209,7 @@ export default function EventTypesPage() {
                       display_order: e.target.value ? parseInt(e.target.value) : undefined,
                     })
                   }
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#084D95]/30"
                   placeholder="0"
                 />
               </div>
@@ -217,7 +217,7 @@ export default function EventTypesPage() {
               {form.name && (
                 <div className="pt-1">
                   <p className="text-xs text-gray-500 mb-1.5">Vista previa:</p>
-                  <span className="inline-flex items-center text-xs font-bold uppercase tracking-widest text-[#3FB1E5] border border-[#3FB1E5]/40 rounded-full px-4 py-1.5">
+                  <span className="inline-flex items-center text-xs font-bold uppercase tracking-widest text-[#23AFE5] border border-[#23AFE5]/40 rounded-full px-4 py-1.5">
                     {form.name}
                   </span>
                 </div>
@@ -234,7 +234,7 @@ export default function EventTypesPage() {
                 <button
                   type="submit"
                   disabled={isPending}
-                  className="bg-[#2B55A3] text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-[#2B55A3]/90 disabled:opacity-60"
+                  className="bg-[#084D95] text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-[#084D95]/90 disabled:opacity-60"
                 >
                   {isPending ? "Guardando..." : editing ? "Guardar cambios" : "Crear tipo"}
                 </button>
@@ -248,7 +248,7 @@ export default function EventTypesPage() {
       {confirmDelete && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl w-full max-w-sm shadow-xl p-6">
-            <h3 className="font-semibold text-gray-900 mb-2">¿Eliminar tipo de evento?</h3>
+            <h3 className="font-semibold text-brand-primary mb-2">¿Eliminar tipo de evento?</h3>
             <p className="text-sm text-gray-500 mb-5">
               Los sliders que usen este tipo quedarán sin etiqueta. Esta acción no se puede deshacer.
             </p>

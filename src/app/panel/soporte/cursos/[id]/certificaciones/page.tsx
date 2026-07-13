@@ -181,7 +181,7 @@ export default function CertificacionesPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 size={24} className="animate-spin text-[#2B55A3]" />
+        <Loader2 size={24} className="animate-spin text-[#084D95]" />
       </div>
     );
   }
@@ -190,7 +190,7 @@ export default function CertificacionesPage() {
     return (
       <div className="text-center py-16 text-gray-500">
         Error al cargar el módulo de certificaciones.{" "}
-        <Link href="/panel/soporte/cursos" className="text-[#2B55A3] hover:underline">
+        <Link href="/panel/soporte/cursos" className="text-[#084D95] hover:underline">
           Volver a cursos
         </Link>
       </div>
@@ -208,7 +208,7 @@ export default function CertificacionesPage() {
           <ArrowLeft size={20} />
         </Link>
         <div className="flex-1">
-          <h1 className="text-2xl font-bold text-gray-900">Certificaciones</h1>
+          <h1 className="text-2xl font-bold text-brand-primary">Certificaciones</h1>
           <p className="text-gray-500 text-sm mt-0.5 truncate max-w-xl">
             {data.course_title}
           </p>
@@ -278,7 +278,7 @@ export default function CertificacionesPage() {
               <select
                 value={certTemplateId}
                 onChange={(e) => setCertTemplateId(e.target.value)}
-                className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/20 bg-white"
+                className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#084D95]/20 bg-white"
               >
                 <option value="">Sin plantilla</option>
                 {plantillas?.map((t) => (
@@ -296,7 +296,7 @@ export default function CertificacionesPage() {
               <select
                 value={constanciaTemplateId}
                 onChange={(e) => setConstanciaTemplateId(e.target.value)}
-                className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/20 bg-white"
+                className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#084D95]/20 bg-white"
               >
                 <option value="">Sin plantilla</option>
                 {plantillas?.map((t) => (
@@ -310,7 +310,7 @@ export default function CertificacionesPage() {
             <button
               onClick={() => saveTemplatesMutation.mutate()}
               disabled={saveTemplatesMutation.isPending}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs bg-[#2B55A3] text-white rounded-lg hover:bg-[#2B55A3]/90 disabled:opacity-50 transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs bg-[#084D95] text-white rounded-lg hover:bg-[#084D95]/90 disabled:opacity-50 transition-colors"
             >
               {saveTemplatesMutation.isPending ? (
                 <Loader2 size={12} className="animate-spin" />
@@ -622,7 +622,7 @@ function TemplatePreview({
               transform: "translate(-50%, -50%)",
               fontSize,
               fontFamily: template.font_family,
-              color: "#2B55A3",
+              color: "#084D95",
               whiteSpace: "nowrap",
               textShadow: "0 1px 4px rgba(0,0,0,0.6)",
               userSelect: "none",

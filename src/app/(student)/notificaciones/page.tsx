@@ -33,7 +33,7 @@ const TYPE_COLOR: Record<string, string> = {
   completado:    "bg-green-100 text-green-600",
   recordatorio:  "bg-yellow-100 text-yellow-600",
   matriculacion: "bg-purple-100 text-purple-600",
-  certificado:   "bg-[#2B55A3]/10 text-[#2B55A3]",
+  certificado:   "bg-[#084D95]/10 text-[#084D95]",
   personalizada: "bg-indigo-100 text-indigo-600",
   descuento:     "bg-orange-100 text-orange-600",
   anuncio:       "bg-pink-100 text-pink-600",
@@ -157,10 +157,10 @@ function NotifPanel({
         </div>
 
         {/* Título dinámico */}
-        <h2 className="text-xl font-bold text-gray-900 text-center">{cfg.heading}</h2>
+        <h2 className="text-xl font-bold text-brand-primary text-center">{cfg.heading}</h2>
 
         {/* Título real de la notificación */}
-        <p className="text-sm font-semibold text-[#2B55A3] text-center mt-1">{stripEmojis(notif.title)}</p>
+        <p className="text-sm font-semibold text-[#084D95] text-center mt-1">{stripEmojis(notif.title)}</p>
 
         {/* Descripción dinámica */}
         <p className="text-sm text-gray-600 text-center mt-3 leading-relaxed">{cfg.description}</p>
@@ -176,7 +176,7 @@ function NotifPanel({
         {notif.redirect_url && (
           <button
             onClick={() => onRedirect(notif)}
-            className="mt-5 w-full flex items-center justify-center gap-2 bg-[#2B55A3] hover:bg-[#2B55A3]/90 text-white font-semibold py-2.5 rounded-xl transition-colors"
+            className="mt-5 w-full flex items-center justify-center gap-2 bg-[#084D95] hover:bg-[#084D95]/90 text-white font-semibold py-2.5 rounded-xl transition-colors"
           >
             <BtnIcon size={16} />
             {cfg.btnLabel}
@@ -263,13 +263,13 @@ export default function NotificacionesPage() {
       {/* Encabezado */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Bell size={22} className="text-[#2B55A3]" />
+          <h1 className="text-2xl font-bold text-brand-primary flex items-center gap-2">
+            <Bell size={22} className="text-[#084D95]" />
             Notificaciones
           </h1>
           {unread > 0 && (
             <p className="text-sm text-gray-500 mt-0.5">
-              Tienes <span className="font-semibold text-[#2B55A3]">{unread}</span> sin leer
+              Tienes <span className="font-semibold text-[#084D95]">{unread}</span> sin leer
             </p>
           )}
         </div>
@@ -277,7 +277,7 @@ export default function NotificacionesPage() {
           <button
             onClick={() => markAll.mutate()}
             disabled={markAll.isPending}
-            className="flex items-center gap-1.5 text-sm text-[#2B55A3] hover:text-[#2B55A3]/80 border border-[#2B55A3]/30 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 text-sm text-[#084D95] hover:text-[#084D95]/80 border border-[#084D95]/30 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
           >
             <CheckCheck size={15} />
             Marcar todas como leídas
@@ -332,7 +332,7 @@ export default function NotificacionesPage() {
                     </p>
                     {/* Punto azul si no leída */}
                     {!n.is_read && (
-                      <span className="w-2 h-2 rounded-full bg-[#2B55A3] shrink-0 mt-1.5" />
+                      <span className="w-2 h-2 rounded-full bg-[#084D95] shrink-0 mt-1.5" />
                     )}
                   </div>
                   <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{stripEmojis(n.body)}</p>

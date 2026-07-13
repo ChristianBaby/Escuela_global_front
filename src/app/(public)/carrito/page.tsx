@@ -191,8 +191,8 @@ export default function CarritoPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <ShoppingCart size={24} className="text-[#2B55A3]" />
+            <h1 className="text-2xl font-bold text-brand-primary flex items-center gap-2">
+              <ShoppingCart size={24} className="text-[#084D95]" />
               Carrito de compras
             </h1>
             <p className="text-gray-500 mt-1 text-sm">
@@ -241,7 +241,7 @@ export default function CarritoPage() {
           {/* ── Summary (1/3) ── */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-xl border border-gray-200 p-5 sticky top-20 shadow-sm">
-              <h2 className="font-semibold text-gray-900 mb-4">Resumen del pedido</h2>
+              <h2 className="font-semibold text-brand-primary mb-4">Resumen del pedido</h2>
 
               {displayItems.length === 0 ? (
                 <p className="text-sm text-gray-400 text-center py-4">Agrega cursos para continuar</p>
@@ -263,14 +263,14 @@ export default function CarritoPage() {
 
                   <div className="border-t border-gray-100 mt-4 pt-4 flex justify-between font-semibold text-gray-900">
                     <span>Total</span>
-                    <span className="text-lg text-[#2B55A3] tabular-nums">
+                    <span className="text-lg text-[#084D95] tabular-nums">
                       {symbol} {subtotal.toFixed(2)}
                     </span>
                   </div>
 
                   <button
                     onClick={handleCheckout}
-                    className="mt-4 w-full flex items-center justify-center gap-2 bg-[#2B55A3] hover:bg-[#2B55A3]/90 text-white font-medium py-3 rounded-xl shadow-sm transition-colors"
+                    className="mt-4 w-full flex items-center justify-center gap-2 bg-[#084D95] hover:bg-[#084D95]/90 text-white font-medium py-3 rounded-xl shadow-sm transition-colors"
                   >
                     Proceder al pago
                     <ArrowRight size={16} />
@@ -286,7 +286,7 @@ export default function CarritoPage() {
 
               <Link
                 href="/cursos"
-                className="mt-3 w-full flex items-center justify-center gap-2 border border-gray-300 hover:border-[#2B55A3] text-gray-700 hover:text-[#2B55A3] font-medium py-2.5 rounded-xl transition-colors text-sm"
+                className="mt-3 w-full flex items-center justify-center gap-2 border border-gray-300 hover:border-[#084D95] text-gray-700 hover:text-[#084D95] font-medium py-2.5 rounded-xl transition-colors text-sm"
               >
                 <ShoppingBag size={15} />
                 Continuar comprando
@@ -298,12 +298,12 @@ export default function CarritoPage() {
         {/* ── Catalog section ── */}
         <section>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">
+            <h2 className="text-lg font-semibold text-brand-primary">
               {displayItems.length === 0 ? "Todos los cursos disponibles" : "También podría interesarte"}
             </h2>
             <Link
               href="/cursos"
-              className="text-sm text-[#2B55A3] hover:underline flex items-center gap-1"
+              className="text-sm text-[#084D95] hover:underline flex items-center gap-1"
             >
               Ver catálogo completo <ArrowRight size={14} />
             </Link>
@@ -370,25 +370,25 @@ function CartItemRow({
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-4 flex items-center gap-4 hover:border-gray-300 transition-colors shadow-sm">
-      <div className="w-20 h-14 rounded-lg bg-[#2B55A3]/10 flex-shrink-0 overflow-hidden flex items-center justify-center">
+      <div className="w-20 h-14 rounded-lg bg-[#084D95]/10 flex-shrink-0 overflow-hidden flex items-center justify-center">
         {item.thumbnail_url ? (
           <img src={item.thumbnail_url} alt={item.title} className="w-full h-full object-cover" />
         ) : (
-          <BookOpen size={20} className="text-[#2B55A3]/40" />
+          <BookOpen size={20} className="text-[#084D95]/40" />
         )}
       </div>
 
       <div className="flex-1 min-w-0">
         <Link
           href={`/cursos/${item.slug}`}
-          className="font-medium text-gray-900 text-sm leading-snug line-clamp-2 hover:text-[#2B55A3] transition-colors"
+          className="font-medium text-gray-900 text-sm leading-snug line-clamp-2 hover:text-[#084D95] transition-colors"
         >
           {item.title}
         </Link>
       </div>
 
       <div className="text-right shrink-0">
-        <p className="font-bold text-[#2B55A3] tabular-nums">
+        <p className="font-bold text-[#084D95] tabular-nums">
           {symbol} {displayPrice.toFixed(2)}
         </p>
         {hasDiscount && (
@@ -428,14 +428,14 @@ function CatalogCourseCard({
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md hover:border-gray-300 transition-all flex flex-col">
-      <div className="relative h-32 bg-[#2B55A3]/10 flex-shrink-0 overflow-hidden flex items-center justify-center">
+      <div className="relative h-32 bg-[#084D95]/10 flex-shrink-0 overflow-hidden flex items-center justify-center">
         {course.thumbnail_url ? (
           <img src={course.thumbnail_url} alt={course.title} className="w-full h-full object-cover" />
         ) : (
-          <BookOpen size={24} className="text-[#2B55A3]/30" />
+          <BookOpen size={24} className="text-[#084D95]/30" />
         )}
         {course.category && (
-          <span className="absolute top-2 left-2 bg-[#3FB1E5] text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">
+          <span className="absolute top-2 left-2 bg-[#23AFE5] text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">
             {course.category.name}
           </span>
         )}
@@ -444,7 +444,7 @@ function CatalogCourseCard({
       <div className="p-3 flex flex-col gap-2 flex-1">
         <Link
           href={`/cursos/${course.slug}`}
-          className="font-semibold text-gray-900 text-xs leading-snug line-clamp-2 hover:text-[#2B55A3] transition-colors"
+          className="font-semibold text-gray-900 text-xs leading-snug line-clamp-2 hover:text-[#084D95] transition-colors"
         >
           {course.title}
         </Link>
@@ -462,7 +462,7 @@ function CatalogCourseCard({
 
         <div className="mt-auto pt-2 border-t border-gray-100 flex items-center justify-between gap-1.5">
           <div>
-            <span className="font-bold text-[#2B55A3] text-sm tabular-nums">
+            <span className="font-bold text-[#084D95] text-sm tabular-nums">
               {symbol} {displayPrice.toFixed(2)}
             </span>
             {hasDiscount && (
@@ -481,7 +481,7 @@ function CatalogCourseCard({
             <button
               onClick={onAdd}
               disabled={adding}
-              className="flex items-center gap-0.5 text-[11px] font-medium text-white bg-[#2B55A3] hover:bg-[#2B55A3]/90 px-2 py-1 rounded-lg transition-colors disabled:opacity-60 shrink-0"
+              className="flex items-center gap-0.5 text-[11px] font-medium text-white bg-[#084D95] hover:bg-[#084D95]/90 px-2 py-1 rounded-lg transition-colors disabled:opacity-60 shrink-0"
             >
               <Plus size={11} />
               Agregar

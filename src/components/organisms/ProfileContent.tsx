@@ -126,13 +126,13 @@ export function ProfileContent() {
   return (
     <div className="max-w-2xl">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Mi Perfil</h1>
+        <h1 className="text-2xl font-bold text-brand-primary">Mi Perfil</h1>
         <p className="text-sm text-gray-500">Administra tu información personal y seguridad de cuenta</p>
       </div>
 
       {/* Card superior: avatar + info */}
       <div className="bg-white rounded-xl border border-gray-200 p-6 flex items-center gap-5 mb-6">
-        <div className="w-16 h-16 rounded-full bg-[#2B55A3] flex items-center justify-center text-white text-xl font-bold shrink-0">
+        <div className="w-16 h-16 rounded-full bg-[#084D95] flex items-center justify-center text-white text-xl font-bold shrink-0">
           {initials}
         </div>
         <div className="flex-1 min-w-0">
@@ -181,7 +181,7 @@ export function ProfileContent() {
             onClick={() => setTab(key)}
             className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
               tab === key
-                ? "border-[#2B55A3] text-[#2B55A3]"
+                ? "border-[#084D95] text-[#084D95]"
                 : "border-transparent text-gray-500 hover:text-gray-700"
             }`}
           >
@@ -199,7 +199,7 @@ export function ProfileContent() {
                 <label className="text-sm font-medium text-gray-700">Nombres *</label>
                 <input
                   {...registerProfile("first_name")}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#084D95]/30"
                 />
                 {profileErrors.first_name && (
                   <p className="text-xs text-red-500">{profileErrors.first_name.message}</p>
@@ -209,7 +209,7 @@ export function ProfileContent() {
                 <label className="text-sm font-medium text-gray-700">Apellidos *</label>
                 <input
                   {...registerProfile("last_name")}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#084D95]/30"
                 />
                 {profileErrors.last_name && (
                   <p className="text-xs text-red-500">{profileErrors.last_name.message}</p>
@@ -233,7 +233,7 @@ export function ProfileContent() {
                 <input
                   {...registerProfile("phone")}
                   placeholder="+51 999 000 111"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#084D95]/30"
                 />
               </div>
               <div className="space-y-1.5">
@@ -241,7 +241,7 @@ export function ProfileContent() {
                 <input
                   {...registerProfile("country")}
                   placeholder="Perú"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#084D95]/30"
                 />
               </div>
             </div>
@@ -251,7 +251,7 @@ export function ProfileContent() {
               <input
                 {...registerProfile("profession")}
                 placeholder="Ej: Contador, Ingeniero, Diseñador..."
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#084D95]/30"
               />
             </div>
 
@@ -259,7 +259,7 @@ export function ProfileContent() {
               <button
                 type="submit"
                 disabled={updateMutation.isPending}
-                className="px-6 py-2 bg-[#2B55A3] text-white rounded-lg text-sm font-medium hover:bg-[#2B55A3]/90 disabled:opacity-50 transition-colors"
+                className="px-6 py-2 bg-[#084D95] text-white rounded-lg text-sm font-medium hover:bg-[#084D95]/90 disabled:opacity-50 transition-colors"
               >
                 {updateMutation.isPending ? "Guardando..." : "Guardar cambios"}
               </button>
@@ -272,7 +272,7 @@ export function ProfileContent() {
       {tab === "security" && (
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <div className="mb-5">
-            <h2 className="text-sm font-semibold text-gray-900">Cambiar contraseña</h2>
+            <h2 className="text-sm font-semibold text-brand-primary">Cambiar contraseña</h2>
             <p className="text-xs text-gray-500 mt-0.5">
               Utiliza al menos 8 caracteres combinando letras y números.
             </p>
@@ -285,7 +285,7 @@ export function ProfileContent() {
                 <input
                   {...registerPassword("current_password")}
                   type={showCurrent ? "text" : "password"}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-[#084D95]/30"
                 />
                 <button
                   type="button"
@@ -307,7 +307,7 @@ export function ProfileContent() {
                 <input
                   {...registerPassword("new_password")}
                   type={showNew ? "text" : "password"}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-[#084D95]/30"
                 />
                 <button
                   type="button"
@@ -329,7 +329,7 @@ export function ProfileContent() {
                 <input
                   {...registerPassword("confirm_password")}
                   type={showConfirm ? "text" : "password"}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-[#084D95]/30"
                 />
                 <button
                   type="button"
@@ -348,7 +348,7 @@ export function ProfileContent() {
               <button
                 type="submit"
                 disabled={passwordMutation.isPending}
-                className="px-6 py-2 bg-[#2B55A3] text-white rounded-lg text-sm font-medium hover:bg-[#2B55A3]/90 disabled:opacity-50 transition-colors"
+                className="px-6 py-2 bg-[#084D95] text-white rounded-lg text-sm font-medium hover:bg-[#084D95]/90 disabled:opacity-50 transition-colors"
               >
                 {passwordMutation.isPending ? "Actualizando..." : "Actualizar contraseña"}
               </button>

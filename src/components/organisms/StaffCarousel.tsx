@@ -20,15 +20,16 @@ export function StaffCarousel() {
   if (!isLoading && staff.length === 0) return null;
 
   return (
-    <section className="py-16 bg-[#0b1230]">
+    <section className="py-16" style={{ backgroundColor: "#2B55A3" }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-10">
-          <span className="text-[#3FB1E5] font-bold text-xs uppercase tracking-widest">
+        <div className="text-center mb-12">
+          <span className="text-[#23AFE5] font-bold text-sm uppercase tracking-widest">
             Nuestros Expertos
           </span>
-          <h2 className="text-3xl font-bold text-white mt-1">
-            Staff de <span className="text-[#3FB1E5]">Docentes</span>
+          <h2 className="text-4xl sm:text-5xl font-bold text-white mt-2">
+            Staff de <span className="text-[#23AFE5]">Docentes</span>
           </h2>
+          <div className="w-16 h-1 bg-brand-secondary rounded-full mx-auto mt-4" />
         </div>
 
         {isLoading ? (
@@ -55,7 +56,7 @@ export function StaffCarousel() {
                 <img
                   src={member.image_url}
                   alt=""
-                  className="w-full h-auto rounded-2xl block"
+                  className="w-full h-auto rounded-2xl block shadow-xl ring-1 ring-white/10 hover:ring-brand-secondary/50 hover:shadow-2xl transition-all duration-300"
                 />
               </SwiperSlide>
             ))}

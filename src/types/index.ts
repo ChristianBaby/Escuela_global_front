@@ -288,7 +288,34 @@ export interface Slider {
   position_on_page: SliderPosition;
   display_order: number;
   status: PromotionStatus;
+  show_content: boolean;
   courses?: Course[];
+  created_at: string;
+}
+
+export interface Software {
+  id: string;
+  name: string;
+  image_url: string;
+  display_order: number;
+  status: PromotionStatus;
+  created_at: string;
+}
+
+export interface ScrollPopup {
+  id: string;
+  image_url: string;
+  destination_url?: string;
+  display_order: number;
+  status: PromotionStatus;
+  created_at: string;
+}
+
+export interface Alliance {
+  id: string;
+  image_url: string;
+  display_order: number;
+  status: PromotionStatus;
   created_at: string;
 }
 

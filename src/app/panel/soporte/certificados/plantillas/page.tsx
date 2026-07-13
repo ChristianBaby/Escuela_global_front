@@ -49,7 +49,7 @@ const FRONT_FIELDS: {
   {
     key: "student_name_position",
     label: "Nombre del estudiante",
-    color: "#2B55A3",
+    color: "#084D95",
     sizeKey: "student_name",
   },
 ];
@@ -163,8 +163,8 @@ function ImageUploader({
           onClick={() => inputRef.current?.click()}
           className={`border-2 border-dashed rounded-xl cursor-pointer transition-all flex flex-col items-center justify-center gap-3 text-sm min-h-[100px] py-8
             ${dragging
-              ? "border-[#2B55A3] bg-[#2B55A3]/5"
-              : "border-gray-300 hover:border-[#2B55A3]/50 hover:bg-gray-50"
+              ? "border-[#084D95] bg-[#084D95]/5"
+              : "border-gray-300 hover:border-[#084D95]/50 hover:bg-gray-50"
             }`}
         >
           <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
@@ -256,7 +256,7 @@ function PositionEditor({
             onClick={() => setActiveSide(key)}
             className={`text-xs px-4 py-2 rounded-lg border transition-all font-medium ${
               activeSide === key
-                ? "bg-[#2B55A3] border-[#2B55A3] text-white"
+                ? "bg-[#084D95] border-[#084D95] text-white"
                 : "border-gray-300 text-gray-600 hover:bg-gray-50"
             }`}
           >
@@ -396,7 +396,7 @@ function PositionEditor({
                   x: Number(e.target.value),
                 })
               }
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#084D95]/30"
             />
           </div>
           <div className="space-y-1">
@@ -412,7 +412,7 @@ function PositionEditor({
                   y: Number(e.target.value),
                 })
               }
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#084D95]/30"
             />
           </div>
         </div>
@@ -620,7 +620,7 @@ export default function PlantillasPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold text-brand-primary">
             Plantillas de Certificado
           </h1>
           <p className="text-gray-500 text-sm mt-0.5">
@@ -630,7 +630,7 @@ export default function PlantillasPage() {
         </div>
         <button
           onClick={openCreate}
-          className="bg-[#2B55A3] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#2B55A3]/90 transition-colors"
+          className="bg-[#084D95] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#084D95]/90 transition-colors"
         >
           + Nueva plantilla
         </button>
@@ -656,7 +656,7 @@ export default function PlantillasPage() {
           </p>
           <button
             onClick={openCreate}
-            className="mt-5 bg-[#2B55A3] text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-[#2B55A3]/90"
+            className="mt-5 bg-[#084D95] text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-[#084D95]/90"
           >
             Crear plantilla
           </button>
@@ -682,7 +682,7 @@ export default function PlantillasPage() {
           <div className="bg-white rounded-xl w-full max-w-3xl shadow-2xl max-h-[92vh] flex flex-col">
             {/* Cabecera */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 flex-shrink-0">
-              <h2 className="font-semibold text-gray-900 text-base">
+              <h2 className="font-semibold text-brand-primary text-base">
                 {editing ? "Editar plantilla" : "Nueva plantilla de certificado"}
               </h2>
               <button
@@ -707,7 +707,7 @@ export default function PlantillasPage() {
                   onClick={() => setActiveTab(key)}
                   className={`flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors ${
                     activeTab === key
-                      ? "border-[#2B55A3] text-[#2B55A3]"
+                      ? "border-[#084D95] text-[#084D95]"
                       : "border-transparent text-gray-500 hover:text-gray-700"
                   }`}
                 >
@@ -758,7 +758,7 @@ export default function PlantillasPage() {
                     <button
                       type="button"
                       onClick={() => setActiveTab("positions")}
-                      className="px-4 py-2 text-sm border border-[#2B55A3] text-[#2B55A3] rounded-lg hover:bg-[#2B55A3]/5"
+                      className="px-4 py-2 text-sm border border-[#084D95] text-[#084D95] rounded-lg hover:bg-[#084D95]/5"
                     >
                       Siguiente →
                     </button>
@@ -766,7 +766,7 @@ export default function PlantillasPage() {
                   <button
                     type="submit"
                     disabled={isPending}
-                    className="px-4 py-2 text-sm bg-[#2B55A3] text-white rounded-lg hover:bg-[#2B55A3]/90 disabled:opacity-50"
+                    className="px-4 py-2 text-sm bg-[#084D95] text-white rounded-lg hover:bg-[#084D95]/90 disabled:opacity-50"
                   >
                     {isPending
                       ? "Guardando..."
@@ -785,7 +785,7 @@ export default function PlantillasPage() {
       {confirmDeleteId && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl p-6 w-full max-w-sm shadow-xl">
-            <h2 className="font-semibold text-gray-900 mb-1">
+            <h2 className="font-semibold text-brand-primary mb-1">
               ¿Eliminar esta plantilla?
             </h2>
             <p className="text-sm text-gray-500 mb-5">
@@ -854,7 +854,7 @@ function TemplateCard({
       {/* Info + acciones */}
       <div className="p-4">
         <div className="flex items-start justify-between gap-2 mb-1">
-          <h3 className="font-semibold text-gray-900 text-sm leading-tight">
+          <h3 className="font-semibold text-brand-primary text-sm leading-tight">
             {t.name}
           </h3>
           <span
@@ -899,7 +899,7 @@ function TemplateCard({
           )}
           <button
             onClick={() => onEdit(t)}
-            className="flex-1 text-xs py-1.5 rounded-lg border border-[#2B55A3]/30 text-[#2B55A3] hover:bg-[#2B55A3]/5 transition-colors flex items-center justify-center gap-1"
+            className="flex-1 text-xs py-1.5 rounded-lg border border-[#084D95]/30 text-[#084D95] hover:bg-[#084D95]/5 transition-colors flex items-center justify-center gap-1"
           >
             <Pencil size={11} />
             Editar
@@ -947,7 +947,7 @@ function ConfigTab({
           value={form.name}
           onChange={(e) => onChange({ name: e.target.value })}
           placeholder="Ej: Plantilla Principal 2025"
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#084D95]/30"
         />
       </div>
 
@@ -973,7 +973,7 @@ function ConfigTab({
         <select
           value={form.font_family}
           onChange={(e) => onChange({ font_family: e.target.value })}
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#084D95]/30"
         >
           {FONT_FAMILIES.map((f) => (
             <option key={f} value={f} style={{ fontFamily: f }}>
@@ -997,7 +997,7 @@ function ConfigTab({
             {
               sizeKey: "student_name" as const,
               label: "Nombre del estudiante",
-              color: "#2B55A3",
+              color: "#084D95",
             },
           ].map(({ sizeKey, label, color }) => (
             <div key={sizeKey} className="space-y-1">
@@ -1021,7 +1021,7 @@ function ConfigTab({
                     },
                   })
                 }
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#084D95]/30"
               />
             </div>
           ))}
@@ -1045,7 +1045,7 @@ function ConfigTab({
             step={10}
             value={form.qr_size}
             onChange={(e) => onChange({ qr_size: Number(e.target.value) })}
-            className="w-36 border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+            className="w-36 border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#084D95]/30"
           />
           <span
             className="w-2.5 h-2.5 rounded-full flex-shrink-0"
