@@ -44,12 +44,13 @@ export function CourseCarousel({
       autoplay={{ delay: 4000, disableOnInteraction: false }}
       navigation
       loop={courses.length > 4}
+      centerInsufficientSlides
       spaceBetween={20}
       slidesPerView={1}
       breakpoints={{
-        640: { slidesPerView: 2 },
-        1024: { slidesPerView: 3 },
-        1280: { slidesPerView: 4 },
+        640: { slidesPerView: 2, spaceBetween: 28 },
+        1024: { slidesPerView: 3, spaceBetween: 40 },
+        1280: { slidesPerView: 4, spaceBetween: 48 },
       }}
       className="eg-carousel-nav !pb-2"
     >
