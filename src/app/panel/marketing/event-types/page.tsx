@@ -116,6 +116,7 @@ export default function EventTypesPage() {
         ) : isError ? (
           <div className="p-8 text-center text-red-500 text-sm">Error al cargar tipos de evento</div>
         ) : (
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
@@ -166,6 +167,7 @@ export default function EventTypesPage() {
               )}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 

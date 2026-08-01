@@ -180,13 +180,13 @@ function CheckoutSuccessContent() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-6 my-6 text-xs">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 my-6 text-xs">
           <div className="space-y-1.5">
             <h3 className="font-bold text-gray-400 uppercase text-[10px] tracking-wider">Datos del Adquiriente</h3>
             <p><strong className="text-gray-500">Estudiante:</strong> <span className="text-gray-900 font-semibold">{order.billing_name}</span></p>
             <p><strong className="text-gray-500">Email:</strong> <span className="text-gray-900">{order.billing_email}</span></p>
           </div>
-          <div className="space-y-1.5 pl-10">
+          <div className="space-y-1.5 sm:pl-10">
             <h3 className="font-bold text-gray-400 uppercase text-[10px] tracking-wider">Información de Operación</h3>
             <p><strong className="text-gray-500">Fecha de Emisión:</strong> <span className="text-gray-900">{fechaActual}</span></p>
             <p><strong className="text-gray-500">Moneda:</strong> <span className="text-gray-900 font-bold">{order.currency}</span></p>
@@ -194,6 +194,7 @@ function CheckoutSuccessContent() {
           </div>
         </div>
 
+        <div className="overflow-x-auto">
         <table className="w-full text-xs text-left mt-8 border-collapse">
           <thead>
             <tr className="bg-gray-100 text-gray-700 uppercase text-[10px] tracking-wider font-bold">
@@ -215,6 +216,7 @@ function CheckoutSuccessContent() {
             ))}
           </tbody>
         </table>
+        </div>
 
         <div className="mt-8 flex justify-end">
           <div className="w-64 space-y-2 text-xs border-t-2 border-gray-100 pt-4">

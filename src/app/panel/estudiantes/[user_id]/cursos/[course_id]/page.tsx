@@ -175,6 +175,7 @@ export default function ActividadEstudiantePage() {
         <div className="px-6 py-4 border-b border-gray-100">
           <h3 className="text-sm font-semibold text-gray-700">Progreso por sesión</h3>
         </div>
+        <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
@@ -242,6 +243,7 @@ export default function ActividadEstudiantePage() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );

@@ -433,46 +433,48 @@ export default function AdminDashboardPage() {
           ) : eFin ? (
             <div className="p-8 text-center text-gray-400 text-sm">Sin datos disponibles</div>
           ) : (
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-100">
-                <tr>
-                  <th className="text-left px-4 py-2 text-gray-500 font-medium text-xs">#</th>
-                  <th className="text-left px-4 py-2 text-gray-500 font-medium text-xs">Curso</th>
-                  <th className="text-right px-4 py-2 text-gray-500 font-medium text-xs">
-                    Matriculados
-                  </th>
-                  <th className="text-right px-4 py-2 text-gray-500 font-medium text-xs">
-                    Finalización
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {!topFinalizacion?.length ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 border-b border-gray-100">
                   <tr>
-                    <td colSpan={4} className="px-4 py-8 text-center text-gray-400">
-                      Sin datos
-                    </td>
+                    <th className="text-left px-4 py-2 text-gray-500 font-medium text-xs">#</th>
+                    <th className="text-left px-4 py-2 text-gray-500 font-medium text-xs">Curso</th>
+                    <th className="text-right px-4 py-2 text-gray-500 font-medium text-xs">
+                      Matriculados
+                    </th>
+                    <th className="text-right px-4 py-2 text-gray-500 font-medium text-xs">
+                      Finalización
+                    </th>
                   </tr>
-                ) : (
-                  topFinalizacion.map((c, i) => (
-                    <tr key={c.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-2.5 text-gray-400 text-xs">{i + 1}</td>
-                      <td className="px-4 py-2.5 text-gray-900 text-xs leading-tight">
-                        {c.title}
-                      </td>
-                      <td className="px-4 py-2.5 text-right text-gray-600 text-xs">
-                        {c.enrolled_count}
-                      </td>
-                      <td className="px-4 py-2.5 text-right">
-                        <span className="text-green-700 font-semibold text-xs">
-                          {c.completion_rate}%
-                        </span>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {!topFinalizacion?.length ? (
+                    <tr>
+                      <td colSpan={4} className="px-4 py-8 text-center text-gray-400">
+                        Sin datos
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ) : (
+                    topFinalizacion.map((c, i) => (
+                      <tr key={c.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-2.5 text-gray-400 text-xs">{i + 1}</td>
+                        <td className="px-4 py-2.5 text-gray-900 text-xs leading-tight">
+                          {c.title}
+                        </td>
+                        <td className="px-4 py-2.5 text-right text-gray-600 text-xs">
+                          {c.enrolled_count}
+                        </td>
+                        <td className="px-4 py-2.5 text-right">
+                          <span className="text-green-700 font-semibold text-xs">
+                            {c.completion_rate}%
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
 
@@ -488,45 +490,47 @@ export default function AdminDashboardPage() {
           ) : eTopEst ? (
             <div className="p-8 text-center text-gray-400 text-sm">Sin datos disponibles</div>
           ) : (
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-100">
-                <tr>
-                  <th className="text-left px-4 py-2 text-gray-500 font-medium text-xs">#</th>
-                  <th className="text-left px-4 py-2 text-gray-500 font-medium text-xs">
-                    Estudiante
-                  </th>
-                  <th className="text-right px-4 py-2 text-gray-500 font-medium text-xs">Cursos</th>
-                  <th className="text-right px-4 py-2 text-gray-500 font-medium text-xs">Horas</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {!topEstudiantes?.length ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 border-b border-gray-100">
                   <tr>
-                    <td colSpan={4} className="px-4 py-8 text-center text-gray-400">
-                      Sin datos
-                    </td>
+                    <th className="text-left px-4 py-2 text-gray-500 font-medium text-xs">#</th>
+                    <th className="text-left px-4 py-2 text-gray-500 font-medium text-xs">
+                      Estudiante
+                    </th>
+                    <th className="text-right px-4 py-2 text-gray-500 font-medium text-xs">Cursos</th>
+                    <th className="text-right px-4 py-2 text-gray-500 font-medium text-xs">Horas</th>
                   </tr>
-                ) : (
-                  topEstudiantes.map((e, i) => (
-                    <tr key={e.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-2.5 text-gray-400 text-xs">{i + 1}</td>
-                      <td className="px-4 py-2.5">
-                        <p className="text-gray-900 text-xs font-medium">
-                          {e.first_name} {e.last_name}
-                        </p>
-                        <p className="text-xs text-gray-400">{e.email}</p>
-                      </td>
-                      <td className="px-4 py-2.5 text-right text-gray-600 text-xs">
-                        {e.courses_count}
-                      </td>
-                      <td className="px-4 py-2.5 text-right text-gray-600 text-xs">
-                        {e.total_watched_hours}h
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {!topEstudiantes?.length ? (
+                    <tr>
+                      <td colSpan={4} className="px-4 py-8 text-center text-gray-400">
+                        Sin datos
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ) : (
+                    topEstudiantes.map((e, i) => (
+                      <tr key={e.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-2.5 text-gray-400 text-xs">{i + 1}</td>
+                        <td className="px-4 py-2.5">
+                          <p className="text-gray-900 text-xs font-medium">
+                            {e.first_name} {e.last_name}
+                          </p>
+                          <p className="text-xs text-gray-400">{e.email}</p>
+                        </td>
+                        <td className="px-4 py-2.5 text-right text-gray-600 text-xs">
+                          {e.courses_count}
+                        </td>
+                        <td className="px-4 py-2.5 text-right text-gray-600 text-xs">
+                          {e.total_watched_hours}h
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       </div>

@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { PublicLayout } from "@/components/templates";
-import { HeroSlider, PromoBanners, UpcomingLaunches, StaffCarousel, SoftwareCarousel, ScrollPopupModal, CertificateShowcase, AlliancesCarousel, CourseGrid } from "@/components/organisms";
+import { HeroSlider, PromoBanners, UpcomingLaunches, StaffCarousel, SoftwareCarousel, ScrollPopupModal, CertificateShowcase, AlliancesCarousel, CourseCarousel } from "@/components/organisms";
 import { cursosService } from "@/lib/services/courses";
 
 export default function HomePage() {
@@ -46,7 +46,7 @@ export default function HomePage() {
               Ver todos →
             </a>
           </div>
-          <CourseGrid
+          <CourseCarousel
             courses={courses}
             loading={isLoading}
             emptyMessage="Los cursos estarán disponibles próximamente."

@@ -181,6 +181,7 @@ export default function MatriculadosCursoPage() {
         ) : isError ? (
           <div className="p-8 text-center text-red-500 text-sm">Error al cargar datos</div>
         ) : (
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
@@ -259,6 +260,7 @@ export default function MatriculadosCursoPage() {
               )}
             </tbody>
           </table>
+          </div>
         )}
 
         {data && data.total_pages > 1 && (

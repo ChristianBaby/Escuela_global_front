@@ -112,6 +112,7 @@ export default function PublicacionesPage() {
         ) : isError ? (
           <div className="p-8 text-center text-red-500 text-sm">Error al cargar publicaciones</div>
         ) : (
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
@@ -165,6 +166,7 @@ export default function PublicacionesPage() {
               )}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 
@@ -227,7 +229,7 @@ export default function PublicacionesPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <label className="text-sm font-medium text-gray-700">Inicio vigencia</label>
                   <input

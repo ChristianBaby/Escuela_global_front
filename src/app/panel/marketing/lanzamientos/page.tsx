@@ -118,6 +118,7 @@ export default function LanzamientosPage() {
         ) : isError ? (
           <div className="p-8 text-center text-red-500 text-sm">Error al cargar lanzamientos</div>
         ) : (
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
@@ -169,6 +170,7 @@ export default function LanzamientosPage() {
               )}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 

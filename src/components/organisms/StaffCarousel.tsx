@@ -48,7 +48,7 @@ export function StaffCarousel() {
               640: { slidesPerView: 2 },
               1024: { slidesPerView: 3 },
             }}
-            className="!pb-2"
+            className="eg-carousel-nav !pb-2"
           >
             {staff.map((member) => (
               <SwiperSlide key={member.id}>

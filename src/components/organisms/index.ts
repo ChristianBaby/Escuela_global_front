@@ -9,6 +9,7 @@ export { ScrollPopupModal } from "./ScrollPopupModal";
 export { CertificateShowcase } from "./CertificateShowcase";
 export { AlliancesCarousel } from "./AlliancesCarousel";
 export { CourseGrid } from "./CourseGrid";
+export { CourseCarousel } from "./CourseCarousel";
 export { CourseFilters } from "./CourseFilters";
 export { Footer } from "./Footer";
 export { CartModal } from "./CartModal";

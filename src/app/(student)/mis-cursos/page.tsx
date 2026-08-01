@@ -75,6 +75,12 @@ function MisCursosContent() {
     { key: "sin-iniciar",   label: "Sin iniciar",  count: sinIniciar.length,  icon: <Clock size={14} /> },
   ];
 
+  const TAB_COLORS: Record<Tab, { border: string; text: string; badge: string }> = {
+    "sin-iniciar": { border: "border-red-600",       text: "text-red-600",       badge: "bg-red-600" },
+    progreso:      { border: "border-brand-primary", text: "text-brand-primary", badge: "bg-brand-primary" },
+    completados:   { border: "border-emerald-600",   text: "text-emerald-600",   badge: "bg-emerald-600" },
+  };
+
   return (
     <div className="space-y-6">
       {/* Cabecera */}
@@ -99,23 +105,26 @@ function MisCursosContent() {
 
       {/* Tabs */}
       <div className="flex gap-1 border-b border-gray-200">
-        {tabList.map(({ key, label, count, icon }) => (
-          <button
-            key={key}
-            onClick={() => { setTab(key); setSearch(""); }}
-            className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
-              tab === key
-                ? "border-[#084D95] text-[#084D95]"
-                : "border-transparent text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            {icon}
-            {label}
-            <span className={`text-xs px-1.5 py-0.5 rounded-full ${tab === key ? "bg-[#084D95] text-white" : "bg-gray-100 text-gray-500"}`}>
-              {count}
-            </span>
-          </button>
-        ))}
+        {tabList.map(({ key, label, count, icon }) => {
+          const colors = TAB_COLORS[key];
+          const isActive = tab === key;
+          const isColored = count > 0 || isActive;
+          return (
+            <button
+              key={key}
+              onClick={() => { setTab(key); setSearch(""); }}
+              className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
+                isColored ? colors.text : "text-gray-500 hover:text-gray-700"
+              } ${isActive ? colors.border : "border-transparent"}`}
+            >
+              {icon}
+              {label}
+              <span className={`text-xs px-1.5 py-0.5 rounded-full ${isColored ? `${colors.badge} text-white` : "bg-gray-100 text-gray-500"}`}>
+                {count}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Contenido */}

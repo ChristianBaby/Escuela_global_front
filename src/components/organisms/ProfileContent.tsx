@@ -194,7 +194,7 @@ export function ProfileContent() {
       {tab === "personal" && (
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <form onSubmit={handleProfileSubmit(onProfileSubmit)} className="space-y-5">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-gray-700">Nombres *</label>
                 <input
@@ -227,7 +227,7 @@ export function ProfileContent() {
               <p className="text-xs text-gray-400">El correo no puede modificarse desde aquí.</p>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-gray-700">Teléfono</label>
                 <input

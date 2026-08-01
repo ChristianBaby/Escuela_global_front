@@ -382,7 +382,7 @@ function PositionEditor({
           />
           Posición exacta — {activeDef.label}
         </p>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="space-y-1">
             <label className="text-xs text-gray-500">X (px horizontal)</label>
             <input
@@ -992,7 +992,7 @@ function ConfigTab({
           Tamaño de fuente por campo{" "}
           <span className="text-xs text-gray-400 font-normal">(unidades virtuales)</span>
         </label>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {[
             {
               sizeKey: "student_name" as const,

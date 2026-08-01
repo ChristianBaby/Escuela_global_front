@@ -253,6 +253,7 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
                     <li key={item.href}>
                       <Link
                         href={item.href}
+                        onClick={() => setSidebarOpen(false)}
                         className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
                           isActive(item.href)
                             ? "bg-[#084D95] text-white font-medium"

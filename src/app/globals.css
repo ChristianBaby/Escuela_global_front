@@ -167,3 +167,22 @@
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+/* Flechas de navegación de los carruseles (swiper) — simples y tenues, sin fondo */
+.eg-carousel-nav {
+  --swiper-navigation-color: #3FB1E5;
+  --swiper-navigation-size: 14px;
+}
+.eg-carousel-nav .swiper-button-next,
+.eg-carousel-nav .swiper-button-prev {
+  width: 20px !important;
+  height: 20px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  opacity: 0.55;
+  transition: opacity 150ms ease;
+}
+.eg-carousel-nav .swiper-button-next:hover,
+.eg-carousel-nav .swiper-button-prev:hover {
+  opacity: 1;
+}

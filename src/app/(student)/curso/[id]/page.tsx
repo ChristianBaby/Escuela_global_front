@@ -72,6 +72,7 @@ export default function CourseViewerPage() {
   });
 
   // Estado del visor
+  const videoSectionRef = useRef<HTMLDivElement>(null);
   const [currentSessionId, setCurrentSessionId] = useState<string>("");
   const [completedSet, setCompletedSet] = useState<Set<string>>(new Set());
   const [progressPercent, setProgressPercent] = useState(0);
@@ -161,6 +162,9 @@ export default function CourseViewerPage() {
     if (!completedSet.has(sessionId)) {
       updateProgress.mutate({ sessionId, forceComplete: true });
     }
+    // En mobile/tablet el video y la lista comparten una sola columna con scroll
+    // de página; al elegir una sesión, llevamos la vista al video (como YouTube).
+    videoSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   const toggleModule = (moduleId: string) => {
@@ -175,7 +179,7 @@ export default function CourseViewerPage() {
 
   if (loadingContent || loadingProgress) {
     return (
-      <div className="-mx-8 -my-8 flex items-center justify-center h-[calc(100vh-64px)]">
+      <div className="-mx-4 lg:-mx-8 -my-6 lg:-my-8 flex items-center justify-center h-[calc(100vh-64px)]">
         <Loader2 size={32} className="animate-spin text-[#084D95]" />
       </div>
     );
@@ -183,7 +187,7 @@ export default function CourseViewerPage() {
 
   if (!content || !progressData) {
     return (
-      <div className="-mx-8 -my-8 flex flex-col items-center justify-center h-[calc(100vh-64px)] gap-4">
+      <div className="-mx-4 lg:-mx-8 -my-6 lg:-my-8 flex flex-col items-center justify-center h-[calc(100vh-64px)] gap-4">
         <p className="text-gray-500">No tienes acceso a este curso.</p>
         <Link href="/mis-cursos" className="text-[#084D95] underline text-sm">Ver mis cursos</Link>
       </div>
@@ -191,7 +195,7 @@ export default function CourseViewerPage() {
   }
 
   return (
-    <div className="-mx-8 -my-8">
+    <div className="-mx-4 lg:-mx-8 -my-6 lg:-my-8">
       {/* Breadcrumb */}
       <div className="bg-white border-b border-gray-200 px-6 py-3 flex items-center gap-2 text-sm">
         <Link href="/mis-cursos" className="text-gray-400 hover:text-gray-600">Mis cursos</Link>
@@ -200,10 +204,12 @@ export default function CourseViewerPage() {
       </div>
 
       {/* Layout principal */}
-      <div className="flex flex-col lg:flex-row h-[calc(100vh-113px)]">
+      {/* En mobile todo fluye normal (scroll de la página); el panel dividido
+          con altura fija y scroll independiente por columna es solo desktop. */}
+      <div className="flex flex-col lg:flex-row lg:h-[calc(100vh-113px)]">
 
         {/* ── Columna izquierda (70%) ── */}
-        <div className="flex-1 min-w-0 overflow-y-auto bg-gray-50">
+        <div ref={videoSectionRef} className="flex-1 min-w-0 lg:overflow-y-auto bg-gray-50">
 
           {/* Video */}
           {allSessions.length === 0 ? (
@@ -360,7 +366,7 @@ export default function CourseViewerPage() {
           </div>
 
           {/* Módulos y sesiones */}
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 lg:overflow-y-auto">
             {content.modules.length === 0 && (
               <div className="flex flex-col items-center justify-center py-16 px-4 gap-3">
                 <Circle size={32} className="text-gray-300" />
