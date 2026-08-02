@@ -14,6 +14,7 @@ const ROLES: { value: UserRole; label: string }[] = [
   { value: "soporte", label: "Soporte" },
   { value: "marketing", label: "Marketing" },
   { value: "admin", label: "Administrador" },
+  { value: "coordinador", label: "Coordinador" },
 ];
 
 const STATUS_LABELS: Record<string, string> = {
@@ -112,12 +113,14 @@ export default function EstudiantesPage() {
           <h1 className="text-2xl font-bold text-brand-primary">Usuarios</h1>
           <p className="text-gray-500 text-sm">Gestión de cuentas del sistema</p>
         </div>
-        <button
-          onClick={() => setShowModal(true)}
-          className="bg-[#084D95] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#084D95]/90 transition-colors"
-        >
-          + Nuevo usuario
-        </button>
+        {isAdmin && (
+          <button
+            onClick={() => setShowModal(true)}
+            className="bg-[#084D95] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#084D95]/90 transition-colors"
+          >
+            + Nuevo usuario
+          </button>
+        )}
       </div>
 
       {/* Filtros */}
@@ -194,20 +197,22 @@ export default function EstudiantesPage() {
                       >
                         Ver detalle
                       </Link>
-                      {u.status === "active" ? (
-                        <button
-                          onClick={() => suspendMutation.mutate(u.id)}
-                          className="text-yellow-600 hover:underline text-xs mr-3"
-                        >
-                          Suspender
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => activateMutation.mutate(u.id)}
-                          className="text-green-600 hover:underline text-xs mr-3"
-                        >
-                          Activar
-                        </button>
+                      {isAdmin && (
+                        u.status === "active" ? (
+                          <button
+                            onClick={() => suspendMutation.mutate(u.id)}
+                            className="text-yellow-600 hover:underline text-xs mr-3"
+                          >
+                            Suspender
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => activateMutation.mutate(u.id)}
+                            className="text-green-600 hover:underline text-xs mr-3"
+                          >
+                            Activar
+                          </button>
+                        )
                       )}
                     </td>
                   </tr>

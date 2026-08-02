@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, Suspense } from "react";
+import { useState, useMemo, useEffect, Suspense } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
 import { studentService } from "@/lib/services/student";
@@ -41,9 +41,10 @@ function formatRelative(iso: string) {
 
 function MisCursosContent() {
   const searchParams = useSearchParams();
-  const initialTab = (searchParams.get("tab") as Tab) ?? "progreso";
+  const explicitTab = searchParams.get("tab") as Tab | null;
 
-  const [tab, setTab] = useState<Tab>(initialTab);
+  const [tab, setTab] = useState<Tab>(explicitTab ?? "progreso");
+  const [autoSelected, setAutoSelected] = useState(false);
   const [search, setSearch] = useState("");
 
   const { data: enrollments = [], isLoading } = useQuery({
@@ -54,6 +55,16 @@ function MisCursosContent() {
   const enProgreso   = enrollments.filter((e) => !e.completed_at && e.progress_percent > 0);
   const completados  = enrollments.filter((e) => !!e.completed_at);
   const sinIniciar   = enrollments.filter((e) => !e.completed_at && e.progress_percent === 0);
+
+  // Selecciona la pestaña por defecto según el estado de los cursos del estudiante,
+  // solo si no llegó con un ?tab= explícito (ej. enlace desde el dashboard).
+  useEffect(() => {
+    if (explicitTab || autoSelected || isLoading) return;
+    if (sinIniciar.length > 0) setTab("sin-iniciar");
+    else if (enProgreso.length > 0) setTab("progreso");
+    else if (completados.length > 0) setTab("completados");
+    setAutoSelected(true);
+  }, [explicitTab, autoSelected, isLoading, sinIniciar.length, enProgreso.length, completados.length]);
 
   const tabData: Record<Tab, Enrollment[]> = {
     progreso:      enProgreso,

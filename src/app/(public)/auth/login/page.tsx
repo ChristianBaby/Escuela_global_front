@@ -22,10 +22,11 @@ const loginSchema = z.object({
 type LoginFormData = z.infer<typeof loginSchema>;
 
 const ROLE_REDIRECTS: Record<string, string> = {
-  estudiante: "/dashboard",
-  soporte:    "/panel/soporte/cursos",
-  marketing:  "/panel/marketing/publicaciones",
-  admin:      "/panel",
+  estudiante:   "/dashboard",
+  soporte:      "/panel/soporte/cursos",
+  marketing:    "/panel/marketing/publicaciones",
+  admin:        "/panel",
+  coordinador:  "/panel/estudiantes",
 };
 
 export default function LoginPage() {

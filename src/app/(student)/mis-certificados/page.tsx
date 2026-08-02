@@ -102,9 +102,11 @@ export default function MisCertificadosPage() {
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold text-brand-primary truncate">{cert.course_title}</h3>
                   <p className="text-xs text-gray-400 mt-0.5">Emitido el {formatDate(cert.issued_at)}</p>
-                  <p className="font-mono text-xs text-gray-500 mt-1 truncate">
-                    {cert.verification_code}
-                  </p>
+                  {cert.verification_code && (
+                    <p className="font-mono text-xs text-gray-500 mt-1 truncate">
+                      {cert.verification_code}
+                    </p>
+                  )}
                 </div>
 
                 {/* Acciones */}
@@ -130,23 +132,25 @@ export default function MisCertificadosPage() {
                     PDF
                   </button>
 
-                  <button
-                    onClick={() => {
-                      if (navigator.share) {
-                        navigator.share({
-                          title: `Certificado — ${cert.course_title}`,
-                          text: `Completé el curso "${cert.course_title}" en Escuela Global.`,
-                          url: shareUrl,
-                        });
-                      } else {
-                        navigator.clipboard.writeText(shareUrl);
-                      }
-                    }}
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-                    title="Compartir"
-                  >
-                    <Share2 size={13} />
-                  </button>
+                  {cert.verification_code && (
+                    <button
+                      onClick={() => {
+                        if (navigator.share) {
+                          navigator.share({
+                            title: `Certificado — ${cert.course_title}`,
+                            text: `Completé el curso "${cert.course_title}" en Escuela Global.`,
+                            url: shareUrl,
+                          });
+                        } else {
+                          navigator.clipboard.writeText(shareUrl);
+                        }
+                      }}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                      title="Compartir"
+                    >
+                      <Share2 size={13} />
+                    </button>
+                  )}
                 </div>
               </div>
             );

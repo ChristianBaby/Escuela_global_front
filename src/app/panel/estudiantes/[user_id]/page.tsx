@@ -288,14 +288,16 @@ export default function StudentDetailPage() {
                           >
                             {e.certificate.type}
                           </span>
-                          <Link
-                            href={`/verificar/${e.certificate.verification_code}`}
-                            target="_blank"
-                            className="p-1 text-[#084D95] hover:text-[#084D95]/70 rounded transition-colors"
-                            title="Ver certificado"
-                          >
-                            <Award size={13} />
-                          </Link>
+                          {e.certificate.verification_code && (
+                            <Link
+                              href={`/verificar/${e.certificate.verification_code}`}
+                              target="_blank"
+                              className="p-1 text-[#084D95] hover:text-[#084D95]/70 rounded transition-colors"
+                              title="Ver certificado"
+                            >
+                              <Award size={13} />
+                            </Link>
+                          )}
                         </div>
                       ) : e.completed_at && e.has_review ? (
                         <span className="text-xs px-2 py-1 rounded-full bg-yellow-50 text-yellow-700">

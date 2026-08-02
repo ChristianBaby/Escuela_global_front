@@ -6,21 +6,23 @@ const ROLE_ROUTES: Record<string, string[]> = {
   "/mis-cursos":          ["estudiante"],
   "/curso/":              ["estudiante"],
   "/pedido":              ["estudiante"],
-  "/perfil":              ["estudiante", "soporte", "marketing", "admin"],
-  "/notificaciones":      ["estudiante", "soporte", "marketing", "admin"],
+  "/perfil":              ["estudiante", "soporte", "marketing", "admin", "coordinador"],
+  "/notificaciones":      ["estudiante", "soporte", "marketing", "admin", "coordinador"],
   "/certificado":         ["estudiante"],
   "/panel/soporte":       ["soporte", "admin"],
   "/panel/marketing":     ["marketing", "admin"],
-  "/panel/estudiantes":   ["admin", "soporte"],
+  "/panel/coordinador":   ["coordinador", "admin"],
+  "/panel/estudiantes":   ["admin", "soporte", "coordinador"],
   "/panel/auditoria":     ["admin"],
-  "/panel/cursos":        ["admin"],
-  "/panel":               ["admin", "soporte", "marketing"],
+  "/panel/cursos":        ["admin", "coordinador"],
+  "/panel":               ["admin", "soporte", "marketing", "coordinador"],
 };
 
 // Rutas más específicas primero
 const ROUTE_PREFIXES = [
   "/panel/soporte",
   "/panel/marketing",
+  "/panel/coordinador",
   "/panel/estudiantes",
   "/panel/auditoria",
   "/panel/cursos",

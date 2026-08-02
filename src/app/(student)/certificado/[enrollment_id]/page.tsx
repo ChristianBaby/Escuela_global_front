@@ -81,7 +81,7 @@ export default function CertificadoPage() {
     );
   }
 
-  const verifyUrl = `/verificar/${cert.verification_code}`;
+  const verifyUrl = cert.verification_code ? `/verificar/${cert.verification_code}` : null;
 
   return (
     <div className="max-w-4xl mx-auto space-y-5">
@@ -143,25 +143,27 @@ export default function CertificadoPage() {
           {loadingPdf ? "Generando PDF..." : "Descargar PDF"}
         </button>
 
-        <button
-          onClick={() => {
-            const shareUrl = `${window.location.origin}${verifyUrl}`;
-            if (navigator.share) {
-              navigator.share({
-                title: `Certificado — ${cert.course_title}`,
-                text: `Completé "${cert.course_title}" en Escuela Global.`,
-                url: shareUrl,
-              });
-            } else {
-              navigator.clipboard.writeText(shareUrl);
-              alert("Enlace de verificación copiado al portapapeles.");
-            }
-          }}
-          className="flex-1 flex items-center justify-center gap-2 border border-gray-300 text-gray-700 py-3 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors"
-        >
-          <Share2 size={16} />
-          Compartir
-        </button>
+        {verifyUrl && (
+          <button
+            onClick={() => {
+              const shareUrl = `${window.location.origin}${verifyUrl}`;
+              if (navigator.share) {
+                navigator.share({
+                  title: `Certificado — ${cert.course_title}`,
+                  text: `Completé "${cert.course_title}" en Escuela Global.`,
+                  url: shareUrl,
+                });
+              } else {
+                navigator.clipboard.writeText(shareUrl);
+                alert("Enlace de verificación copiado al portapapeles.");
+              }
+            }}
+            className="flex-1 flex items-center justify-center gap-2 border border-gray-300 text-gray-700 py-3 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors"
+          >
+            <Share2 size={16} />
+            Compartir
+          </button>
+        )}
       </div>
 
       {/* Datos del certificado */}
@@ -192,22 +194,24 @@ export default function CertificadoPage() {
             </span>
           </div>
         )}
-        <div className="flex items-center justify-between px-6 py-3.5">
-          <div className="flex items-center gap-1.5">
-            <CheckCircle2 size={14} className="text-emerald-500" />
-            <span className="font-mono text-xs text-gray-500 tracking-wider">
-              {cert.verification_code}
-            </span>
+        {verifyUrl && (
+          <div className="flex items-center justify-between px-6 py-3.5">
+            <div className="flex items-center gap-1.5">
+              <CheckCircle2 size={14} className="text-emerald-500" />
+              <span className="font-mono text-xs text-gray-500 tracking-wider">
+                {cert.verification_code}
+              </span>
+            </div>
+            <Link
+              href={verifyUrl}
+              target="_blank"
+              className="inline-flex items-center gap-1 text-xs text-[#084D95] hover:underline"
+            >
+              Verificar autenticidad
+              <ExternalLink size={11} />
+            </Link>
           </div>
-          <Link
-            href={verifyUrl}
-            target="_blank"
-            className="inline-flex items-center gap-1 text-xs text-[#084D95] hover:underline"
-          >
-            Verificar autenticidad
-            <ExternalLink size={11} />
-          </Link>
-        </div>
+        )}
       </div>
 
       <Link

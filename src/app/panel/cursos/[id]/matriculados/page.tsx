@@ -7,6 +7,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { cursosService } from "@/lib/services/courses";
 import { dashboardService, type MatriculadoCurso } from "@/lib/services/dashboard";
+import { useAuthStore } from "@/store/authStore";
 import { Download, ArrowLeft, Users, TrendingUp, Clock, Trophy, Loader2 } from "lucide-react";
 
 function downloadBlob(blob: Blob, filename: string) {
@@ -53,6 +54,8 @@ function StatCard({
 export default function MatriculadosCursoPage() {
   const params = useParams();
   const courseId = params.id as string;
+  const { user: me } = useAuthStore();
+  const isCoordinador = me?.role === "coordinador";
 
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
@@ -92,7 +95,7 @@ export default function MatriculadosCursoPage() {
       {/* Header */}
       <div className="mb-6">
         <Link
-          href="/panel/soporte/cursos"
+          href={isCoordinador ? "/panel/coordinador/cursos" : "/panel/soporte/cursos"}
           className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-3"
         >
           <ArrowLeft size={14} /> Volver a cursos
@@ -164,14 +167,16 @@ export default function MatriculadosCursoPage() {
           <option value="online">Online</option>
           <option value="manual">Manual</option>
         </select>
-        <button
-          onClick={() => exportMutation.mutate()}
-          disabled={!data?.data?.length || exportMutation.isPending}
-          className="ml-auto flex items-center gap-2 px-4 py-2 text-sm bg-[#084D95] text-white rounded-lg hover:bg-[#084D95]/90 disabled:opacity-40 transition-colors"
-        >
-          {exportMutation.isPending ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />}
-          Exportar Excel
-        </button>
+        {!isCoordinador && (
+          <button
+            onClick={() => exportMutation.mutate()}
+            disabled={!data?.data?.length || exportMutation.isPending}
+            className="ml-auto flex items-center gap-2 px-4 py-2 text-sm bg-[#084D95] text-white rounded-lg hover:bg-[#084D95]/90 disabled:opacity-40 transition-colors"
+          >
+            {exportMutation.isPending ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />}
+            Exportar Excel
+          </button>
+        )}
       </div>
 
       {/* Tabla */}

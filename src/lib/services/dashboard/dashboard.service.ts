@@ -154,7 +154,7 @@ export interface StudentDetailEnrollment {
   has_review: boolean;
   certificate: {
     id: string;
-    verification_code: string;
+    verification_code: string | null;
     type: string;
     issued_at: string;
   } | null;

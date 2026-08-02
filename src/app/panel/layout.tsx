@@ -55,7 +55,24 @@ const NAV_SECTIONS: NavSection[] = [
         label: "Estudiantes",
         href: "/panel/estudiantes",
         icon: <Users size={18} />,
-        roles: ["admin", "soporte"],
+        roles: ["admin", "soporte", "coordinador"],
+      },
+    ],
+  },
+  {
+    title: "Coordinación",
+    items: [
+      {
+        label: "Cursos",
+        href: "/panel/coordinador/cursos",
+        icon: <BookOpen size={18} />,
+        roles: ["coordinador"],
+      },
+      {
+        label: "Matriculas",
+        href: "/panel/coordinador/matriculas",
+        icon: <ClipboardList size={18} />,
+        roles: ["coordinador"],
       },
     ],
   },
@@ -154,7 +171,7 @@ const NAV_SECTIONS: NavSection[] = [
         label: "Mi perfil",
         href: "/panel/perfil",
         icon: <User size={18} />,
-        roles: ["admin", "soporte", "marketing"],
+        roles: ["admin", "soporte", "marketing", "coordinador"],
       },
       {
         label: "Auditoría",

@@ -1,6 +1,6 @@
 // ─── Enums ────────────────────────────────────────────────────────────────────
 
-export type UserRole = "estudiante" | "soporte" | "marketing" | "admin";
+export type UserRole = "estudiante" | "soporte" | "marketing" | "admin" | "coordinador";
 export type UserStatus = "active" | "suspended" | "deleted";
 export type CourseLevel = "principiante" | "intermedio" | "avanzado";
 export type CourseStatus = "draft" | "published" | "archived";
@@ -239,13 +239,13 @@ export interface CertificateSummary {
   id: string;
   enrollment_id: string;
   course_title: string;
-  verification_code: string;
+  verification_code: string | null;
   issued_at: string;
 }
 
 export interface CertificateDetail {
   id: string;
-  verification_code: string;
+  verification_code: string | null;
   course_title: string;
   student_name: string;
   issued_at: string;
