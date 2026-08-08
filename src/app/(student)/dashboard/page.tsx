@@ -73,24 +73,30 @@ export default function DashboardPage() {
     "sin-iniciar": sinIniciar,
   };
 
+  const TAB_COLORS: Record<Tab, { border: string; text: string; badge: string }> = {
+    "sin-iniciar": { border: "border-red-600",       text: "text-red-600",       badge: "bg-red-600" },
+    progreso:      { border: "border-brand-primary", text: "text-brand-primary", badge: "bg-brand-primary" },
+    completados:   { border: "border-emerald-600",   text: "text-emerald-600",   badge: "bg-emerald-600" },
+  };
+
   return (
     <div className="space-y-8">
       {/* Bienvenida */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Hola, {firstName}</h1>
+        <h1 className="text-2xl font-bold text-brand-primary">Hola, {firstName}</h1>
         <p className="text-gray-500 mt-1">Aquí tienes un resumen de tu aprendizaje.</p>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          icon={<BookOpen size={20} className="text-[#2B55A3]" />}
+          icon={<BookOpen size={20} className="text-[#084D95]" />}
           label="En progreso"
           value={isLoading ? "—" : enProgreso.length}
           bg="bg-blue-50"
         />
         <StatCard
-          icon={<Clock size={20} className="text-[#3FB1E5]" />}
+          icon={<Clock size={20} className="text-[#23AFE5]" />}
           label="Progreso prom."
           value={isLoading ? "—" : `${progresoPromedio}%`}
           bg="bg-cyan-50"
@@ -112,12 +118,12 @@ export default function DashboardPage() {
       {/* Continuar aprendiendo */}
       {!isLoading && cursoReciente?.course && (
         <section>
-          <h2 className="text-base font-semibold text-gray-900 mb-3">Continuar aprendiendo</h2>
+          <h2 className="text-base font-semibold text-brand-primary mb-3">Continuar aprendiendo</h2>
           <div className="bg-white rounded-xl border border-gray-200 p-5 flex items-center gap-5">
-            <div className="w-20 h-14 rounded-lg bg-[#2B55A3]/10 flex items-center justify-center shrink-0 overflow-hidden">
+            <div className="w-20 h-14 rounded-lg bg-[#084D95]/10 flex items-center justify-center shrink-0 overflow-hidden">
               {cursoReciente.course.thumbnail_url
                 ? <img src={cursoReciente.course.thumbnail_url} alt="" className="w-full h-full object-cover" />
-                : <BookOpen size={24} className="text-[#2B55A3]" />
+                : <BookOpen size={24} className="text-[#084D95]" />
               }
             </div>
             <div className="flex-1 min-w-0">
@@ -125,7 +131,7 @@ export default function DashboardPage() {
               <div className="flex items-center gap-2 mt-2">
                 <div className="flex-1 h-1.5 bg-gray-200 rounded-full max-w-xs">
                   <div
-                    className="h-1.5 bg-[#2B55A3] rounded-full transition-all"
+                    className="h-1.5 bg-[#084D95] rounded-full transition-all"
                     style={{ width: `${cursoReciente.progress_percent}%` }}
                   />
                 </div>
@@ -134,7 +140,7 @@ export default function DashboardPage() {
             </div>
             <Link
               href={`/curso/${cursoReciente.course_id}`}
-              className="flex items-center gap-2 bg-[#2B55A3] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#2B55A3]/90 transition-colors shrink-0"
+              className="flex items-center gap-2 bg-[#084D95] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#084D95]/90 transition-colors shrink-0"
             >
               <PlayCircle size={16} />
               Continuar
@@ -146,30 +152,33 @@ export default function DashboardPage() {
       {/* Mis cursos con tabs */}
       <section>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-base font-semibold text-gray-900">Mis cursos</h2>
-          <Link href="/mis-cursos" className="text-sm text-[#2B55A3] hover:underline flex items-center gap-1">
+          <h2 className="text-base font-semibold text-brand-primary">Mis cursos</h2>
+          <Link href="/mis-cursos" className="text-sm text-[#084D95] hover:underline flex items-center gap-1">
             Ver todos <ChevronRight size={14} />
           </Link>
         </div>
 
         {/* Tabs */}
         <div className="flex gap-1 mb-4 border-b border-gray-200">
-          {tabList.map(({ key, label, count }) => (
-            <button
-              key={key}
-              onClick={() => setTab(key)}
-              className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
-                tab === key
-                  ? "border-[#2B55A3] text-[#2B55A3]"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              {label}
-              <span className={`ml-1.5 text-xs px-1.5 py-0.5 rounded-full ${tab === key ? "bg-[#2B55A3] text-white" : "bg-gray-100 text-gray-500"}`}>
-                {count}
-              </span>
-            </button>
-          ))}
+          {tabList.map(({ key, label, count }) => {
+            const colors = TAB_COLORS[key];
+            const isActive = tab === key;
+            const isColored = count > 0 || isActive;
+            return (
+              <button
+                key={key}
+                onClick={() => setTab(key)}
+                className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
+                  isColored ? colors.text : "text-gray-500 hover:text-gray-700"
+                } ${isActive ? colors.border : "border-transparent"}`}
+              >
+                {label}
+                <span className={`ml-1.5 text-xs px-1.5 py-0.5 rounded-full ${isColored ? `${colors.badge} text-white` : "bg-gray-100 text-gray-500"}`}>
+                  {count}
+                </span>
+              </button>
+            );
+          })}
         </div>
 
         {isLoading ? (
@@ -191,11 +200,11 @@ export default function DashboardPage() {
 
       {/* Accesos rápidos */}
       <section>
-        <h2 className="text-base font-semibold text-gray-900 mb-3">Accesos rápidos</h2>
+        <h2 className="text-base font-semibold text-brand-primary mb-3">Accesos rápidos</h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <QuickLink
             href="/perfil"
-            icon={<User size={20} className="text-[#2B55A3]" />}
+            icon={<User size={20} className="text-[#084D95]" />}
             label="Mi perfil"
             description="Editar datos personales"
             bg="bg-blue-50"
@@ -261,10 +270,10 @@ function CourseCard({ enrollment }: { enrollment: Enrollment }) {
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
-      <div className="h-28 bg-[#2B55A3]/10 flex items-center justify-center overflow-hidden relative">
+      <div className="h-28 bg-[#084D95]/10 flex items-center justify-center overflow-hidden relative">
         {course.thumbnail_url
           ? <img src={course.thumbnail_url} alt="" className="w-full h-full object-cover" />
-          : <BookOpen size={32} className="text-[#2B55A3]/40" />
+          : <BookOpen size={32} className="text-[#084D95]/40" />
         }
         {needsReview && (
           <div className="absolute top-2 right-2 bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
@@ -283,7 +292,7 @@ function CourseCard({ enrollment }: { enrollment: Enrollment }) {
         <div className="mt-3 flex items-center gap-2">
           <div className="flex-1 h-1.5 bg-gray-200 rounded-full">
             <div
-              className="h-1.5 bg-[#2B55A3] rounded-full"
+              className="h-1.5 bg-[#084D95] rounded-full"
               style={{ width: `${enrollment.progress_percent}%` }}
             />
           </div>
@@ -299,7 +308,7 @@ function CourseCard({ enrollment }: { enrollment: Enrollment }) {
         ) : (
           <Link
             href={`/curso/${enrollment.course_id}`}
-            className="mt-3 block text-center text-sm font-medium text-[#2B55A3] border border-[#2B55A3] rounded-lg py-1.5 hover:bg-[#2B55A3] hover:text-white transition-colors"
+            className="mt-3 block text-center text-sm font-medium text-[#084D95] border border-[#084D95] rounded-lg py-1.5 hover:bg-[#084D95] hover:text-white transition-colors"
           >
             {isCompleted ? "Revisar" : enrollment.progress_percent === 0 ? "Empezar" : "Continuar"}
           </Link>
@@ -323,7 +332,7 @@ function EmptyState({ tab }: { tab: Tab }) {
       {tab !== "completados" && (
         <Link
           href="/cursos"
-          className="inline-block mt-4 bg-[#2B55A3] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#2B55A3]/90 transition-colors"
+          className="inline-block mt-4 bg-[#084D95] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#084D95]/90 transition-colors"
         >
           Explorar catálogo
         </Link>

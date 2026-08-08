@@ -32,7 +32,7 @@ function downloadBlob(blob: Blob, filename: string) {
 }
 
 const CHART_COLORS = [
-  "#2B55A3",
+  "#084D95",
   "#10b981",
   "#f59e0b",
   "#ef4444",
@@ -179,7 +179,7 @@ export default function AdminDashboardPage() {
       {/* Header + Filtros */}
       <div className="flex flex-wrap items-start justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+          <h1 className="text-2xl font-bold text-brand-primary">Dashboard</h1>
           <p className="text-gray-500 text-sm">Resumen general de la plataforma</p>
         </div>
         <div className="flex flex-wrap gap-3">
@@ -189,7 +189,7 @@ export default function AdminDashboardPage() {
               type="date"
               value={desde}
               onChange={(e) => setDesde(e.target.value)}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#084D95]/30"
             />
           </div>
           <div className="flex flex-col gap-0.5">
@@ -198,7 +198,7 @@ export default function AdminDashboardPage() {
               type="date"
               value={hasta}
               onChange={(e) => setHasta(e.target.value)}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#084D95]/30"
             />
           </div>
           <div className="flex flex-col gap-0.5">
@@ -231,7 +231,7 @@ export default function AdminDashboardPage() {
           <button
             onClick={() => exportMutation.mutate()}
             disabled={exportMutation.isPending}
-            className="self-end flex items-center gap-2 px-4 py-2 text-sm bg-[#2B55A3] text-white rounded-lg hover:bg-[#2B55A3]/90 disabled:opacity-50 transition-colors"
+            className="self-end flex items-center gap-2 px-4 py-2 text-sm bg-[#084D95] text-white rounded-lg hover:bg-[#084D95]/90 disabled:opacity-50 transition-colors"
           >
             {exportMutation.isPending ? (
               <Loader2 size={15} className="animate-spin" />
@@ -307,7 +307,7 @@ export default function AdminDashboardPage() {
                 <Line
                   type="monotone"
                   dataKey="total"
-                  stroke="#2B55A3"
+                  stroke="#084D95"
                   strokeWidth={2}
                   dot={false}
                   name="Total"
@@ -385,7 +385,7 @@ export default function AdminDashboardPage() {
               <Tooltip />
               <Bar
                 dataKey="enrolled_count"
-                fill="#2B55A3"
+                fill="#084D95"
                 name="Matriculados"
                 radius={[0, 3, 3, 0]}
               />
@@ -406,7 +406,7 @@ export default function AdminDashboardPage() {
               <YAxis tick={{ fontSize: 11 }} />
               <Tooltip />
               <Legend iconSize={10} />
-              <Bar dataKey="activos" stackId="a" fill="#2B55A3" name="Activos" />
+              <Bar dataKey="activos" stackId="a" fill="#084D95" name="Activos" />
               <Bar
                 dataKey="inactivos"
                 stackId="a"
@@ -433,46 +433,48 @@ export default function AdminDashboardPage() {
           ) : eFin ? (
             <div className="p-8 text-center text-gray-400 text-sm">Sin datos disponibles</div>
           ) : (
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-100">
-                <tr>
-                  <th className="text-left px-4 py-2 text-gray-500 font-medium text-xs">#</th>
-                  <th className="text-left px-4 py-2 text-gray-500 font-medium text-xs">Curso</th>
-                  <th className="text-right px-4 py-2 text-gray-500 font-medium text-xs">
-                    Matriculados
-                  </th>
-                  <th className="text-right px-4 py-2 text-gray-500 font-medium text-xs">
-                    Finalización
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {!topFinalizacion?.length ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 border-b border-gray-100">
                   <tr>
-                    <td colSpan={4} className="px-4 py-8 text-center text-gray-400">
-                      Sin datos
-                    </td>
+                    <th className="text-left px-4 py-2 text-gray-500 font-medium text-xs">#</th>
+                    <th className="text-left px-4 py-2 text-gray-500 font-medium text-xs">Curso</th>
+                    <th className="text-right px-4 py-2 text-gray-500 font-medium text-xs">
+                      Matriculados
+                    </th>
+                    <th className="text-right px-4 py-2 text-gray-500 font-medium text-xs">
+                      Finalización
+                    </th>
                   </tr>
-                ) : (
-                  topFinalizacion.map((c, i) => (
-                    <tr key={c.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-2.5 text-gray-400 text-xs">{i + 1}</td>
-                      <td className="px-4 py-2.5 text-gray-900 text-xs leading-tight">
-                        {c.title}
-                      </td>
-                      <td className="px-4 py-2.5 text-right text-gray-600 text-xs">
-                        {c.enrolled_count}
-                      </td>
-                      <td className="px-4 py-2.5 text-right">
-                        <span className="text-green-700 font-semibold text-xs">
-                          {c.completion_rate}%
-                        </span>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {!topFinalizacion?.length ? (
+                    <tr>
+                      <td colSpan={4} className="px-4 py-8 text-center text-gray-400">
+                        Sin datos
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ) : (
+                    topFinalizacion.map((c, i) => (
+                      <tr key={c.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-2.5 text-gray-400 text-xs">{i + 1}</td>
+                        <td className="px-4 py-2.5 text-gray-900 text-xs leading-tight">
+                          {c.title}
+                        </td>
+                        <td className="px-4 py-2.5 text-right text-gray-600 text-xs">
+                          {c.enrolled_count}
+                        </td>
+                        <td className="px-4 py-2.5 text-right">
+                          <span className="text-green-700 font-semibold text-xs">
+                            {c.completion_rate}%
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
 
@@ -488,45 +490,47 @@ export default function AdminDashboardPage() {
           ) : eTopEst ? (
             <div className="p-8 text-center text-gray-400 text-sm">Sin datos disponibles</div>
           ) : (
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-100">
-                <tr>
-                  <th className="text-left px-4 py-2 text-gray-500 font-medium text-xs">#</th>
-                  <th className="text-left px-4 py-2 text-gray-500 font-medium text-xs">
-                    Estudiante
-                  </th>
-                  <th className="text-right px-4 py-2 text-gray-500 font-medium text-xs">Cursos</th>
-                  <th className="text-right px-4 py-2 text-gray-500 font-medium text-xs">Horas</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {!topEstudiantes?.length ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 border-b border-gray-100">
                   <tr>
-                    <td colSpan={4} className="px-4 py-8 text-center text-gray-400">
-                      Sin datos
-                    </td>
+                    <th className="text-left px-4 py-2 text-gray-500 font-medium text-xs">#</th>
+                    <th className="text-left px-4 py-2 text-gray-500 font-medium text-xs">
+                      Estudiante
+                    </th>
+                    <th className="text-right px-4 py-2 text-gray-500 font-medium text-xs">Cursos</th>
+                    <th className="text-right px-4 py-2 text-gray-500 font-medium text-xs">Horas</th>
                   </tr>
-                ) : (
-                  topEstudiantes.map((e, i) => (
-                    <tr key={e.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-2.5 text-gray-400 text-xs">{i + 1}</td>
-                      <td className="px-4 py-2.5">
-                        <p className="text-gray-900 text-xs font-medium">
-                          {e.first_name} {e.last_name}
-                        </p>
-                        <p className="text-xs text-gray-400">{e.email}</p>
-                      </td>
-                      <td className="px-4 py-2.5 text-right text-gray-600 text-xs">
-                        {e.courses_count}
-                      </td>
-                      <td className="px-4 py-2.5 text-right text-gray-600 text-xs">
-                        {e.total_watched_hours}h
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {!topEstudiantes?.length ? (
+                    <tr>
+                      <td colSpan={4} className="px-4 py-8 text-center text-gray-400">
+                        Sin datos
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ) : (
+                    topEstudiantes.map((e, i) => (
+                      <tr key={e.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-2.5 text-gray-400 text-xs">{i + 1}</td>
+                        <td className="px-4 py-2.5">
+                          <p className="text-gray-900 text-xs font-medium">
+                            {e.first_name} {e.last_name}
+                          </p>
+                          <p className="text-xs text-gray-400">{e.email}</p>
+                        </td>
+                        <td className="px-4 py-2.5 text-right text-gray-600 text-xs">
+                          {e.courses_count}
+                        </td>
+                        <td className="px-4 py-2.5 text-right text-gray-600 text-xs">
+                          {e.total_watched_hours}h
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       </div>

@@ -44,7 +44,7 @@ export default function MisCertificadosPage() {
     <div className="space-y-6">
       {/* Encabezado */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Mis certificados</h1>
+        <h1 className="text-2xl font-bold text-brand-primary">Mis certificados</h1>
         <p className="text-gray-500 mt-1 text-sm">
           Descarga y comparte los certificados de los cursos que has completado.
         </p>
@@ -53,15 +53,15 @@ export default function MisCertificadosPage() {
       {/* Estado de carga */}
       {isLoading && (
         <div className="flex items-center justify-center py-24">
-          <Loader2 size={28} className="animate-spin text-[#2B55A3]" />
+          <Loader2 size={28} className="animate-spin text-[#084D95]" />
         </div>
       )}
 
       {/* Empty state */}
       {!isLoading && (!certificates || certificates.length === 0) && (
         <div className="bg-white rounded-2xl border border-gray-200 py-20 flex flex-col items-center text-center px-6">
-          <div className="w-16 h-16 rounded-full bg-[#2B55A3]/10 flex items-center justify-center mb-4">
-            <Award size={32} className="text-[#2B55A3]" />
+          <div className="w-16 h-16 rounded-full bg-[#084D95]/10 flex items-center justify-center mb-4">
+            <Award size={32} className="text-[#084D95]" />
           </div>
           <h2 className="text-lg font-semibold text-gray-800 mb-2">
             Aún no están disponibles
@@ -71,7 +71,7 @@ export default function MisCertificadosPage() {
           </p>
           <Link
             href="/mis-cursos"
-            className="mt-6 inline-block bg-[#2B55A3] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#2B55A3]/90 transition-colors"
+            className="mt-6 inline-block bg-[#084D95] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#084D95]/90 transition-colors"
           >
             Ver mis cursos
           </Link>
@@ -91,20 +91,22 @@ export default function MisCertificadosPage() {
             return (
               <div
                 key={cert.id}
-                className="bg-white rounded-2xl border border-gray-200 p-6 flex flex-col sm:flex-row sm:items-center gap-4 hover:border-[#2B55A3]/30 transition-colors"
+                className="bg-white rounded-2xl border border-gray-200 p-6 flex flex-col sm:flex-row sm:items-center gap-4 hover:border-[#084D95]/30 transition-colors"
               >
                 {/* Icono */}
-                <div className="shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-[#2B55A3] to-[#3FB1E5] flex items-center justify-center">
+                <div className="shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-[#084D95] to-[#23AFE5] flex items-center justify-center">
                   <Award size={24} className="text-white" />
                 </div>
 
                 {/* Info */}
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-gray-900 truncate">{cert.course_title}</h3>
+                  <h3 className="font-semibold text-brand-primary truncate">{cert.course_title}</h3>
                   <p className="text-xs text-gray-400 mt-0.5">Emitido el {formatDate(cert.issued_at)}</p>
-                  <p className="font-mono text-xs text-gray-500 mt-1 truncate">
-                    {cert.verification_code}
-                  </p>
+                  {cert.verification_code && (
+                    <p className="font-mono text-xs text-gray-500 mt-1 truncate">
+                      {cert.verification_code}
+                    </p>
+                  )}
                 </div>
 
                 {/* Acciones */}
@@ -120,7 +122,7 @@ export default function MisCertificadosPage() {
                   <button
                     onClick={() => handleDownload(cert.id, cert.course_title)}
                     disabled={!!downloadingId}
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#2B55A3] text-white text-xs font-medium hover:bg-[#2B55A3]/90 transition-colors disabled:opacity-60"
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#084D95] text-white text-xs font-medium hover:bg-[#084D95]/90 transition-colors disabled:opacity-60"
                   >
                     {isDownloading ? (
                       <Loader2 size={13} className="animate-spin" />
@@ -130,23 +132,25 @@ export default function MisCertificadosPage() {
                     PDF
                   </button>
 
-                  <button
-                    onClick={() => {
-                      if (navigator.share) {
-                        navigator.share({
-                          title: `Certificado — ${cert.course_title}`,
-                          text: `Completé el curso "${cert.course_title}" en Escuela Global.`,
-                          url: shareUrl,
-                        });
-                      } else {
-                        navigator.clipboard.writeText(shareUrl);
-                      }
-                    }}
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-                    title="Compartir"
-                  >
-                    <Share2 size={13} />
-                  </button>
+                  {cert.verification_code && (
+                    <button
+                      onClick={() => {
+                        if (navigator.share) {
+                          navigator.share({
+                            title: `Certificado — ${cert.course_title}`,
+                            text: `Completé el curso "${cert.course_title}" en Escuela Global.`,
+                            url: shareUrl,
+                          });
+                        } else {
+                          navigator.clipboard.writeText(shareUrl);
+                        }
+                      }}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                      title="Compartir"
+                    >
+                      <Share2 size={13} />
+                    </button>
+                  )}
                 </div>
               </div>
             );

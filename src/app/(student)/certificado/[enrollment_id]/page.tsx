@@ -58,7 +58,7 @@ export default function CertificadoPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-32">
-        <Loader2 size={32} className="animate-spin text-[#2B55A3]" />
+        <Loader2 size={32} className="animate-spin text-[#084D95]" />
       </div>
     );
   }
@@ -73,7 +73,7 @@ export default function CertificadoPage() {
         </p>
         <Link
           href="/mis-certificados"
-          className="inline-block bg-[#2B55A3] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#2B55A3]/90 transition-colors"
+          className="inline-block bg-[#084D95] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#084D95]/90 transition-colors"
         >
           Volver a mis certificados
         </Link>
@@ -81,19 +81,19 @@ export default function CertificadoPage() {
     );
   }
 
-  const verifyUrl = `/verificar/${cert.verification_code}`;
+  const verifyUrl = cert.verification_code ? `/verificar/${cert.verification_code}` : null;
 
   return (
     <div className="max-w-4xl mx-auto space-y-5">
       {/* Cabecera */}
       <div>
         <div className="flex items-center gap-2 mb-1">
-          <Award size={16} className="text-[#2B55A3]" />
-          <p className="text-xs font-semibold uppercase tracking-wider text-[#2B55A3]">
+          <Award size={16} className="text-[#084D95]" />
+          <p className="text-xs font-semibold uppercase tracking-wider text-[#084D95]">
             Mi certificado
           </p>
         </div>
-        <h1 className="text-2xl font-bold text-gray-900">{cert.course_title}</h1>
+        <h1 className="text-2xl font-bold text-brand-primary">{cert.course_title}</h1>
         <p className="text-gray-500 text-sm mt-0.5">
           {cert.student_name} · Emitido el {formatDate(cert.issued_at)} · {cert.total_hours} horas
         </p>
@@ -116,7 +116,7 @@ export default function CertificadoPage() {
         >
           {loadingPdf ? (
             <>
-              <Loader2 size={32} className="animate-spin text-[#2B55A3]" />
+              <Loader2 size={32} className="animate-spin text-[#084D95]" />
               <p className="text-sm text-gray-500">Generando certificado...</p>
             </>
           ) : (
@@ -133,7 +133,7 @@ export default function CertificadoPage() {
         <button
           onClick={handleDownload}
           disabled={!pdfBlobUrl || loadingPdf}
-          className="flex-1 flex items-center justify-center gap-2 bg-[#2B55A3] text-white py-3 rounded-xl text-sm font-medium hover:bg-[#2B55A3]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-1 flex items-center justify-center gap-2 bg-[#084D95] text-white py-3 rounded-xl text-sm font-medium hover:bg-[#084D95]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loadingPdf ? (
             <Loader2 size={16} className="animate-spin" />
@@ -143,25 +143,27 @@ export default function CertificadoPage() {
           {loadingPdf ? "Generando PDF..." : "Descargar PDF"}
         </button>
 
-        <button
-          onClick={() => {
-            const shareUrl = `${window.location.origin}${verifyUrl}`;
-            if (navigator.share) {
-              navigator.share({
-                title: `Certificado — ${cert.course_title}`,
-                text: `Completé "${cert.course_title}" en Escuela Global.`,
-                url: shareUrl,
-              });
-            } else {
-              navigator.clipboard.writeText(shareUrl);
-              alert("Enlace de verificación copiado al portapapeles.");
-            }
-          }}
-          className="flex-1 flex items-center justify-center gap-2 border border-gray-300 text-gray-700 py-3 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors"
-        >
-          <Share2 size={16} />
-          Compartir
-        </button>
+        {verifyUrl && (
+          <button
+            onClick={() => {
+              const shareUrl = `${window.location.origin}${verifyUrl}`;
+              if (navigator.share) {
+                navigator.share({
+                  title: `Certificado — ${cert.course_title}`,
+                  text: `Completé "${cert.course_title}" en Escuela Global.`,
+                  url: shareUrl,
+                });
+              } else {
+                navigator.clipboard.writeText(shareUrl);
+                alert("Enlace de verificación copiado al portapapeles.");
+              }
+            }}
+            className="flex-1 flex items-center justify-center gap-2 border border-gray-300 text-gray-700 py-3 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors"
+          >
+            <Share2 size={16} />
+            Compartir
+          </button>
+        )}
       </div>
 
       {/* Datos del certificado */}
@@ -192,22 +194,24 @@ export default function CertificadoPage() {
             </span>
           </div>
         )}
-        <div className="flex items-center justify-between px-6 py-3.5">
-          <div className="flex items-center gap-1.5">
-            <CheckCircle2 size={14} className="text-emerald-500" />
-            <span className="font-mono text-xs text-gray-500 tracking-wider">
-              {cert.verification_code}
-            </span>
+        {verifyUrl && (
+          <div className="flex items-center justify-between px-6 py-3.5">
+            <div className="flex items-center gap-1.5">
+              <CheckCircle2 size={14} className="text-emerald-500" />
+              <span className="font-mono text-xs text-gray-500 tracking-wider">
+                {cert.verification_code}
+              </span>
+            </div>
+            <Link
+              href={verifyUrl}
+              target="_blank"
+              className="inline-flex items-center gap-1 text-xs text-[#084D95] hover:underline"
+            >
+              Verificar autenticidad
+              <ExternalLink size={11} />
+            </Link>
           </div>
-          <Link
-            href={verifyUrl}
-            target="_blank"
-            className="inline-flex items-center gap-1 text-xs text-[#2B55A3] hover:underline"
-          >
-            Verificar autenticidad
-            <ExternalLink size={11} />
-          </Link>
-        </div>
+        )}
       </div>
 
       <Link

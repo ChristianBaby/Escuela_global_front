@@ -7,6 +7,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { cursosService } from "@/lib/services/courses";
 import { dashboardService, type MatriculadoCurso } from "@/lib/services/dashboard";
+import { useAuthStore } from "@/store/authStore";
 import { Download, ArrowLeft, Users, TrendingUp, Clock, Trophy, Loader2 } from "lucide-react";
 
 function downloadBlob(blob: Blob, filename: string) {
@@ -42,7 +43,7 @@ function StatCard({
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-5">
       <div className="flex items-center gap-2 mb-2">
-        <span className="text-[#2B55A3]">{icon}</span>
+        <span className="text-[#084D95]">{icon}</span>
         <p className="text-xs text-gray-500">{label}</p>
       </div>
       <p className="text-2xl font-bold text-gray-900">{value}</p>
@@ -53,6 +54,8 @@ function StatCard({
 export default function MatriculadosCursoPage() {
   const params = useParams();
   const courseId = params.id as string;
+  const { user: me } = useAuthStore();
+  const isCoordinador = me?.role === "coordinador";
 
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
@@ -92,12 +95,12 @@ export default function MatriculadosCursoPage() {
       {/* Header */}
       <div className="mb-6">
         <Link
-          href="/panel/soporte/cursos"
+          href={isCoordinador ? "/panel/coordinador/cursos" : "/panel/soporte/cursos"}
           className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-3"
         >
           <ArrowLeft size={14} /> Volver a cursos
         </Link>
-        <h1 className="text-2xl font-bold text-gray-900">
+        <h1 className="text-2xl font-bold text-brand-primary">
           Matriculados{curso ? ` — ${curso.title}` : ""}
         </h1>
         <p className="text-gray-500 text-sm">Reporte detallado de estudiantes matriculados</p>
@@ -137,7 +140,7 @@ export default function MatriculadosCursoPage() {
             setSearch(e.target.value);
             setPage(1);
           }}
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm w-64 focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+          className="border border-gray-300 rounded-lg px-3 py-2 text-sm w-64 focus:outline-none focus:ring-2 focus:ring-[#084D95]/30"
         />
         <select
           value={statusFilter}
@@ -164,14 +167,16 @@ export default function MatriculadosCursoPage() {
           <option value="online">Online</option>
           <option value="manual">Manual</option>
         </select>
-        <button
-          onClick={() => exportMutation.mutate()}
-          disabled={!data?.data?.length || exportMutation.isPending}
-          className="ml-auto flex items-center gap-2 px-4 py-2 text-sm bg-[#2B55A3] text-white rounded-lg hover:bg-[#2B55A3]/90 disabled:opacity-40 transition-colors"
-        >
-          {exportMutation.isPending ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />}
-          Exportar Excel
-        </button>
+        {!isCoordinador && (
+          <button
+            onClick={() => exportMutation.mutate()}
+            disabled={!data?.data?.length || exportMutation.isPending}
+            className="ml-auto flex items-center gap-2 px-4 py-2 text-sm bg-[#084D95] text-white rounded-lg hover:bg-[#084D95]/90 disabled:opacity-40 transition-colors"
+          >
+            {exportMutation.isPending ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />}
+            Exportar Excel
+          </button>
+        )}
       </div>
 
       {/* Tabla */}
@@ -181,6 +186,7 @@ export default function MatriculadosCursoPage() {
         ) : isError ? (
           <div className="p-8 text-center text-red-500 text-sm">Error al cargar datos</div>
         ) : (
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
@@ -216,7 +222,7 @@ export default function MatriculadosCursoPage() {
                       <div className="flex items-center gap-2">
                         <div className="w-20 h-1.5 bg-gray-200 rounded-full overflow-hidden">
                           <div
-                            className="h-full bg-[#2B55A3] rounded-full"
+                            className="h-full bg-[#084D95] rounded-full"
                             style={{ width: `${m.progress_percent}%` }}
                           />
                         </div>
@@ -249,7 +255,7 @@ export default function MatriculadosCursoPage() {
                     <td className="px-4 py-3 text-right">
                       <Link
                         href={`/panel/estudiantes/${m.user.id}/cursos/${courseId}`}
-                        className="text-[#2B55A3] hover:underline text-xs"
+                        className="text-[#084D95] hover:underline text-xs"
                       >
                         Ver actividad
                       </Link>
@@ -259,6 +265,7 @@ export default function MatriculadosCursoPage() {
               )}
             </tbody>
           </table>
+          </div>
         )}
 
         {data && data.total_pages > 1 && (

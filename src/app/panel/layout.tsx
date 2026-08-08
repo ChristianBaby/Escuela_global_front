@@ -23,6 +23,11 @@ import {
   TrendingUp,
   Menu,
   X,
+  Rocket,
+  GraduationCap,
+  Blocks,
+  ImageIcon,
+  Handshake,
 } from "lucide-react";
 
 interface NavItem {
@@ -50,7 +55,24 @@ const NAV_SECTIONS: NavSection[] = [
         label: "Estudiantes",
         href: "/panel/estudiantes",
         icon: <Users size={18} />,
-        roles: ["admin", "soporte"],
+        roles: ["admin", "soporte", "coordinador"],
+      },
+    ],
+  },
+  {
+    title: "Coordinación",
+    items: [
+      {
+        label: "Cursos",
+        href: "/panel/coordinador/cursos",
+        icon: <BookOpen size={18} />,
+        roles: ["coordinador"],
+      },
+      {
+        label: "Matriculas",
+        href: "/panel/coordinador/matriculas",
+        icon: <ClipboardList size={18} />,
+        roles: ["coordinador"],
       },
     ],
   },
@@ -105,6 +127,36 @@ const NAV_SECTIONS: NavSection[] = [
         roles: ["admin", "marketing"],
       },
       {
+        label: "Próximos Lanzamientos",
+        href: "/panel/marketing/lanzamientos",
+        icon: <Rocket size={18} />,
+        roles: ["admin", "marketing"],
+      },
+      {
+        label: "Docentes",
+        href: "/panel/marketing/docentes",
+        icon: <GraduationCap size={18} />,
+        roles: ["admin", "marketing"],
+      },
+      {
+        label: "Softwares",
+        href: "/panel/marketing/softwares",
+        icon: <Blocks size={18} />,
+        roles: ["admin", "marketing"],
+      },
+      {
+        label: "Popup promocional",
+        href: "/panel/marketing/popup",
+        icon: <ImageIcon size={18} />,
+        roles: ["admin", "marketing"],
+      },
+      {
+        label: "Alianzas",
+        href: "/panel/marketing/alianzas",
+        icon: <Handshake size={18} />,
+        roles: ["admin", "marketing"],
+      },
+      {
         label: "Notificaciones",
         href: "/panel/marketing/notificaciones",
         icon: <Bell size={18} />,
@@ -119,7 +171,7 @@ const NAV_SECTIONS: NavSection[] = [
         label: "Mi perfil",
         href: "/panel/perfil",
         icon: <User size={18} />,
-        roles: ["admin", "soporte", "marketing"],
+        roles: ["admin", "soporte", "marketing", "coordinador"],
       },
       {
         label: "Auditoría",
@@ -186,7 +238,7 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
               className="h-9 w-auto object-contain"
               priority
             />
-            <span className="text-xs bg-[#2B55A3] text-white px-2 py-0.5 rounded-full capitalize shrink-0">
+            <span className="text-xs bg-[#084D95] text-white px-2 py-0.5 rounded-full capitalize shrink-0">
               {user?.role}
             </span>
           </Link>
@@ -218,9 +270,10 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
                     <li key={item.href}>
                       <Link
                         href={item.href}
+                        onClick={() => setSidebarOpen(false)}
                         className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
                           isActive(item.href)
-                            ? "bg-[#2B55A3] text-white font-medium"
+                            ? "bg-[#084D95] text-white font-medium"
                             : "text-gray-600 hover:bg-gray-100"
                         }`}
                       >
@@ -239,7 +292,7 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
         {/* User + Logout */}
         <div className="border-t border-gray-200 p-4">
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-8 h-8 rounded-full bg-[#2B55A3] flex items-center justify-center text-white text-sm font-semibold">
+            <div className="w-8 h-8 rounded-full bg-[#084D95] flex items-center justify-center text-white text-sm font-semibold">
               {user?.first_name?.charAt(0).toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">

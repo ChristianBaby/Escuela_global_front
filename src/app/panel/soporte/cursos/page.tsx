@@ -93,12 +93,12 @@ export default function SoporteCursosPage() {
       {/* ── Encabezado ──────────────────────────────────────────────────────── */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Cursos</h1>
+          <h1 className="text-2xl font-bold text-brand-primary">Cursos</h1>
           <p className="text-gray-500 text-sm mt-0.5">Gestión del catálogo de cursos</p>
         </div>
         <Link
           href="/panel/soporte/cursos/nuevo"
-          className="inline-flex items-center gap-2 bg-[#2B55A3] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#2B55A3]/90 transition-colors"
+          className="inline-flex items-center gap-2 bg-[#084D95] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#084D95]/90 transition-colors"
         >
           <Plus size={16} />
           Crear curso
@@ -115,13 +115,13 @@ export default function SoporteCursosPage() {
             placeholder="Buscar por título..."
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/20 focus:border-[#2B55A3]"
+            className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#084D95]/20 focus:border-[#084D95]"
           />
         </div>
         <select
           value={statusFilter}
           onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-          className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/20 focus:border-[#2B55A3] bg-white"
+          className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#084D95]/20 focus:border-[#084D95] bg-white"
         >
           <option value="">Todos los estados</option>
           <option value="draft">Borrador</option>
@@ -131,7 +131,7 @@ export default function SoporteCursosPage() {
         <select
           value={categoriaFilter}
           onChange={(e) => { setCategoriaFilter(e.target.value); setPage(1); }}
-          className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/20 focus:border-[#2B55A3] bg-white"
+          className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#084D95]/20 focus:border-[#084D95] bg-white"
         >
           <option value="">Todas las categorías</option>
           {categorias?.map((c) => (
@@ -251,7 +251,7 @@ export default function SoporteCursosPage() {
                           )}
                           <Link
                             href={`/panel/soporte/cursos/${curso.id}/contenido`}
-                            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs text-[#2B55A3] hover:bg-blue-50 rounded-lg transition-colors"
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs text-[#084D95] hover:bg-blue-50 rounded-lg transition-colors"
                             title="Gestionar contenido"
                           >
                             <FileText size={13} />
@@ -332,9 +332,9 @@ export default function SoporteCursosPage() {
             <div className="w-10 h-10 bg-red-50 rounded-full flex items-center justify-center mb-4">
               <Trash2 size={18} className="text-red-500" />
             </div>
-            <h2 className="font-semibold text-gray-900 mb-1">¿Eliminar este curso?</h2>
+            <h2 className="font-semibold text-brand-primary mb-1">¿Eliminar este curso?</h2>
             {confirmDeleteCourse && (
-              <p className="text-sm text-[#2B55A3] font-medium mb-2 truncate">
+              <p className="text-sm text-[#084D95] font-medium mb-2 truncate">
                 {confirmDeleteCourse.title}
               </p>
             )}

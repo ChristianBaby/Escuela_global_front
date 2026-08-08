@@ -22,5 +22,5 @@ export const profileService = {
     api.patch<User>(`/users/profile/${id}`, data).then((r) => r.data),
 
   changePassword: (data: ChangePasswordDto) =>
-    api.patch<{ message: string }>("/usuarios/me/password", data).then((r) => r.data),
+    api.patch<{ message: string }>("/users/me/password", data).then((r) => r.data),
 };

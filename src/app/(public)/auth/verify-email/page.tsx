@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { authService } from "@/lib/services/auth";
 
-export default function VerifyEmailPage() {
+function VerifyEmailContent() {
   const [status, setStatus] = useState<
     "loading" | "success" | "error"
   >("loading");
@@ -50,4 +50,12 @@ export default function VerifyEmailPage() {
   }
 
   return <p>Error al verificar el email ❌</p>;
+}
+
+export default function VerifyEmailPage() {
+  return (
+    <Suspense fallback={<p>Verificando email...</p>}>
+      <VerifyEmailContent />
+    </Suspense>
+  );
 }

@@ -47,9 +47,9 @@
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
   /* Colores de marca — Manual de Identidad Corporativa Escuela Global */
-  --color-brand-primary: #2B55A3;
-  --color-brand-secondary: #3FB1E5;
-  --color-brand-dark: #0f1f4d;
+  --color-brand-primary: #084D95;
+  --color-brand-secondary: #23AFE5;
+  --color-brand-dark: #052E59;
 }
 
 :root {
@@ -59,10 +59,10 @@
   --card-foreground: oklch(0.18 0.02 264);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.18 0.02 264);
-  /* Primary = azul corporativo #2B55A3 */
+  /* Primary = azul corporativo #084D95 */
   --primary: oklch(0.42 0.14 264);
   --primary-foreground: oklch(1 0 0);
-  /* Secondary = azul claro #3FB1E5 */
+  /* Secondary = azul claro #23AFE5 */
   --secondary: oklch(0.93 0.02 220);
   --secondary-foreground: oklch(0.42 0.14 264);
   --muted: oklch(0.96 0.005 264);
@@ -147,7 +147,7 @@
     font-weight: 700;
     letter-spacing: -0.02em;
     line-height: 1.25;
-    color: oklch(0.18 0.02 264);
+    color: var(--color-brand-primary);
   }
 
   h1 { font-size: clamp(1.75rem, 4vw, 2.5rem); }
@@ -166,4 +166,23 @@
 }
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
+}
+
+/* Flechas de navegación de los carruseles (swiper) — simples y tenues, sin fondo */
+.eg-carousel-nav {
+  --swiper-navigation-color: #3FB1E5;
+  --swiper-navigation-size: 14px;
+}
+.eg-carousel-nav .swiper-button-next,
+.eg-carousel-nav .swiper-button-prev {
+  width: 20px !important;
+  height: 20px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  opacity: 0.55;
+  transition: opacity 150ms ease;
+}
+.eg-carousel-nav .swiper-button-next:hover,
+.eg-carousel-nav .swiper-button-prev:hover {
+  opacity: 1;
 }

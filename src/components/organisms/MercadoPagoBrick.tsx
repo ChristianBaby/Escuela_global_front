@@ -47,7 +47,7 @@ export function MercadoPagoBrick({ orderId, totalAmount, currency }: MercadoPago
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-12 space-y-2 bg-white rounded-xl border border-gray-200">
-        <Loader2 size={28} className="animate-spin text-[#2B55A3]" />
+        <Loader2 size={28} className="animate-spin text-[#084D95]" />
         <p className="text-xs text-gray-400">Generando pasarela segura con Mercado Pago...</p>
       </div>
     );
@@ -91,8 +91,12 @@ export function MercadoPagoBrick({ orderId, totalAmount, currency }: MercadoPago
 
       if (data.success) {
         toast.success("¡Matrícula procesada y aprobada con éxito!");
+<<<<<<< HEAD
         // 🚀 REDIRECCIÓN CON PARÁMETRO DE ORDEN PARA CONECTAR CON EL POLLING DE LA BOLETA
         router.push(`/checkout/success?orderId=${orderId}`);
+=======
+        router.push(`/checkout/success?order=${orderId}`);
+>>>>>>> d6f3dd424ae0733704a7215f647c85a1b0fbb2e8
       } else {
         toast.error("La transacción no pudo ser validada.");
       }

@@ -5,6 +5,7 @@ export * from "./courses";
 export * from "./dashboard";
 export * from "./enrollments";
 export * from "./marketing";
+export * from "./orders";
 export * from "./profile";
 export * from "./student";
 export * from "./users";

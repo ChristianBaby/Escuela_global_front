@@ -86,14 +86,15 @@ export function CourseFilters({ filters, onChange, categories, softwares }: Cour
     <aside className="space-y-6">
       {/* Encabezado con botón limpiar */}
       <div className="flex items-center justify-between">
-        <h2 className="font-semibold text-gray-900 text-sm uppercase tracking-wide">Filtros</h2>
+        <h2 className="font-semibold text-brand-primary text-sm uppercase tracking-wide">Filtros</h2>
         {hasActiveFilters && (
           <button
             onClick={() => onChange(EMPTY_FILTERS)}
             className="flex items-center gap-1 text-xs text-brand-primary hover:text-brand-secondary transition-colors"
           >
+    
             <RotateCcw size={11} />
-            Limpiar
+            Limpiar          
           </button>
         )}
       </div>

@@ -60,6 +60,15 @@ export function PayPalButtonComponent({ orderId, totalAmount }: PayPalButtonProp
         router.push(`/checkout/success?orderId=${orderId}`);
       }, 400);
 
+<<<<<<< HEAD
+=======
+      if (response.data.success) {
+        toast.success("¡Pago internacional con PayPal aprobado!");
+        router.push(`/checkout/success?order=${orderId}`);
+      } else {
+        toast.error("El pago no pudo ser verificado por el servidor.");
+      }
+>>>>>>> d6f3dd424ae0733704a7215f647c85a1b0fbb2e8
     } catch (error) {
       console.error("Error en la captura de PayPal:", error);
       // Red de seguridad: si algo falla, avanzamos igual para que el frente intente validar el Postgres

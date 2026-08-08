@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { notificacionesService } from "@/lib/services/notifications";
+import { cursosService } from "@/lib/services/courses";
 import {
   Bell, CheckCheck, BookOpen, Award, Clock, UserCheck,
   ChevronRight, X, PlayCircle, ExternalLink, MessageSquare, Percent, Megaphone,
@@ -32,7 +33,7 @@ const TYPE_COLOR: Record<string, string> = {
   completado:    "bg-green-100 text-green-600",
   recordatorio:  "bg-yellow-100 text-yellow-600",
   matriculacion: "bg-purple-100 text-purple-600",
-  certificado:   "bg-[#2B55A3]/10 text-[#2B55A3]",
+  certificado:   "bg-[#084D95]/10 text-[#084D95]",
   personalizada: "bg-indigo-100 text-indigo-600",
   descuento:     "bg-orange-100 text-orange-600",
   anuncio:       "bg-pink-100 text-pink-600",
@@ -126,7 +127,7 @@ function NotifPanel({
 }: {
   notif: Notification;
   onClose: () => void;
-  onRedirect: (url: string) => void;
+  onRedirect: (notif: Notification) => void;
 }) {
   const cfg = PANEL_CONFIG[notif.type] ?? DEFAULT_PANEL;
   const { BtnIcon } = cfg;
@@ -150,16 +151,26 @@ function NotifPanel({
           <X size={20} />
         </button>
 
+        {/* Imagen adjunta */}
+        {notif.image_url && (
+          <img
+            src={notif.image_url}
+            alt=""
+            className="w-full h-40 object-cover rounded-xl mb-4 bg-gray-100"
+            onError={(e) => (e.currentTarget.style.display = "none")}
+          />
+        )}
+
         {/* Ícono grande */}
         <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${TYPE_COLOR[notif.type] ?? "bg-gray-100 text-gray-500"}`}>
           <NotifIcon type={notif.type} />
         </div>
 
         {/* Título dinámico */}
-        <h2 className="text-xl font-bold text-gray-900 text-center">{cfg.heading}</h2>
+        <h2 className="text-xl font-bold text-brand-primary text-center">{cfg.heading}</h2>
 
         {/* Título real de la notificación */}
-        <p className="text-sm font-semibold text-[#2B55A3] text-center mt-1">{stripEmojis(notif.title)}</p>
+        <p className="text-sm font-semibold text-[#084D95] text-center mt-1">{stripEmojis(notif.title)}</p>
 
         {/* Descripción dinámica */}
         <p className="text-sm text-gray-600 text-center mt-3 leading-relaxed">{cfg.description}</p>
@@ -174,8 +185,8 @@ function NotifPanel({
         {/* Botón de acción (solo si tiene redirect) */}
         {notif.redirect_url && (
           <button
-            onClick={() => onRedirect(notif.redirect_url!)}
-            className="mt-5 w-full flex items-center justify-center gap-2 bg-[#2B55A3] hover:bg-[#2B55A3]/90 text-white font-semibold py-2.5 rounded-xl transition-colors"
+            onClick={() => onRedirect(notif)}
+            className="mt-5 w-full flex items-center justify-center gap-2 bg-[#084D95] hover:bg-[#084D95]/90 text-white font-semibold py-2.5 rounded-xl transition-colors"
           >
             <BtnIcon size={16} />
             {cfg.btnLabel}
@@ -227,9 +238,25 @@ export default function NotificacionesPage() {
     setSelected(n);
   }
 
-  function handleRedirect(url: string) {
+  async function handleRedirect(notif: Notification) {
     setSelected(null);
-    router.push(url);
+
+    // La notificación de matrícula trae el link público de venta (/cursos/[slug]);
+    // como ya está matriculado, lo llevamos directo al visor del curso (/curso/[id]).
+    if (notif.type === "matriculacion" && notif.redirect_url) {
+      const match = notif.redirect_url.match(/^\/cursos\/([^/?#]+)/);
+      if (match) {
+        try {
+          const curso = await cursosService.getBySlug(match[1]);
+          router.push(`/curso/${curso.id}`);
+          return;
+        } catch {
+          // si falla la búsqueda, cae al comportamiento original
+        }
+      }
+    }
+
+    router.push(notif.redirect_url!);
   }
 
   return (
@@ -246,13 +273,13 @@ export default function NotificacionesPage() {
       {/* Encabezado */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Bell size={22} className="text-[#2B55A3]" />
+          <h1 className="text-2xl font-bold text-brand-primary flex items-center gap-2">
+            <Bell size={22} className="text-[#084D95]" />
             Notificaciones
           </h1>
           {unread > 0 && (
             <p className="text-sm text-gray-500 mt-0.5">
-              Tienes <span className="font-semibold text-[#2B55A3]">{unread}</span> sin leer
+              Tienes <span className="font-semibold text-[#084D95]">{unread}</span> sin leer
             </p>
           )}
         </div>
@@ -260,7 +287,7 @@ export default function NotificacionesPage() {
           <button
             onClick={() => markAll.mutate()}
             disabled={markAll.isPending}
-            className="flex items-center gap-1.5 text-sm text-[#2B55A3] hover:text-[#2B55A3]/80 border border-[#2B55A3]/30 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 text-sm text-[#084D95] hover:text-[#084D95]/80 border border-[#084D95]/30 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
           >
             <CheckCheck size={15} />
             Marcar todas como leídas
@@ -302,10 +329,19 @@ export default function NotificacionesPage() {
                   !n.is_read ? "bg-blue-50/40" : ""
                 }`}
               >
-                {/* Ícono */}
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${TYPE_COLOR[n.type] ?? "bg-gray-100 text-gray-500"}`}>
-                  <NotifIcon type={n.type} />
-                </div>
+                {/* Ícono o miniatura */}
+                {n.image_url ? (
+                  <img
+                    src={n.image_url}
+                    alt=""
+                    className="w-10 h-10 rounded-full object-cover shrink-0 bg-gray-100"
+                    onError={(e) => (e.currentTarget.style.display = "none")}
+                  />
+                ) : (
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${TYPE_COLOR[n.type] ?? "bg-gray-100 text-gray-500"}`}>
+                    <NotifIcon type={n.type} />
+                  </div>
+                )}
 
                 {/* Contenido */}
                 <div className="flex-1 min-w-0">
@@ -315,7 +351,7 @@ export default function NotificacionesPage() {
                     </p>
                     {/* Punto azul si no leída */}
                     {!n.is_read && (
-                      <span className="w-2 h-2 rounded-full bg-[#2B55A3] shrink-0 mt-1.5" />
+                      <span className="w-2 h-2 rounded-full bg-[#084D95] shrink-0 mt-1.5" />
                     )}
                   </div>
                   <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{stripEmojis(n.body)}</p>

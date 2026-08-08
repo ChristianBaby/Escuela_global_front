@@ -9,23 +9,45 @@ interface LogoProps {
   theme?: "light" | "dark";
 }
 
-export function Logo({ className, variant = "full", size = "md", theme = "light" }: LogoProps) {
-  const heights = { sm: 8, md: 10, lg: 13 };
-  const widths = { sm: 30, md: 37, lg: 48 };
+// El logo completo (ícono + "Escuela Global") mantiene la proporción real
+// del archivo (900x220) para no distorsionar el texto al escalarlo.
+const FULL_LOGO_RATIO = 900 / 220;
 
-  const height = heights[size];
-  const width = variant === "icon" ? height : widths[size];
+// Alturas del ícono solo (cuadrado, pequeño está bien).
+const ICON_HEIGHTS = { sm: 24, md: 32, lg: 44 };
+// Alturas del logo completo (ícono + texto) — tiene que ser más alto para
+// que el texto siga siendo legible, no puede compartir la escala del ícono.
+const FULL_HEIGHTS = { sm: 40, md: 52, lg: 64 };
+
+export function Logo({ className, variant = "full", size = "md", theme = "light" }: LogoProps) {
+  const isIcon = variant === "icon";
+  const height = isIcon ? ICON_HEIGHTS[size] : FULL_HEIGHTS[size];
+  const width = isIcon ? height : Math.round(height * FULL_LOGO_RATIO);
+
+  // El PNG del isotipo trae fondo blanco sólido (no transparente), así que en
+  // fondos oscuros se envuelve en una placa blanca en vez de invertir colores.
+  // Eso solo aplica al ícono cuadrado: envolver el logo completo (rectangular)
+  // en un círculo lo recortaría, así que ahí se muestra tal cual.
+  const image = (
+    <Image
+      src={isIcon ? "/Logo_escuela_global.png" : "/logo_full_escuela_global.svg"}
+      alt="Escuela Global"
+      width={width}
+      height={height}
+      className="object-contain"
+      priority
+    />
+  );
 
   return (
     <Link href="/" className={cn("inline-flex items-center hover:opacity-90 transition-opacity", className)}>
-      <Image
-        src="/Logo_escuela_global.png"
-        alt="Escuela Global"
-        width={width}
-        height={height}
-        className={cn("object-contain", theme === "dark" && "brightness-0 invert")}
-        priority
-      />
+      {theme === "dark" && isIcon ? (
+        <span className="inline-flex items-center justify-center rounded-full bg-white p-1.5 shadow-sm">
+          {image}
+        </span>
+      ) : (
+        image
+      )}
     </Link>
   );
 }

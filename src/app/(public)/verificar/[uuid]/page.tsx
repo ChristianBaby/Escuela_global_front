@@ -162,7 +162,7 @@ export default function VerificarCertificadoPage() {
 
           {isLoading && (
             <div className="flex flex-col items-center justify-center py-32 gap-4">
-              <Loader2 size={36} className="animate-spin text-[#2B55A3]" />
+              <Loader2 size={36} className="animate-spin text-[#084D95]" />
               <p className="text-gray-500 text-sm">Verificando certificado...</p>
             </div>
           )}
@@ -179,7 +179,7 @@ export default function VerificarCertificadoPage() {
               </p>
               <Link
                 href="/"
-                className="inline-block bg-[#2B55A3] text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-[#2B55A3]/90 transition-colors"
+                className="inline-block bg-[#084D95] text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-[#084D95]/90 transition-colors"
               >
                 Ir al inicio
               </Link>
@@ -271,7 +271,7 @@ export default function VerificarCertificadoPage() {
                     onClick={() => setSide("front")}
                     className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                       side === "front"
-                        ? "bg-[#2B55A3] text-white"
+                        ? "bg-[#084D95] text-white"
                         : "border border-gray-300 text-gray-600 hover:bg-gray-50"
                     }`}
                   >
@@ -282,7 +282,7 @@ export default function VerificarCertificadoPage() {
                     onClick={() => setSide("back")}
                     className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                       side === "back"
-                        ? "bg-[#2B55A3] text-white"
+                        ? "bg-[#084D95] text-white"
                         : "border border-gray-300 text-gray-600 hover:bg-gray-50"
                     }`}
                   >
@@ -329,7 +329,7 @@ export default function VerificarCertificadoPage() {
                 Emitido por{" "}
                 <Link
                   href="/"
-                  className="text-[#2B55A3] hover:underline font-medium"
+                  className="text-[#084D95] hover:underline font-medium"
                 >
                   Escuela Global
                 </Link>

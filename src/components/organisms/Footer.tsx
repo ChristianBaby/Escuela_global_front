@@ -30,13 +30,13 @@ const SOCIAL = [
 
 export function Footer() {
   return (
-    <footer className="bg-brand-dark text-white/80">
+    <footer className="bg-[#022A5D] text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
           {/* Brand */}
           <div className="space-y-4">
             <Logo variant="full" size="md" theme="dark" />
-            <p className="text-sm leading-relaxed text-white/60">
+            <p className="text-sm leading-relaxed text-white">
               Plataforma especializada en formación profesional de alta calidad. Crece, globaliza y
               profesionalízate.
             </p>
@@ -46,7 +46,7 @@ export function Footer() {
                   key={label}
                   href={href}
                   aria-label={label}
-                  className="w-8 h-8 flex items-center justify-center rounded-full bg-white/10 hover:bg-brand-secondary transition-colors"
+                  className="w-8 h-8 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-brand-secondary transition-colors"
                 >
                   <Icon size={15} />
                 </a>
@@ -61,7 +61,7 @@ export function Footer() {
                 <li key={href}>
                   <Link
                     href={href}
-                    className="text-sm text-white/60 hover:text-brand-secondary transition-colors"
+                    className="text-sm text-white hover:text-brand-secondary transition-colors"
                   >
                     {label}
                   </Link>
@@ -77,7 +77,7 @@ export function Footer() {
                 <li key={href}>
                   <Link
                     href={href}
-                    className="text-sm text-white/60 hover:text-brand-secondary transition-colors"
+                    className="text-sm text-white hover:text-brand-secondary transition-colors"
                   >
                     {label}
                   </Link>
@@ -93,7 +93,7 @@ export function Footer() {
                 <li key={href}>
                   <Link
                     href={href}
-                    className="text-sm text-white/60 hover:text-brand-secondary transition-colors"
+                    className="text-sm text-white hover:text-brand-secondary transition-colors"
                   >
                     {label}
                   </Link>
@@ -103,9 +103,9 @@ export function Footer() {
           </div>
         </div>
 
-        <Separator className="my-10 bg-white/10" />
+        <Separator className="my-10 bg-white/20" />
 
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-white/40">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-white">
           <span>© {new Date().getFullYear()} Escuela Global. Todos los derechos reservados.</span>
           <span>especializacionesglobal.net</span>
         </div>

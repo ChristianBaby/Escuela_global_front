@@ -35,7 +35,7 @@ function InfoCard({
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-5">
       <div className="flex items-center gap-2 mb-2">
-        <span className={highlight ? "text-green-600" : "text-[#2B55A3]"}>{icon}</span>
+        <span className={highlight ? "text-green-600" : "text-[#084D95]"}>{icon}</span>
         <p className="text-xs text-gray-500">{label}</p>
       </div>
       <p className={`text-xl font-bold ${highlight ? "text-green-700" : "text-gray-900"}`}>
@@ -94,7 +94,7 @@ export default function ActividadEstudiantePage() {
         >
           <ArrowLeft size={14} /> Volver a matriculados
         </button>
-        <h1 className="text-2xl font-bold text-gray-900">
+        <h1 className="text-2xl font-bold text-brand-primary">
           {user.first_name} {user.last_name}
         </h1>
         <p className="text-gray-500 text-sm">
@@ -161,7 +161,7 @@ export default function ActividadEstudiantePage() {
                   })
                 }
               />
-              <Bar dataKey="hours" fill="#2B55A3" radius={[3, 3, 0, 0]} name="Horas" />
+              <Bar dataKey="hours" fill="#084D95" radius={[3, 3, 0, 0]} name="Horas" />
             </BarChart>
           </ResponsiveContainer>
           <p className="text-xs text-gray-400 mt-2 text-right">
@@ -175,6 +175,7 @@ export default function ActividadEstudiantePage() {
         <div className="px-6 py-4 border-b border-gray-100">
           <h3 className="text-sm font-semibold text-gray-700">Progreso por sesión</h3>
         </div>
+        <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
@@ -210,7 +211,7 @@ export default function ActividadEstudiantePage() {
                     <div className="flex items-center justify-end gap-2">
                       <div className="w-16 h-1.5 bg-gray-200 rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-[#2B55A3] rounded-full"
+                          className="h-full bg-[#084D95] rounded-full"
                           style={{ width: `${Math.min(s.percent_watched, 100)}%` }}
                         />
                       </div>
@@ -242,6 +243,7 @@ export default function ActividadEstudiantePage() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );

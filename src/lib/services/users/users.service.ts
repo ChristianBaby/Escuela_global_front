@@ -7,6 +7,7 @@ export interface UsuarioParams {
   search?: string;
   role?: UserRole;
   status?: string;
+  sort?: string;
 }
 
 export interface CreateUsuarioDto {

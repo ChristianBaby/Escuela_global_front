@@ -14,6 +14,7 @@ const ROLES: { value: UserRole; label: string }[] = [
   { value: "soporte", label: "Soporte" },
   { value: "marketing", label: "Marketing" },
   { value: "admin", label: "Administrador" },
+  { value: "coordinador", label: "Coordinador" },
 ];
 
 const STATUS_LABELS: Record<string, string> = {
@@ -21,6 +22,8 @@ const STATUS_LABELS: Record<string, string> = {
   suspended: "Suspendido",
   deleted: "Eliminado",
 };
+
+const PAGE_SIZES = [15, 50, 100, 200];
 
 const empty: CreateUsuarioDto = {
   first_name: "",
@@ -38,6 +41,7 @@ export default function EstudiantesPage() {
   const isAdmin = me?.role === "admin";
 
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(15);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("estudiante");
   const [showModal, setShowModal] = useState(false);
@@ -45,15 +49,25 @@ export default function EstudiantesPage() {
   const [showPassword, setShowPassword] = useState(false);
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["usuarios", page, search, roleFilter],
+    queryKey: ["usuarios", page, limit, search, roleFilter],
     queryFn: () =>
       usuariosService.list({
         page,
-        limit: 15,
+        limit,
         search: search || undefined,
         role: (roleFilter as UserRole) || undefined,
+        sort: "first_name",
       }),
   });
+
+  // Orden alfabético por nombre dentro de la página actual
+  const usuarios = [...(data?.data ?? [])].sort((a, b) =>
+    `${a.first_name} ${a.last_name}`.localeCompare(
+      `${b.first_name} ${b.last_name}`,
+      "es",
+      { sensitivity: "base" }
+    )
+  );
 
   const createMutation = useMutation({
     mutationFn: usuariosService.create,
@@ -96,15 +110,17 @@ export default function EstudiantesPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Usuarios</h1>
+          <h1 className="text-2xl font-bold text-brand-primary">Usuarios</h1>
           <p className="text-gray-500 text-sm">Gestión de cuentas del sistema</p>
         </div>
-        <button
-          onClick={() => setShowModal(true)}
-          className="bg-[#2B55A3] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#2B55A3]/90 transition-colors"
-        >
-          + Nuevo usuario
-        </button>
+        {isAdmin && (
+          <button
+            onClick={() => setShowModal(true)}
+            className="bg-[#084D95] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#084D95]/90 transition-colors"
+          >
+            + Nuevo usuario
+          </button>
+        )}
       </div>
 
       {/* Filtros */}
@@ -114,7 +130,7 @@ export default function EstudiantesPage() {
           placeholder="Buscar por nombre o email..."
           value={search}
           onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm w-64 focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+          className="border border-gray-300 rounded-lg px-3 py-2 text-sm w-64 focus:outline-none focus:ring-2 focus:ring-[#084D95]/30"
         />
         <select
           value={roleFilter}
@@ -148,12 +164,12 @@ export default function EstudiantesPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {data?.data.length === 0 ? (
+              {usuarios.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="text-center py-8 text-gray-400">Sin usuarios encontrados</td>
                 </tr>
               ) : (
-                data?.data.map((u) => (
+                usuarios.map((u) => (
                   <tr key={u.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3 font-medium text-gray-900">{u.first_name} {u.last_name}</td>
                     <td className="px-4 py-3 text-gray-600">{u.email}</td>
@@ -177,24 +193,26 @@ export default function EstudiantesPage() {
                     <td className="px-4 py-3 text-right">
                       <Link
                         href={`/panel/estudiantes/${u.id}`}
-                        className="text-[#2B55A3] hover:underline text-xs mr-3"
+                        className="text-[#084D95] hover:underline text-xs mr-3"
                       >
                         Ver detalle
                       </Link>
-                      {u.status === "active" ? (
-                        <button
-                          onClick={() => suspendMutation.mutate(u.id)}
-                          className="text-yellow-600 hover:underline text-xs mr-3"
-                        >
-                          Suspender
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => activateMutation.mutate(u.id)}
-                          className="text-green-600 hover:underline text-xs mr-3"
-                        >
-                          Activar
-                        </button>
+                      {isAdmin && (
+                        u.status === "active" ? (
+                          <button
+                            onClick={() => suspendMutation.mutate(u.id)}
+                            className="text-yellow-600 hover:underline text-xs mr-3"
+                          >
+                            Suspender
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => activateMutation.mutate(u.id)}
+                            className="text-green-600 hover:underline text-xs mr-3"
+                          >
+                            Activar
+                          </button>
+                        )
                       )}
                     </td>
                   </tr>
@@ -206,9 +224,23 @@ export default function EstudiantesPage() {
         )}
 
         {/* Paginación */}
-        {data && data.total_pages > 1 && (
+        {data && data.total > 0 && (
           <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 text-sm text-gray-500">
-            <span>Página {page} de {data.total_pages} — {data.total} usuarios</span>
+            <div className="flex items-center gap-3">
+              <span>Página {page} de {data.total_pages} — {data.total} usuarios</span>
+              <label className="flex items-center gap-1.5 text-xs">
+                Por página
+                <select
+                  value={limit}
+                  onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}
+                  className="border border-gray-300 rounded-lg px-2 py-1 text-xs focus:outline-none"
+                >
+                  {PAGE_SIZES.map((size) => (
+                    <option key={size} value={size}>{size}</option>
+                  ))}
+                </select>
+              </label>
+            </div>
             <div className="flex gap-2">
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
@@ -234,7 +266,7 @@ export default function EstudiantesPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl w-full max-w-md shadow-xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-              <h2 className="font-semibold text-gray-900">Nuevo usuario</h2>
+              <h2 className="font-semibold text-brand-primary">Nuevo usuario</h2>
               <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
@@ -269,7 +301,7 @@ export default function EstudiantesPage() {
                     type={showPassword ? "text" : "password"}
                     value={form.password}
                     onChange={(e) => setForm({ ...form, password: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-[#084D95]/30"
                   />
                   <button
                     type="button"
@@ -286,7 +318,7 @@ export default function EstudiantesPage() {
                 <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">
                   Cancelar
                 </button>
-                <button type="submit" disabled={createMutation.isPending} className="px-4 py-2 text-sm bg-[#2B55A3] text-white rounded-lg hover:bg-[#2B55A3]/90 disabled:opacity-50">
+                <button type="submit" disabled={createMutation.isPending} className="px-4 py-2 text-sm bg-[#084D95] text-white rounded-lg hover:bg-[#084D95]/90 disabled:opacity-50">
                   {createMutation.isPending ? "Creando..." : "Crear usuario"}
                 </button>
               </div>
@@ -309,7 +341,7 @@ function Field({
     <div className="space-y-1">
       <label className="text-sm font-medium text-gray-700">{label}</label>
       {React.cloneElement(children, {
-        className: "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30",
+        className: "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#084D95]/30",
       })}
     </div>
   );

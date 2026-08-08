@@ -72,6 +72,7 @@ export default function CourseViewerPage() {
   });
 
   // Estado del visor
+  const videoSectionRef = useRef<HTMLDivElement>(null);
   const [currentSessionId, setCurrentSessionId] = useState<string>("");
   const [completedSet, setCompletedSet] = useState<Set<string>>(new Set());
   const [progressPercent, setProgressPercent] = useState(0);
@@ -161,6 +162,9 @@ export default function CourseViewerPage() {
     if (!completedSet.has(sessionId)) {
       updateProgress.mutate({ sessionId, forceComplete: true });
     }
+    // En mobile/tablet el video y la lista comparten una sola columna con scroll
+    // de página; al elegir una sesión, llevamos la vista al video (como YouTube).
+    videoSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   const toggleModule = (moduleId: string) => {
@@ -175,23 +179,23 @@ export default function CourseViewerPage() {
 
   if (loadingContent || loadingProgress) {
     return (
-      <div className="-mx-8 -my-8 flex items-center justify-center h-[calc(100vh-64px)]">
-        <Loader2 size={32} className="animate-spin text-[#2B55A3]" />
+      <div className="-mx-4 lg:-mx-8 -my-6 lg:-my-8 flex items-center justify-center h-[calc(100vh-64px)]">
+        <Loader2 size={32} className="animate-spin text-[#084D95]" />
       </div>
     );
   }
 
   if (!content || !progressData) {
     return (
-      <div className="-mx-8 -my-8 flex flex-col items-center justify-center h-[calc(100vh-64px)] gap-4">
+      <div className="-mx-4 lg:-mx-8 -my-6 lg:-my-8 flex flex-col items-center justify-center h-[calc(100vh-64px)] gap-4">
         <p className="text-gray-500">No tienes acceso a este curso.</p>
-        <Link href="/mis-cursos" className="text-[#2B55A3] underline text-sm">Ver mis cursos</Link>
+        <Link href="/mis-cursos" className="text-[#084D95] underline text-sm">Ver mis cursos</Link>
       </div>
     );
   }
 
   return (
-    <div className="-mx-8 -my-8">
+    <div className="-mx-4 lg:-mx-8 -my-6 lg:-my-8">
       {/* Breadcrumb */}
       <div className="bg-white border-b border-gray-200 px-6 py-3 flex items-center gap-2 text-sm">
         <Link href="/mis-cursos" className="text-gray-400 hover:text-gray-600">Mis cursos</Link>
@@ -200,10 +204,12 @@ export default function CourseViewerPage() {
       </div>
 
       {/* Layout principal */}
-      <div className="flex flex-col lg:flex-row h-[calc(100vh-113px)]">
+      {/* En mobile todo fluye normal (scroll de la página); el panel dividido
+          con altura fija y scroll independiente por columna es solo desktop. */}
+      <div className="flex flex-col lg:flex-row lg:h-[calc(100vh-113px)]">
 
         {/* ── Columna izquierda (70%) ── */}
-        <div className="flex-1 min-w-0 overflow-y-auto bg-gray-50">
+        <div ref={videoSectionRef} className="flex-1 min-w-0 lg:overflow-y-auto bg-gray-50">
 
           {/* Video */}
           {allSessions.length === 0 ? (
@@ -231,7 +237,7 @@ export default function CourseViewerPage() {
               <div className="flex gap-2">
                 <button
                   onClick={() => { setShowAutoAdvance(false); goToSession(allSessions[currentIndex + 1].id); }}
-                  className="bg-[#2B55A3] text-white text-xs px-3 py-1.5 rounded-lg hover:bg-[#2B55A3]/80"
+                  className="bg-[#084D95] text-white text-xs px-3 py-1.5 rounded-lg hover:bg-[#084D95]/80"
                 >
                   Ir ahora
                 </button>
@@ -249,7 +255,7 @@ export default function CourseViewerPage() {
           <div className="bg-white px-6 py-6">
             {currentSession ? (
               <>
-                <h1 className="text-xl font-bold text-gray-900">{currentSession.title}</h1>
+                <h1 className="text-xl font-bold text-brand-primary">{currentSession.title}</h1>
                 {currentSession.description && (
                   <p className="text-gray-500 mt-2 text-sm leading-relaxed">{currentSession.description}</p>
                 )}
@@ -265,7 +271,7 @@ export default function CourseViewerPage() {
                           href={mat.drive_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg text-sm hover:border-[#2B55A3] hover:text-[#2B55A3] transition-colors"
+                          className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg text-sm hover:border-[#084D95] hover:text-[#084D95] transition-colors"
                         >
                           <span>{MATERIAL_ICON[mat.type] ?? "📎"}</span>
                           <span>{mat.name}</span>
@@ -281,7 +287,7 @@ export default function CourseViewerPage() {
                   <button
                     disabled={!hasPrev}
                     onClick={() => goToSession(allSessions[currentIndex - 1].id)}
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border border-gray-200 text-gray-600 hover:border-[#2B55A3] hover:text-[#2B55A3] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border border-gray-200 text-gray-600 hover:border-[#084D95] hover:text-[#084D95] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                   >
                     <ChevronLeft size={16} />
                     Sesión anterior
@@ -308,7 +314,7 @@ export default function CourseViewerPage() {
                   <button
                     disabled={!hasNext}
                     onClick={() => goToSession(allSessions[currentIndex + 1].id)}
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border border-gray-200 text-gray-600 hover:border-[#2B55A3] hover:text-[#2B55A3] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border border-gray-200 text-gray-600 hover:border-[#084D95] hover:text-[#084D95] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                   >
                     Siguiente sesión
                     <ChevronRight size={16} />
@@ -346,11 +352,11 @@ export default function CourseViewerPage() {
           <div className="p-4 border-b border-gray-100">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-semibold text-gray-700">Progreso del curso</span>
-              <span className="text-sm font-bold text-[#2B55A3]">{progressPercent}%</span>
+              <span className="text-sm font-bold text-[#084D95]">{progressPercent}%</span>
             </div>
             <div className="h-2 bg-gray-200 rounded-full">
               <div
-                className="h-2 bg-[#2B55A3] rounded-full transition-all duration-500"
+                className="h-2 bg-[#084D95] rounded-full transition-all duration-500"
                 style={{ width: `${progressPercent}%` }}
               />
             </div>
@@ -360,7 +366,7 @@ export default function CourseViewerPage() {
           </div>
 
           {/* Módulos y sesiones */}
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 lg:overflow-y-auto">
             {content.modules.length === 0 && (
               <div className="flex flex-col items-center justify-center py-16 px-4 gap-3">
                 <Circle size={32} className="text-gray-300" />
@@ -401,19 +407,19 @@ export default function CourseViewerPage() {
                             onClick={() => goToSession(sess.id)}
                             className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${
                               isActive
-                                ? "bg-[#2B55A3]/10 border-l-2 border-[#2B55A3]"
+                                ? "bg-[#084D95]/10 border-l-2 border-[#084D95]"
                                 : "hover:bg-gray-100 border-l-2 border-transparent"
                             }`}
                           >
                             {done ? (
                               <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
                             ) : isActive ? (
-                              <PlayCircle size={16} className="text-[#2B55A3] shrink-0" />
+                              <PlayCircle size={16} className="text-[#084D95] shrink-0" />
                             ) : (
                               <Circle size={16} className="text-gray-300 shrink-0" />
                             )}
                             <div className="flex-1 min-w-0">
-                              <p className={`text-xs leading-snug truncate ${isActive ? "font-semibold text-[#2B55A3]" : "text-gray-700"}`}>
+                              <p className={`text-xs leading-snug truncate ${isActive ? "font-semibold text-[#084D95]" : "text-gray-700"}`}>
                                 {sess.title}
                               </p>
                               <p className="text-[10px] text-gray-400 mt-0.5">{sess.duration_minutes} min</p>
@@ -528,7 +534,7 @@ function ReviewModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-gray-900">Dejar reseña del curso</h2>
+          <h2 className="text-lg font-bold text-brand-primary">Dejar reseña del curso</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
             <X size={20} />
           </button>
@@ -579,7 +585,7 @@ function ReviewModal({
             rows={4}
             maxLength={500}
             placeholder="Comparte tu experiencia con este curso..."
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3] focus:border-transparent resize-none"
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#084D95] focus:border-transparent resize-none"
           />
           <div className={`text-xs text-right mt-1 ${charCount < 50 ? "text-red-400" : charCount > 490 ? "text-amber-500" : "text-gray-400"}`}>
             {charCount}/500 {charCount < 50 && `(mínimo 50)`}
@@ -598,7 +604,7 @@ function ReviewModal({
           <button
             onClick={handleSubmit}
             disabled={!valid || submitting}
-            className="flex-1 py-2.5 rounded-lg text-sm font-medium bg-[#2B55A3] text-white hover:bg-[#2B55A3]/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+            className="flex-1 py-2.5 rounded-lg text-sm font-medium bg-[#084D95] text-white hover:bg-[#084D95]/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
           >
             {submitting && <Loader2 size={14} className="animate-spin" />}
             Enviar reseña

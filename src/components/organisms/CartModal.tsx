@@ -60,15 +60,15 @@ export function CartModal({ open, onOpenChange }: CartModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg sm:max-w-lg p-0 gap-0 overflow-hidden">
-        <DialogHeader className="p-4 pb-0">
+      <DialogContent className="max-w-lg sm:max-w-lg p-0 gap-0 overflow-hidden max-h-[85vh] flex flex-col">
+        <DialogHeader className="p-4 pb-0 shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <ShoppingCart size={18} className="text-brand-primary" />
             Mi carrito
           </DialogTitle>
         </DialogHeader>
 
-        <div className="max-h-[70vh] flex flex-col">
+        <div className="flex-1 min-h-0 overflow-y-auto flex flex-col">
           {/* Items actuales del carrito */}
           <div className="px-4 pt-3">
             {items.length === 0 ? (
@@ -76,7 +76,7 @@ export function CartModal({ open, onOpenChange }: CartModalProps) {
                 Aún no tienes cursos en el carrito. Búscalos abajo y agrégalos.
               </p>
             ) : (
-              <ul className="space-y-2 max-h-40 overflow-y-auto pr-1">
+              <ul className="space-y-2 pr-1">
                 {items.map(({ course }) => {
                   const symbol = course.currency === "PEN" ? "S/" : "$";
                   const price = course.discount_price ?? course.price;
@@ -128,7 +128,7 @@ export function CartModal({ open, onOpenChange }: CartModalProps) {
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto px-4 pb-2 space-y-2">
+          <div className="px-4 pb-2 space-y-2">
             {isLoading ? (
               <p className="text-sm text-gray-400 py-4 text-center">Buscando cursos...</p>
             ) : courses.length === 0 ? (
@@ -183,31 +183,31 @@ export function CartModal({ open, onOpenChange }: CartModalProps) {
               })
             )}
           </div>
+        </div>
 
-          {/* Footer con total y acciones */}
-          <div className="border-t border-gray-100 bg-gray-50 p-4 space-y-3">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600">
-                {items.length} {items.length === 1 ? "curso" : "cursos"} en el carrito
-              </span>
-              <span className="font-bold text-gray-900">Total: S/ {cartTotal.toFixed(2)}</span>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={goToCart}
-                className="flex-1 border-2 border-brand-primary text-brand-primary font-semibold py-2 rounded-lg text-sm hover:bg-brand-primary/5 transition-colors"
-              >
-                Ver carrito completo
-              </button>
-              <button
-                onClick={goToCheckout}
-                disabled={items.length === 0}
-                className="flex-1 flex items-center justify-center gap-1.5 bg-brand-primary text-white font-semibold py-2 rounded-lg text-sm hover:bg-brand-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                <CreditCard size={15} />
-                Pagar
-              </button>
-            </div>
+        {/* Footer con total y acciones — siempre visible, fuera del área con scroll */}
+        <div className="border-t border-gray-100 bg-gray-50 p-4 space-y-3 shrink-0">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-gray-600">
+              {items.length} {items.length === 1 ? "curso" : "cursos"} en el carrito
+            </span>
+            <span className="font-bold text-gray-900">Total: S/ {cartTotal.toFixed(2)}</span>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={goToCart}
+              className="flex-1 border-2 border-brand-primary text-brand-primary font-semibold py-2 rounded-lg text-sm hover:bg-brand-primary/5 transition-colors"
+            >
+              Ver carrito completo
+            </button>
+            <button
+              onClick={goToCheckout}
+              disabled={items.length === 0}
+              className="flex-1 flex items-center justify-center gap-1.5 bg-brand-primary text-white font-semibold py-2 rounded-lg text-sm hover:bg-brand-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <CreditCard size={15} />
+              Pagar
+            </button>
           </div>
         </div>
       </DialogContent>

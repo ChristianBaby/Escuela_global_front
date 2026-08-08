@@ -1,6 +1,6 @@
 // ─── Enums ────────────────────────────────────────────────────────────────────
 
-export type UserRole = "estudiante" | "soporte" | "marketing" | "admin";
+export type UserRole = "estudiante" | "soporte" | "marketing" | "admin" | "coordinador";
 export type UserStatus = "active" | "suspended" | "deleted";
 export type CourseLevel = "principiante" | "intermedio" | "avanzado";
 export type CourseStatus = "draft" | "published" | "archived";
@@ -239,13 +239,13 @@ export interface CertificateSummary {
   id: string;
   enrollment_id: string;
   course_title: string;
-  verification_code: string;
+  verification_code: string | null;
   issued_at: string;
 }
 
 export interface CertificateDetail {
   id: string;
-  verification_code: string;
+  verification_code: string | null;
   course_title: string;
   student_name: string;
   issued_at: string;
@@ -288,7 +288,54 @@ export interface Slider {
   position_on_page: SliderPosition;
   display_order: number;
   status: PromotionStatus;
+  show_content: boolean;
   courses?: Course[];
+  created_at: string;
+}
+
+export interface Software {
+  id: string;
+  name: string;
+  image_url: string;
+  display_order: number;
+  status: PromotionStatus;
+  created_at: string;
+}
+
+export interface ScrollPopup {
+  id: string;
+  image_url: string;
+  destination_url?: string;
+  display_order: number;
+  status: PromotionStatus;
+  created_at: string;
+}
+
+export interface Alliance {
+  id: string;
+  image_url: string;
+  display_order: number;
+  status: PromotionStatus;
+  created_at: string;
+}
+
+export interface UpcomingLaunch {
+  id: string;
+  category_label: string;
+  title: string;
+  start_date: string;
+  image_url?: string;
+  link_url?: string;
+  display_order: number;
+  status: PromotionStatus;
+  created_at: string;
+}
+
+export interface StaffMember {
+  id: string;
+  image_url: string;
+  display_order: number;
+  status: PromotionStatus;
   created_at: string;
 }
 
@@ -300,6 +347,7 @@ export interface Notification {
   body: string;
   is_read: boolean;
   redirect_url?: string;
+  image_url?: string;
   created_at: string;
 }
 

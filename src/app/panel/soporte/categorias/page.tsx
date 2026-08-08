@@ -10,7 +10,7 @@ const empty: CreateCategoriaDto = {
   name: "",
   slug: "",
   icon: "",
-  color: "#2B55A3",
+  color: "#084D95",
   description: "",
 };
 
@@ -110,12 +110,12 @@ export default function CategoriasPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Categorías</h1>
+          <h1 className="text-2xl font-bold text-brand-primary">Categorías</h1>
           <p className="text-gray-500 text-sm">Organiza los cursos por categoría</p>
         </div>
         <button
           onClick={openCreate}
-          className="bg-[#2B55A3] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#2B55A3]/90 transition-colors"
+          className="bg-[#084D95] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#084D95]/90 transition-colors"
         >
           + Nueva categoría
         </button>
@@ -158,7 +158,7 @@ export default function CategoriasPage() {
                     </td>
                     <td className="px-4 py-3 text-gray-500 max-w-xs truncate">{cat.description ?? "—"}</td>
                     <td className="px-4 py-3 text-right space-x-3">
-                      <button onClick={() => openEdit(cat)} className="text-[#2B55A3] hover:underline text-xs">Editar</button>
+                      <button onClick={() => openEdit(cat)} className="text-[#084D95] hover:underline text-xs">Editar</button>
                       <button onClick={() => setConfirmDelete(cat.id)} className="text-red-500 hover:underline text-xs">Eliminar</button>
                     </td>
                   </tr>
@@ -175,7 +175,7 @@ export default function CategoriasPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl w-full max-w-md shadow-xl">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-              <h2 className="font-semibold text-gray-900">{editing ? "Editar categoría" : "Nueva categoría"}</h2>
+              <h2 className="font-semibold text-brand-primary">{editing ? "Editar categoría" : "Nueva categoría"}</h2>
               <button onClick={closeModal} className="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
@@ -185,7 +185,7 @@ export default function CategoriasPage() {
                   required
                   value={form.name}
                   onChange={(e) => handleNameChange(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#084D95]/30"
                 />
               </div>
               <div className="space-y-1">
@@ -194,7 +194,7 @@ export default function CategoriasPage() {
                   required
                   value={form.slug}
                   onChange={(e) => setForm({ ...form, slug: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#084D95]/30"
                 />
                 <p className="text-xs text-gray-400">Debe ser único, sin espacios ni caracteres especiales</p>
               </div>
@@ -216,12 +216,12 @@ export default function CategoriasPage() {
                   value={form.description ?? ""}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
                   rows={2}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#084D95]/30"
                 />
               </div>
               <div className="flex justify-end gap-3 pt-2">
                 <button type="button" onClick={closeModal} className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">Cancelar</button>
-                <button type="submit" disabled={isPending} className="px-4 py-2 text-sm bg-[#2B55A3] text-white rounded-lg hover:bg-[#2B55A3]/90 disabled:opacity-50">
+                <button type="submit" disabled={isPending} className="px-4 py-2 text-sm bg-[#084D95] text-white rounded-lg hover:bg-[#084D95]/90 disabled:opacity-50">
                   {isPending ? "Guardando..." : editing ? "Guardar cambios" : "Crear categoría"}
                 </button>
               </div>
@@ -234,7 +234,7 @@ export default function CategoriasPage() {
       {confirmDelete && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-6 w-full max-w-sm shadow-xl">
-            <h2 className="font-semibold text-gray-900 mb-2">¿Eliminar esta categoría?</h2>
+            <h2 className="font-semibold text-brand-primary mb-2">¿Eliminar esta categoría?</h2>
             <p className="text-sm text-gray-500 mb-5">Solo se puede eliminar si no tiene cursos asignados.</p>
             <div className="flex justify-end gap-3">
               <button onClick={() => setConfirmDelete(null)} className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">Cancelar</button>

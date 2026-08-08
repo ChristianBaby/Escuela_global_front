@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import {
   notificacionesMktService,
@@ -10,7 +10,7 @@ import {
 import { cursosService } from "@/lib/services/courses";
 import { categoriasService } from "@/lib/services/categories";
 import { toast } from "sonner";
-import { Bell, Send, Users, BookOpen, UserCheck, Search, X, Tag, Percent, Megaphone, Clock } from "lucide-react";
+import { Bell, Send, Users, BookOpen, UserCheck, Search, X, Tag, Percent, Megaphone, Clock, ImageIcon } from "lucide-react";
 
 const TIPOS = [
   { value: "nuevo_curso", label: "Nuevo curso", icon: BookOpen },
@@ -64,6 +64,9 @@ const empty = {
 
 export default function NotificacionesMarketingPage() {
   const [form, setForm] = useState(empty);
+  const [image, setImage] = useState<File | undefined>(undefined);
+  const [previewUrl, setPreviewUrl] = useState<string>("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedUsers, setSelectedUsers] = useState<NotificationRecipient[]>([]);
@@ -104,6 +107,10 @@ export default function NotificacionesMarketingPage() {
     enabled: recipientsEnabled,
   });
 
+  const recipientsOrdenados = [...recipients].sort((a, b) =>
+    `${a.first_name} ${a.last_name}`.localeCompare(`${b.first_name} ${b.last_name}`, "es", { sensitivity: "base" })
+  );
+
   const sendMutation = useMutation({
     mutationFn: notificacionesMktService.send,
     onSuccess: (data) => {
@@ -114,6 +121,7 @@ export default function NotificacionesMarketingPage() {
       setFiltroModo("search");
       setFiltroCourseId("");
       setFiltroCategoryId("");
+      clearImage();
     },
     onError: (err: unknown) =>
       toast.error((err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? "Error al enviar la notificación"),
@@ -123,6 +131,23 @@ export default function NotificacionesMarketingPage() {
     setSelectedUsers((prev) =>
       prev.some((u) => u.id === user.id) ? prev.filter((u) => u.id !== user.id) : [...prev, user]
     );
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Selecciona un archivo de imagen");
+      return;
+    }
+    setImage(file);
+    setPreviewUrl(URL.createObjectURL(file));
+  };
+
+  const clearImage = () => {
+    setImage(undefined);
+    setPreviewUrl("");
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -149,6 +174,7 @@ export default function NotificacionesMarketingPage() {
       type: form.type,
       ...(form.audience === "course" && { course_id: form.course_id }),
       ...(form.audience === "users" && { user_ids: selectedUsers.map((u) => u.id) }),
+      ...(image && { image }),
     };
 
     sendMutation.mutate(dto);
@@ -158,8 +184,8 @@ export default function NotificacionesMarketingPage() {
     <div className="max-w-3xl">
       {/* Encabezado */}
       <div className="flex items-center gap-3 mb-1">
-        <Bell size={22} className="text-[#2B55A3]" />
-        <h1 className="text-2xl font-bold text-gray-900">Notificaciones</h1>
+        <Bell size={22} className="text-[#084D95]" />
+        <h1 className="text-2xl font-bold text-brand-primary">Notificaciones</h1>
       </div>
       <p className="text-sm text-gray-500 mb-6">
         Envía un mensaje personalizado a tus estudiantes. Aparecerá en su centro de notificaciones.
@@ -172,7 +198,7 @@ export default function NotificacionesMarketingPage() {
           <input
             value={form.title}
             onChange={(e) => setForm({ ...form, title: e.target.value })}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#084D95]/30"
             placeholder="Ej: ¡Nuevo descuento disponible!"
             maxLength={150}
           />
@@ -185,10 +211,46 @@ export default function NotificacionesMarketingPage() {
             rows={3}
             value={form.body}
             onChange={(e) => setForm({ ...form, body: e.target.value })}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30 resize-none"
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#084D95]/30 resize-none"
             placeholder="Escribe el contenido del mensaje..."
             maxLength={500}
           />
+        </div>
+
+        {/* Imagen */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-gray-700">
+            Imagen <span className="text-xs text-gray-400 font-normal">(opcional)</span>
+          </label>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleFileChange}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#084D95]/30 file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-[#084D95] file:text-white file:cursor-pointer"
+          />
+          {previewUrl ? (
+            <div className="relative rounded-lg overflow-hidden border border-gray-200">
+              <img
+                src={previewUrl}
+                alt="Vista previa"
+                className="w-full h-32 object-cover"
+                onError={(e) => (e.currentTarget.style.display = "none")}
+              />
+              <button
+                type="button"
+                onClick={clearImage}
+                className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white rounded-full p-1"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 text-xs text-gray-400">
+              <ImageIcon size={14} />
+              Se mostrará junto a la notificación en el centro de notificaciones.
+            </div>
+          )}
         </div>
 
         {/* Link de redirección */}
@@ -199,7 +261,7 @@ export default function NotificacionesMarketingPage() {
           <input
             value={form.redirect_url}
             onChange={(e) => setForm({ ...form, redirect_url: e.target.value })}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#084D95]/30"
             placeholder="/cursos/nombre-del-curso"
           />
         </div>
@@ -215,11 +277,11 @@ export default function NotificacionesMarketingPage() {
                 onClick={() => setForm({ ...form, type: t.value })}
                 className={`flex items-center gap-2 p-3 rounded-xl border transition-all ${
                   form.type === t.value
-                    ? "border-[#2B55A3] bg-[#2B55A3]/5 text-[#2B55A3]"
+                    ? "border-[#084D95] bg-[#084D95]/5 text-[#084D95]"
                     : "border-gray-200 text-gray-600 hover:border-gray-300"
                 }`}
               >
-                <t.icon size={16} className={form.type === t.value ? "text-[#2B55A3]" : "text-gray-400"} />
+                <t.icon size={16} className={form.type === t.value ? "text-[#084D95]" : "text-gray-400"} />
                 <span className="text-sm font-medium">{t.label}</span>
               </button>
             ))}
@@ -237,15 +299,15 @@ export default function NotificacionesMarketingPage() {
                 onClick={() => setForm({ ...form, audience: a.value })}
                 className={`text-left p-4 rounded-xl border transition-all ${
                   form.audience === a.value
-                    ? "border-[#2B55A3] bg-[#2B55A3]/5"
+                    ? "border-[#084D95] bg-[#084D95]/5"
                     : "border-gray-200 hover:border-gray-300"
                 }`}
               >
                 <a.icon
                   size={18}
-                  className={form.audience === a.value ? "text-[#2B55A3]" : "text-gray-400"}
+                  className={form.audience === a.value ? "text-[#084D95]" : "text-gray-400"}
                 />
-                <p className={`text-sm font-semibold mt-2 ${form.audience === a.value ? "text-[#2B55A3]" : "text-gray-800"}`}>
+                <p className={`text-sm font-semibold mt-2 ${form.audience === a.value ? "text-[#084D95]" : "text-gray-800"}`}>
                   {a.label}
                 </p>
                 <p className="text-xs text-gray-500 mt-1 leading-relaxed">{a.description}</p>
@@ -261,7 +323,7 @@ export default function NotificacionesMarketingPage() {
             <select
               value={form.course_id}
               onChange={(e) => setForm({ ...form, course_id: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#084D95]/30"
             >
               <option value="">Selecciona un curso...</option>
               {cursosData?.data.map((c) => (
@@ -282,10 +344,10 @@ export default function NotificacionesMarketingPage() {
                 {selectedUsers.map((u) => (
                   <span
                     key={u.id}
-                    className="flex items-center gap-1.5 bg-[#2B55A3]/10 text-[#2B55A3] text-xs font-medium px-2.5 py-1 rounded-full"
+                    className="flex items-center gap-1.5 bg-[#084D95]/10 text-[#084D95] text-xs font-medium px-2.5 py-1 rounded-full"
                   >
                     {u.first_name} {u.last_name}
-                    <button type="button" onClick={() => toggleUser(u)} className="hover:text-[#2B55A3]/70">
+                    <button type="button" onClick={() => toggleUser(u)} className="hover:text-[#084D95]/70">
                       <X size={12} />
                     </button>
                   </span>
@@ -302,7 +364,7 @@ export default function NotificacionesMarketingPage() {
                   onClick={() => setFiltroModo(f.value)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
                     filtroModo === f.value
-                      ? "border-[#2B55A3] bg-[#2B55A3]/5 text-[#2B55A3]"
+                      ? "border-[#084D95] bg-[#084D95]/5 text-[#084D95]"
                       : "border-gray-200 text-gray-500 hover:border-gray-300"
                   }`}
                 >
@@ -317,7 +379,7 @@ export default function NotificacionesMarketingPage() {
               <select
                 value={filtroCourseId}
                 onChange={(e) => setFiltroCourseId(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#084D95]/30"
               >
                 <option value="">Selecciona un curso...</option>
                 {cursosData?.data.map((c) => (
@@ -331,7 +393,7 @@ export default function NotificacionesMarketingPage() {
               <select
                 value={filtroCategoryId}
                 onChange={(e) => setFiltroCategoryId(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#084D95]/30"
               >
                 <option value="">Selecciona una categoría...</option>
                 {categoriasData?.map((c) => (
@@ -346,7 +408,7 @@ export default function NotificacionesMarketingPage() {
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B55A3]/30"
+                className="w-full border border-gray-300 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#084D95]/30"
                 placeholder="Buscar por nombre o correo..."
               />
             </div>
@@ -359,10 +421,10 @@ export default function NotificacionesMarketingPage() {
                 </p>
               ) : loadingRecipients ? (
                 <p className="text-center text-sm text-gray-400 py-4">Buscando...</p>
-              ) : recipients.length === 0 ? (
+              ) : recipientsOrdenados.length === 0 ? (
                 <p className="text-center text-sm text-gray-400 py-4">Sin resultados</p>
               ) : (
-                recipients.map((u) => (
+                recipientsOrdenados.map((u) => (
                   <label key={u.id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0">
                     <input
                       type="checkbox"
@@ -386,7 +448,7 @@ export default function NotificacionesMarketingPage() {
           <button
             type="submit"
             disabled={sendMutation.isPending}
-            className="flex items-center gap-2 px-4 py-2 text-sm bg-[#2B55A3] text-white rounded-lg hover:bg-[#2B55A3]/90 disabled:opacity-50"
+            className="flex items-center gap-2 px-4 py-2 text-sm bg-[#084D95] text-white rounded-lg hover:bg-[#084D95]/90 disabled:opacity-50"
           >
             <Send size={15} />
             {sendMutation.isPending ? "Enviando..." : "Enviar notificación"}

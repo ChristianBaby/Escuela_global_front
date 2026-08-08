@@ -1,82 +1,15 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Eye, EyeOff } from "lucide-react";
 import { AuthLayout } from "@/components/templates";
-import { FormField } from "@/components/molecules";
+import { FormField, PasswordField } from "@/components/molecules";
 import { Button, Checkbox, Label, buttonVariants } from "@/components/atoms";
 import { authService } from "@/lib/services/auth";
 import { cn } from "@/lib/utils";
-
-const COUNTRIES = [
-  { name: "Perú",                code: "PE", dial: "+51",   flag: "🇵🇪" },
-  { name: "México",              code: "MX", dial: "+52",   flag: "🇲🇽" },
-  { name: "Colombia",            code: "CO", dial: "+57",   flag: "🇨🇴" },
-  { name: "Argentina",           code: "AR", dial: "+54",   flag: "🇦🇷" },
-  { name: "Chile",               code: "CL", dial: "+56",   flag: "🇨🇱" },
-  { name: "Ecuador",             code: "EC", dial: "+593",  flag: "🇪🇨" },
-  { name: "Bolivia",             code: "BO", dial: "+591",  flag: "🇧🇴" },
-  { name: "Venezuela",           code: "VE", dial: "+58",   flag: "🇻🇪" },
-  { name: "Uruguay",             code: "UY", dial: "+598",  flag: "🇺🇾" },
-  { name: "Paraguay",            code: "PY", dial: "+595",  flag: "🇵🇾" },
-  { name: "Brasil",              code: "BR", dial: "+55",   flag: "🇧🇷" },
-  { name: "España",              code: "ES", dial: "+34",   flag: "🇪🇸" },
-  { name: "Estados Unidos",      code: "US", dial: "+1",    flag: "🇺🇸" },
-  { name: "Canadá",              code: "CA", dial: "+1",    flag: "🇨🇦" },
-  { name: "Reino Unido",         code: "GB", dial: "+44",   flag: "🇬🇧" },
-  { name: "Alemania",            code: "DE", dial: "+49",   flag: "🇩🇪" },
-  { name: "Francia",             code: "FR", dial: "+33",   flag: "🇫🇷" },
-  { name: "Italia",              code: "IT", dial: "+39",   flag: "🇮🇹" },
-  { name: "Portugal",            code: "PT", dial: "+351",  flag: "🇵🇹" },
-  { name: "Panamá",              code: "PA", dial: "+507",  flag: "🇵🇦" },
-  { name: "Costa Rica",          code: "CR", dial: "+506",  flag: "🇨🇷" },
-  { name: "Guatemala",           code: "GT", dial: "+502",  flag: "🇬🇹" },
-  { name: "Honduras",            code: "HN", dial: "+504",  flag: "🇭🇳" },
-  { name: "El Salvador",         code: "SV", dial: "+503",  flag: "🇸🇻" },
-  { name: "Nicaragua",           code: "NI", dial: "+505",  flag: "🇳🇮" },
-  { name: "Cuba",                code: "CU", dial: "+53",   flag: "🇨🇺" },
-  { name: "República Dominicana",code: "DO", dial: "+1809", flag: "🇩🇴" },
-];
-
-const PROFESSIONS = [
-  "Ingeniero/a",
-  "Médico/a / Profesional de salud",
-  "Contador/a / Auditor/a",
-  "Administrador/a de empresas",
-  "Economista",
-  "Arquitecto/a",
-  "Abogado/a",
-  "Docente / Educador/a",
-  "Estadístico/a / Matemático/a",
-  "Analista de datos / Data Scientist",
-  "Desarrollador/a de software",
-  "Diseñador/a gráfico/a",
-  "Técnico/a",
-  "Estudiante universitario/a",
-  "Otro",
-];
-
-function getPasswordStrength(password: string): {
-  score: number;
-  label: string;
-  color: string;
-} {
-  if (!password) return { score: 0, label: "", color: "" };
-  let score = 0;
-  if (password.length >= 8)          score++;
-  if (password.length >= 12)         score++;
-  if (/[A-Z]/.test(password))        score++;
-  if (/[0-9]/.test(password))        score++;
-  if (/[^A-Za-z0-9]/.test(password)) score++;
-  if (score <= 1) return { score: 1, label: "Muy débil",  color: "bg-red-500"     };
-  if (score === 2) return { score: 2, label: "Débil",      color: "bg-orange-400"  };
-  if (score === 3) return { score: 3, label: "Regular",    color: "bg-yellow-400"  };
-  if (score === 4) return { score: 4, label: "Fuerte",     color: "bg-green-500"   };
-  return             { score: 5, label: "Muy fuerte", color: "bg-emerald-500" };
-}
+import { COUNTRIES, PROFESSIONS } from "@/lib/constants/checkout-options";
 
 const registerSchema = z
   .object({
@@ -96,40 +29,6 @@ const registerSchema = z
   });
 
 type RegisterFormData = z.infer<typeof registerSchema>;
-
-// ─── PasswordInput con forwardRef para que el ojito funcione con react-hook-form
-interface PasswordInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  hasError?: boolean;
-}
-
-const PasswordInput = React.forwardRef<HTMLInputElement, PasswordInputProps>(
-  function PasswordInput({ hasError, className, ...props }, ref) {
-    const [show, setShow] = useState(false);
-    return (
-      <div className="relative">
-        <input
-          ref={ref}
-          type={show ? "text" : "password"}
-          aria-invalid={hasError}
-          className={cn(
-            "w-full border rounded-lg px-3 pr-10 h-10 text-sm outline-none transition focus:ring-2 focus:ring-brand-primary/30 focus:border-brand-primary",
-            hasError ? "border-red-400" : "border-gray-300",
-            className
-          )}
-          {...props}
-        />
-        <button
-          type="button"
-          onClick={() => setShow((p) => !p)}
-          aria-label={show ? "Ocultar contraseña" : "Mostrar contraseña"}
-          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-        >
-          {show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-        </button>
-      </div>
-    );
-  }
-);
 
 // ─── Página principal ─────────────────────────────────────────────────────────
 export default function RegisterPage() {
@@ -151,7 +50,6 @@ export default function RegisterPage() {
   const terms         = watch("terms");
   const watchCountry  = watch("country");
   const watchPassword = watch("password") ?? "";
-  const strength      = getPasswordStrength(watchPassword);
   const selectedCountry = COUNTRIES.find((c) => c.code === watchCountry);
 
   useEffect(() => {
@@ -161,18 +59,19 @@ export default function RegisterPage() {
   const onSubmit = async (data: RegisterFormData) => {
     setServerError(null);
     try {
-      const { nombres, apellidos, email, country, phone: rawPhone, password } = data;
+      const { nombres, apellidos, email, country, phone: rawPhone, profession, password } = data;
 
       const phone = `${phonePrefix}${rawPhone.replace(/\D/g, "")}`;
 
-	const res = await authService.register({
+	await authService.register({
         first_name: nombres.trim(),
         last_name: apellidos.trim(),
         email,
         phone,
         password,
+        country,
+        profession,
       });
-      console.log(res)
 
       setSuccess(true);
     } catch (err: unknown) {
@@ -349,68 +248,28 @@ export default function RegisterPage() {
         </div>
 
         {/* Contraseña */}
-        <div className="space-y-1.5">
-          <Label htmlFor="password" className="text-sm font-medium text-gray-700">
-            Contraseña <span className="text-red-500" aria-hidden>*</span>
-          </Label>
-          <PasswordInput
-            id="password"
-            autoComplete="new-password"
-            placeholder="Mínimo 8 caracteres"
-            hasError={!!errors.password}
-            {...register("password")}
-          />
-          {errors.password && (
-            <p role="alert" className="text-xs text-red-500">
-              {errors.password.message}
-            </p>
-          )}
-          {watchPassword.length > 0 && (
-            <div className="mt-2 space-y-1.5">
-              <div className="flex gap-1">
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <div
-                    key={i}
-                    className={cn(
-                      "h-1.5 flex-1 rounded-full transition-all duration-300",
-                      i <= strength.score ? strength.color : "bg-gray-200"
-                    )}
-                  />
-                ))}
-              </div>
-              <p
-                className={cn(
-                  "text-xs font-medium",
-                  strength.score <= 1 && "text-red-500",
-                  strength.score === 2 && "text-orange-500",
-                  strength.score === 3 && "text-yellow-600",
-                  strength.score >= 4 && "text-green-600"
-                )}
-              >
-                {strength.label}
-              </p>
-            </div>
-          )}
-        </div>
+        <PasswordField
+          label="Contraseña"
+          id="password"
+          autoComplete="new-password"
+          placeholder="Mínimo 8 caracteres"
+          error={errors.password?.message}
+          required
+          showStrength
+          value={watchPassword}
+          {...register("password")}
+        />
 
         {/* Confirmar contraseña */}
-        <div className="space-y-1.5">
-          <Label htmlFor="password_confirmation" className="text-sm font-medium text-gray-700">
-            Confirmar contraseña <span className="text-red-500" aria-hidden>*</span>
-          </Label>
-          <PasswordInput
-            id="password_confirmation"
-            autoComplete="new-password"
-            placeholder="Repite tu contraseña"
-            hasError={!!errors.password_confirmation}
-            {...register("password_confirmation")}
-          />
-          {errors.password_confirmation && (
-            <p role="alert" className="text-xs text-red-500">
-              {errors.password_confirmation.message}
-            </p>
-          )}
-        </div>
+        <PasswordField
+          label="Confirmar contraseña"
+          id="password_confirmation"
+          autoComplete="new-password"
+          placeholder="Repite tu contraseña"
+          error={errors.password_confirmation?.message}
+          required
+          {...register("password_confirmation")}
+        />
 
         {/* Términos */}
         <div className="space-y-1 pt-1">
