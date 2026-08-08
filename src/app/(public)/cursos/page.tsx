@@ -18,6 +18,9 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cursosService } from "@/lib/services/courses";
 import { categoriasService } from "@/lib/services/categories";
+import { studentService } from "@/lib/services/student";
+// 🚀 CAMBIO 1: Importamos el store de autenticación para saber si hay un alumno logueado
+import { useAuthStore } from "@/store/authStore"; 
 
 const SORT_OPTIONS = [
   { value: "recent", label: "Más recientes" },
@@ -72,18 +75,38 @@ function parseFiltersFromUrl(sp: URLSearchParams): {
 function CursosContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  
+  // 🚀 CAMBIO 2: Extraemos el estado de autenticación
+  const { isAuthenticated } = useAuthStore(); 
+  const [demoEnrollments, setDemoEnrollments] = useState<any[]>([]);
 
-  // 1. Derive all filtering states directly from searchParams (Single Source of Truth)
   const { filters, sort, search, page } = parseFiltersFromUrl(searchParams);
 
-  // 2. Keep only searchInput as a local state for the interactive typing
   const [searchInput, setSearchInput] = useState(search);
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  // Sync search input when the URL search parameter changes
   useEffect(() => {
     setSearchInput(search);
   }, [search]);
+
+  // 🚀 CAMBIO 3: Consultamos las matrículas reales de Postgres (Solo si está logueado)
+  const { data: serverEnrollments = [] } = useQuery({
+    queryKey: ["mis-inscripciones"],
+    queryFn: studentService.getMyEnrollments,
+    enabled: isAuthenticated,
+  });
+
+  // 🚀 CAMBIO 4: Cargamos las matrículas de la simulación del localStorage
+  useEffect(() => {
+    if (isAuthenticated) {
+      const stored = localStorage.getItem("demo_enrollments");
+      if (stored) {
+        setDemoEnrollments(JSON.parse(stored));
+      }
+    } else {
+      setDemoEnrollments([]);
+    }
+  }, [isAuthenticated]);
 
   const pushUrl = useCallback(
     (f: FiltersState, s: string, q: string, pg: number) => {
@@ -118,7 +141,6 @@ function CursosContent() {
     pushUrl(filters, sort, "", 1);
   }
 
-  // Build API params from derived params
   const apiParams = {
     status: "published",
     page,
@@ -151,8 +173,20 @@ function CursosContent() {
     staleTime: 5 * 60_000,
   });
 
-  const courses = coursesData?.data ?? [];
-  const total = coursesData?.total ?? 0;
+  const allCourses = coursesData?.data ?? [];
+
+  // 🚀 CAMBIO 5: ESCUDO HÍBRIDO DE CATÁLOGO (Filtramos los cursos que el alumno ya posee)
+  const enrolledCourseIds = new Set([
+    ...serverEnrollments.map((e: any) => e.course_id),
+    ...demoEnrollments.map((e: any) => e.course_id),
+  ]);
+
+  const courses = isAuthenticated
+    ? allCourses.filter((course: any) => !enrolledCourseIds.has(course.id))
+    : allCourses;
+
+  // Adaptamos el contador visual al tamaño real del array filtrado
+  const total = isAuthenticated ? courses.length : (coursesData?.total ?? 0);
   const totalPages = coursesData?.total_pages ?? 1;
 
   const hasActiveFilters =
@@ -164,7 +198,6 @@ function CursosContent() {
     filters.max_price > 0 ||
     search.trim().length > 0;
 
-  // Active filter badges for quick removal
   const activeBadges: { key: string; label: string; onRemove: () => void }[] = [];
   if (search.trim()) {
     activeBadges.push({ key: "search", label: `"${search}"`, onRemove: clearSearch });
@@ -184,16 +217,16 @@ function CursosContent() {
       onRemove: () => handleFiltersChange({ ...filters, duration: "" }),
     });
   }
-  filters.categoria_ids.forEach((id) => {
-    const cat = categories.find((c) => c.id === id);
-    if (cat) {
+  categories.forEach((cat) => {
+    if (filters.categoria_ids.includes(cat.id)) {
       activeBadges.push({
-        key: `cat-${id}`,
+        key: `cat-${cat.id}`,
         label: cat.name,
         onRemove: () =>
           handleFiltersChange({
             ...filters,
-            categoria_ids: filters.categoria_ids.filter((c) => c !== id),
+            // 🚀 CORREGIDO: Cambiado de filters.filters a filters solo
+            categoria_ids: filters.categoria_ids.filter((c) => c !== cat.id),
           }),
       });
     }
@@ -358,7 +391,7 @@ function CursosContent() {
               emptyMessage={
                 hasActiveFilters
                   ? "No encontramos cursos con esos filtros. Prueba con otros criterios."
-                  : "No hay cursos disponibles en este momento."
+                  : "No hay cursos disponibles en este momento o ya te encuentras matriculado en todos ellos."
               }
             />
 

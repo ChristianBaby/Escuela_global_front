@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { initMercadoPago, Payment } from "@mercadopago/sdk-react"; // Regresamos al componente Payment completo
+import { initMercadoPago, Payment } from "@mercadopago/sdk-react";
 import { useAuthStore } from "@/store/authStore";
 import { api } from "@/lib/http/api";
 import { toast } from "sonner";
@@ -24,18 +24,15 @@ export function MercadoPagoBrick({ orderId, totalAmount, currency }: MercadoPago
   const { user } = useAuthStore();
   const router = useRouter();
   
-  // Estados para controlar la carga del PreferenceID real
   const [preferenceId, setPreferenceId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Pedimos el ID de preferencia oficial al backend al montar el componente
-  // Deja este bloque exactamente así en tu MercadoPagoBrick.tsx:
   useEffect(() => {
     setLoading(true);
     api.post("/payments/session", {
       orderId: orderId,
       paymentMethod: "mercado_pago",
-      currency: currency, // 
+      currency: currency,
     })
     .then(({ data }) => {
       setPreferenceId(data.preferenceId);
@@ -63,7 +60,7 @@ export function MercadoPagoBrick({ orderId, totalAmount, currency }: MercadoPago
       email: user?.email || "estudiante_demo@escuelaglobal.com",
       firstName: user?.first_name || "Ferdy",
       lastName: user?.last_name || "Estudiante",
-      entityType: "individual" as const, // 🚀 CORREGIDO: Define explícitamente que es persona natural
+      entityType: "individual" as const,
     },
   };
 
@@ -73,12 +70,13 @@ export function MercadoPagoBrick({ orderId, totalAmount, currency }: MercadoPago
         theme: "default" as const,
       },
     },
-    // 🚀 CORREGIDO: Dejamos únicamente los métodos aprobados y autorizados para tu cuenta de pruebas
     paymentMethods: {
-      creditCard: "all" as const,  // Tarjeta de Crédito (con opción a simular cuotas)
-      debitCard: "all" as const,   // Tarjeta de Débito
-      mercadoPago: "all" as const,  // Mercado Pago Wallet (Dinero en cuenta)
-      maxInstallments: 1, 
+      creditCard: "all" as const,
+      debitCard: "all" as const,
+      mercadoPago: "all" as const,
+      maxInstallments: 1,
+      // 🚀 EXCLUIMOS onboarding_credits PARA ELIMINAR EL ERROR DEL BROWSER EN SANDBOX
+      excludedPaymentTypes: ["onboarding_credits"] as any,
     },
   };
 
@@ -86,7 +84,6 @@ export function MercadoPagoBrick({ orderId, totalAmount, currency }: MercadoPago
     try {
       const { formData } = param;
       
-      // 🚀 CORREGIDO: Quitamos el "/api" inicial para evitar la duplicación en Axios
       const { data } = await api.post("/payments/mercadopago/brick", {
         orderId,
         ...formData,
@@ -94,11 +91,12 @@ export function MercadoPagoBrick({ orderId, totalAmount, currency }: MercadoPago
 
       if (data.success) {
         toast.success("¡Matrícula procesada y aprobada con éxito!");
-        router.push("/checkout/success");
+        // 🚀 REDIRECCIÓN CON PARÁMETRO DE ORDEN PARA CONECTAR CON EL POLLING DE LA BOLETA
+        router.push(`/checkout/success?orderId=${orderId}`);
       } else {
         toast.error("La transacción no pudo ser validada.");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error al capturar el cobro:", error);
       toast.error("Error de comunicación en el servidor transaccional.");
     }

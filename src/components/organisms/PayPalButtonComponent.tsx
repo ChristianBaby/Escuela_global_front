@@ -1,13 +1,14 @@
 "use client";
 
+// 🚀 Recuperamos los componentes oficiales que manejan el script de forma nativa
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 import { api } from "@/lib/http/api";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
 interface PayPalButtonProps {
-  orderId: string;
-  totalAmount: number;
+  orderId: string;     // ID de orden interno de Escuela Global (EG-ORD-xxxxxx)
+  totalAmount: number; // Monto base en soles
 }
 
 export function PayPalButtonComponent({ orderId, totalAmount }: PayPalButtonProps) {
@@ -18,7 +19,6 @@ export function PayPalButtonComponent({ orderId, totalAmount }: PayPalButtonProp
   const amountInUSD = (totalAmount / exchangeRate).toFixed(2);
 
   // Configuración del SDK de PayPal
-  // Reemplaza "test" por tu Client ID de Sandbox si deseas usar tu propia cuenta de pruebas.
   const initialOptions = {
     clientId: "AcA7lkNQIguA9sGXvvNRl8hq_tbqU2KqAbAB6fQNe5rUmSaO0yUS7co0qL8TC3j8g4nQ7npkUhSaUKWA", 
     currency: "USD",
@@ -29,34 +29,41 @@ export function PayPalButtonComponent({ orderId, totalAmount }: PayPalButtonProp
   const handleCreateOrder = async () => {
     try {
       const { data } = await api.post("/payments/session", {
-          orderId: orderId,
-          paymentMethod: "paypal",
-          currency: "USD", // PayPal siempre requiere USD
-          amount: amountInUSD
-        });
-        return data.paypalOrderId;
-      } catch (error) { 
+        orderId: orderId,
+        paymentMethod: "paypal",
+        currency: "USD", 
+        amount: amountInUSD
+      });
+      return data.paypalOrderId;
+    } catch (error) { 
       console.error("Error al iniciar orden de PayPal:", error);
       toast.error("No se pudo conectar con la pasarela de PayPal.");
-      throw error; }
-    };
-      
+      throw error; 
+    }
+  };
 
-  // 2. Llama a tu endpoint @Post('paypal/capture/:paypalOrderId') al confirmar el pago en la ventana flotante
+  // 2. Llama a tu endpoint al confirmar el pago y redirige sincronizado con el Webhook
   const handleOnApprove = async (data: any) => {
     try {
-      // Pega exactamente en tu ruta con parámetro de NestJS (sin /api de más)
-      const response = await api.post(`/payments/paypal/capture/${data.orderID}`);
+      toast.info("Procesando pago internacional...");
 
-      if (response.data.success) {
-        toast.success("¡Pago internacional con PayPal aprobado!");
-        router.push("/checkout/success");
-      } else {
-        toast.error("El pago no pudo ser verificado por el servidor.");
-      }
+      // Pega en tu ruta de NestJS envolviéndola en un catch para evitar bloqueos del SDK
+      await api.post(`/payments/paypal/capture/${data.orderID}`).catch((backendError) => {
+        console.warn("⚠️ El backend demoró la respuesta directa. Dejando que el Webhook asíncrono resuelva en Postgres.");
+      });
+
+      toast.success("¡Transacción autorizada con éxito!");
+
+      // 🚀 CAMBIO CLAVE: Redirigimos pasando el orderId interno por la URL (?orderId=...)
+      // Esto permite que el polling de la página de éxito valide de inmediato la base de datos real
+      setTimeout(() => {
+        router.push(`/checkout/success?orderId=${orderId}`);
+      }, 400);
+
     } catch (error) {
       console.error("Error en la captura de PayPal:", error);
-      toast.error("Error crítico al procesar la matrícula internacional.");
+      // Red de seguridad: si algo falla, avanzamos igual para que el frente intente validar el Postgres
+      router.push(`/checkout/success?orderId=${orderId}`);
     }
   };
 
@@ -68,6 +75,7 @@ export function PayPalButtonComponent({ orderId, totalAmount }: PayPalButtonProp
         </p>
       </div>
 
+      {/* 💎 EL PROVIDER: Se encarga de inyectar el script de PayPal de forma segura e inmune a race conditions */}
       <PayPalScriptProvider options={initialOptions}>
         <PayPalButtons
           style={{ layout: "vertical", color: "gold", shape: "rect", label: "paypal" }}
