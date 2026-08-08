@@ -347,6 +347,7 @@ export interface Notification {
   body: string;
   is_read: boolean;
   redirect_url?: string;
+  image_url?: string;
   created_at: string;
 }
 

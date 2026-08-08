@@ -151,6 +151,16 @@ function NotifPanel({
           <X size={20} />
         </button>
 
+        {/* Imagen adjunta */}
+        {notif.image_url && (
+          <img
+            src={notif.image_url}
+            alt=""
+            className="w-full h-40 object-cover rounded-xl mb-4 bg-gray-100"
+            onError={(e) => (e.currentTarget.style.display = "none")}
+          />
+        )}
+
         {/* Ícono grande */}
         <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${TYPE_COLOR[notif.type] ?? "bg-gray-100 text-gray-500"}`}>
           <NotifIcon type={notif.type} />
@@ -319,10 +329,19 @@ export default function NotificacionesPage() {
                   !n.is_read ? "bg-blue-50/40" : ""
                 }`}
               >
-                {/* Ícono */}
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${TYPE_COLOR[n.type] ?? "bg-gray-100 text-gray-500"}`}>
-                  <NotifIcon type={n.type} />
-                </div>
+                {/* Ícono o miniatura */}
+                {n.image_url ? (
+                  <img
+                    src={n.image_url}
+                    alt=""
+                    className="w-10 h-10 rounded-full object-cover shrink-0 bg-gray-100"
+                    onError={(e) => (e.currentTarget.style.display = "none")}
+                  />
+                ) : (
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${TYPE_COLOR[n.type] ?? "bg-gray-100 text-gray-500"}`}>
+                    <NotifIcon type={n.type} />
+                  </div>
+                )}
 
                 {/* Contenido */}
                 <div className="flex-1 min-w-0">

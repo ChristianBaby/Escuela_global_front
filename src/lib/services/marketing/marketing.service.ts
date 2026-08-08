@@ -90,6 +90,7 @@ export interface SendNotificationDto {
   type: "nuevo_curso" | "descuento" | "anuncio" | "recordatorio";
   course_id?: string;
   user_ids?: string[];
+  image?: File;
 }
 
 export interface NotificationRecipient {
@@ -99,12 +100,31 @@ export interface NotificationRecipient {
   email: string;
 }
 
+function buildNotificationFormData(data: SendNotificationDto): FormData {
+  const formData = new FormData();
+  formData.append("title", data.title);
+  formData.append("body", data.body);
+  if (data.redirect_url) formData.append("redirect_url", data.redirect_url);
+  formData.append("audience", data.audience);
+  formData.append("type", data.type);
+  if (data.course_id) formData.append("course_id", data.course_id);
+  if (data.user_ids) data.user_ids.forEach((id) => formData.append("user_ids", id));
+  if (data.image) formData.append("image", data.image);
+  return formData;
+}
+
 export const notificacionesMktService = {
   getRecipients: (params?: { search?: string; course_id?: string; category_id?: string }) =>
     api.get<NotificationRecipient[]>("/marketing/notifications/recipients", { params }).then((r) => r.data),
 
   send: (data: SendNotificationDto) =>
-    api.post<{ success: boolean; sent: number }>("/marketing/notifications/send", data).then((r) => r.data),
+    data.image
+      ? api.post<{ success: boolean; sent: number }>(
+          "/marketing/notifications/send",
+          buildNotificationFormData(data),
+          { headers: { "Content-Type": "multipart/form-data" } }
+        ).then((r) => r.data)
+      : api.post<{ success: boolean; sent: number }>("/marketing/notifications/send", data).then((r) => r.data),
 };
 
 // ── Próximos Lanzamientos ───────────────────────────────────────────────────

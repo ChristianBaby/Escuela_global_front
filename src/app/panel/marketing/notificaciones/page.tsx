@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import {
   notificacionesMktService,
@@ -10,7 +10,7 @@ import {
 import { cursosService } from "@/lib/services/courses";
 import { categoriasService } from "@/lib/services/categories";
 import { toast } from "sonner";
-import { Bell, Send, Users, BookOpen, UserCheck, Search, X, Tag, Percent, Megaphone, Clock } from "lucide-react";
+import { Bell, Send, Users, BookOpen, UserCheck, Search, X, Tag, Percent, Megaphone, Clock, ImageIcon } from "lucide-react";
 
 const TIPOS = [
   { value: "nuevo_curso", label: "Nuevo curso", icon: BookOpen },
@@ -64,6 +64,9 @@ const empty = {
 
 export default function NotificacionesMarketingPage() {
   const [form, setForm] = useState(empty);
+  const [image, setImage] = useState<File | undefined>(undefined);
+  const [previewUrl, setPreviewUrl] = useState<string>("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedUsers, setSelectedUsers] = useState<NotificationRecipient[]>([]);
@@ -118,6 +121,7 @@ export default function NotificacionesMarketingPage() {
       setFiltroModo("search");
       setFiltroCourseId("");
       setFiltroCategoryId("");
+      clearImage();
     },
     onError: (err: unknown) =>
       toast.error((err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? "Error al enviar la notificación"),
@@ -127,6 +131,23 @@ export default function NotificacionesMarketingPage() {
     setSelectedUsers((prev) =>
       prev.some((u) => u.id === user.id) ? prev.filter((u) => u.id !== user.id) : [...prev, user]
     );
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Selecciona un archivo de imagen");
+      return;
+    }
+    setImage(file);
+    setPreviewUrl(URL.createObjectURL(file));
+  };
+
+  const clearImage = () => {
+    setImage(undefined);
+    setPreviewUrl("");
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -153,6 +174,7 @@ export default function NotificacionesMarketingPage() {
       type: form.type,
       ...(form.audience === "course" && { course_id: form.course_id }),
       ...(form.audience === "users" && { user_ids: selectedUsers.map((u) => u.id) }),
+      ...(image && { image }),
     };
 
     sendMutation.mutate(dto);
@@ -193,6 +215,42 @@ export default function NotificacionesMarketingPage() {
             placeholder="Escribe el contenido del mensaje..."
             maxLength={500}
           />
+        </div>
+
+        {/* Imagen */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-gray-700">
+            Imagen <span className="text-xs text-gray-400 font-normal">(opcional)</span>
+          </label>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleFileChange}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#084D95]/30 file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-[#084D95] file:text-white file:cursor-pointer"
+          />
+          {previewUrl ? (
+            <div className="relative rounded-lg overflow-hidden border border-gray-200">
+              <img
+                src={previewUrl}
+                alt="Vista previa"
+                className="w-full h-32 object-cover"
+                onError={(e) => (e.currentTarget.style.display = "none")}
+              />
+              <button
+                type="button"
+                onClick={clearImage}
+                className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white rounded-full p-1"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 text-xs text-gray-400">
+              <ImageIcon size={14} />
+              Se mostrará junto a la notificación en el centro de notificaciones.
+            </div>
+          )}
         </div>
 
         {/* Link de redirección */}

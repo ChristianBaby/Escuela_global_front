@@ -45,6 +45,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
   });
   const unreadCount = notifData?.unread_count ?? 0;
   const badgeLabel  = unreadCount > 9 ? "9+" : unreadCount > 0 ? String(unreadCount) : null;
+  const badgeColor  = unreadCount >= 10 ? "bg-red-600" : "bg-[#084D95]";
 
   const handleLogout = async () => {
     try {
@@ -116,7 +117,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
                 <span className="relative shrink-0">
                   <Icon size={18} />
                   {isNotif && badgeLabel && (
-                    <span className="absolute -top-2 -right-2 min-w-[16px] h-4 px-0.5 rounded-full bg-[#084D95] text-white text-[10px] font-bold flex items-center justify-center leading-none">
+                    <span className={`absolute -top-2 -right-2 min-w-[16px] h-4 px-0.5 rounded-full ${badgeColor} text-white text-[10px] font-bold flex items-center justify-center leading-none`}>
                       {badgeLabel}
                     </span>
                   )}
