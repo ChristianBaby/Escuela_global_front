@@ -121,15 +121,18 @@ export default function CarritoPage() {
 
   // 2. Mapeo de ítems provenientes del Servidor
   const serverNormalizedItems: DisplayItem[] = cartItemsRaw.map((i: any) => ({
-    key: i.id,
-    serverId: i.id,
-    courseId: i.course?.id || i.course_id,
-    title: i.course?.title || "Curso de Especialización",
-    slug: i.course?.slug || "",
-    thumbnail_url: i.course?.thumbnail_url || "",
-    price: Number(i.course?.price || 0),
-    discount_price: i.course?.discount_price ? Number(i.course.discount_price) : undefined,
-    currency: i.course?.currency || "PEN",
+    key: i.cartItemId ?? i.id,
+    serverId: i.cartItemId ?? i.id,
+    courseId: i.courseId ?? i.course?.id ?? i.course_id,
+    title: i.title ?? i.course?.title ?? "Curso de Especialización",
+    slug: i.slug ?? i.course?.slug ?? "",
+    thumbnail_url: i.thumbnail ?? i.course?.thumbnail_url ?? "",
+    price: Number(i.price ?? i.course?.price ?? 0),
+    discount_price:
+      i.discountPrice ?? i.course?.discount_price
+        ? Number(i.discountPrice ?? i.course?.discount_price)
+        : undefined,
+    currency: i.currency ?? i.course?.currency ?? "PEN",
   }));
 
   // 3. Mapeo de ítems provenientes del Almacenamiento Local (Zustand)
