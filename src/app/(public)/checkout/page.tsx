@@ -59,6 +59,10 @@ type GuestFormData = z.infer<typeof guestSchema>;
 
 type EmailStatus = "idle" | "checking" | "available" | "exists";
 
+// La cuenta de Mercado Pago configurada en este proyecto es de Perú y solo puede
+// liquidar en esa moneda (cada cuenta de MP está atada a un único país/moneda).
+const MERCADOPAGO_SUPPORTED_CURRENCY = "PEN";
+
 export default function CheckoutPage() {
   const { user, isAuthenticated, setUser } = useAuthStore();
   const { items: localItems, total: localTotal } = useCartStore();
@@ -97,9 +101,9 @@ export default function CheckoutPage() {
   const displayItems =
     cartItemsRaw.length > 0
       ? cartItemsRaw.map((i: any) => ({
-          id: i.course?.id || i.course_id,
-          title: i.course?.title || "Curso",
-          price: Number(i.course?.discount_price ?? i.course?.price ?? 0),
+          id: i.courseId ?? i.course?.id ?? i.course_id,
+          title: i.title ?? i.course?.title ?? "Curso",
+          price: Number(i.finalPrice ?? i.discountPrice ?? i.price ?? i.course?.discount_price ?? i.course?.price ?? 0),
         }))
       : localItems.map((e) => ({
           id: e.course.id,
@@ -121,6 +125,16 @@ export default function CheckoutPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, displayItems.length]);
+
+  const mercadoPagoAvailable = !order || order.currency === MERCADOPAGO_SUPPORTED_CURRENCY;
+
+  // Si la orden resulta en una moneda que Mercado Pago no puede procesar (p. ej. USD),
+  // forzamos el cambio a PayPal para no ofrecer una opción que va a fallar al pagar.
+  useEffect(() => {
+    if (order && order.currency !== MERCADOPAGO_SUPPORTED_CURRENCY && paymentMethod === "mercado_pago") {
+      setPaymentMethod("paypal");
+    }
+  }, [order, paymentMethod]);
 
   async function handleEmailBlur(email: string) {
     if (!email || !z.string().email().safeParse(email).success) return;
@@ -331,20 +345,22 @@ export default function CheckoutPage() {
               <>
                 <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
                   <h3 className="text-sm font-bold text-brand-primary uppercase tracking-wider mb-4">1. Selecciona tu método de pago</h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod("mercado_pago")}
-                      className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all text-center gap-2 ${
-                        paymentMethod === "mercado_pago"
-                          ? "border-[#084D95] bg-blue-50/40 text-[#084D95]"
-                          : "border-gray-200 text-gray-600 hover:border-gray-300"
-                      }`}
-                    >
-                      <CreditCard size={22} />
-                      <span className="text-xs font-bold">Mercado Pago (Latam)</span>
-                      <span className="text-[10px] text-gray-400">Tarjetas de débito/crédito locales</span>
-                    </button>
+                  <div className={`grid grid-cols-1 gap-3 ${mercadoPagoAvailable ? "sm:grid-cols-2" : ""}`}>
+                    {mercadoPagoAvailable && (
+                      <button
+                        type="button"
+                        onClick={() => setPaymentMethod("mercado_pago")}
+                        className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all text-center gap-2 ${
+                          paymentMethod === "mercado_pago"
+                            ? "border-[#084D95] bg-blue-50/40 text-[#084D95]"
+                            : "border-gray-200 text-gray-600 hover:border-gray-300"
+                        }`}
+                      >
+                        <CreditCard size={22} />
+                        <span className="text-xs font-bold">Mercado Pago (Latam)</span>
+                        <span className="text-[10px] text-gray-400">Tarjetas de débito/crédito locales</span>
+                      </button>
+                    )}
 
                     <button
                       type="button"
@@ -360,6 +376,12 @@ export default function CheckoutPage() {
                       <span className="text-[10px] text-gray-400">Internacional (USD)</span>
                     </button>
                   </div>
+                  {!mercadoPagoAvailable && (
+                    <p className="text-[11px] text-gray-400 mt-3">
+                      Mercado Pago solo está disponible para pagos en soles (PEN). Este curso está en{" "}
+                      {order?.currency}, así que usa PayPal.
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-4">

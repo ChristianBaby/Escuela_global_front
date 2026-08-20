@@ -1,24 +1,22 @@
 import { api } from "@/lib/http/api";
 
-export interface ApiCartCourse {
-  id: string;
+export interface ApiCartItem {
+  cartItemId: string;
+  courseId: string;
   title: string;
   slug: string;
-  thumbnail_url: string;
+  thumbnail: string;
   price: number;
-  discount_price?: number;
+  discountPrice: number | null;
+  finalPrice: number;
   currency: string;
-}
-
-export interface ApiCartItem {
-  id: string;
-  course: ApiCartCourse;
 }
 
 export interface CartResponse {
   items: ApiCartItem[];
+  totalCount: number;
   subtotal: number;
-  item_count: number;
+  currency: string;
 }
 
 export const cartService = {

@@ -13,7 +13,10 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/atoms";
 import { useCartStore } from "@/store/cartStore";
+import { useAuthStore } from "@/store/authStore";
 import { cursosService } from "@/lib/services/courses";
+import { cartService } from "@/lib/services/cart";
+import { getGuestSessionToken } from "@/lib/session";
 import { cn } from "@/lib/utils";
 
 interface CartModalProps {
@@ -24,6 +27,7 @@ interface CartModalProps {
 export function CartModal({ open, onOpenChange }: CartModalProps) {
   const router = useRouter();
   const { items, addItem, removeItem, hasItem, total } = useCartStore();
+  const { isAuthenticated } = useAuthStore();
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
@@ -45,6 +49,9 @@ export function CartModal({ open, onOpenChange }: CartModalProps) {
 
   function handleAdd(course: (typeof courses)[number]) {
     addItem(course);
+    cartService
+      .add(course.id, isAuthenticated ? undefined : getGuestSessionToken())
+      .catch(() => toast.error("No se pudo sincronizar el carrito con el servidor"));
     toast.success(`"${course.title}" agregado al carrito`);
   }
 

@@ -3,12 +3,19 @@
 import { useEffect, useState } from "react";
 import { initMercadoPago, Payment } from "@mercadopago/sdk-react";
 import { useAuthStore } from "@/store/authStore";
-import { api } from "@/lib/http/api";
+import { paymentsService } from "@/lib/services/payments";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 
-const PUBLIC_KEY = process.env.NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY || "TEST-a6a719c4-9eba-488c-9bf8-22facd0b6475";
+const FALLBACK_PUBLIC_KEY = "TEST-a6a719c4-9eba-488c-9bf8-22facd0b6475";
+const PUBLIC_KEY = process.env.NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY || FALLBACK_PUBLIC_KEY;
+
+if (!process.env.NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY) {
+  console.warn(
+    "NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY no está configurada — usando llave de prueba de fallback."
+  );
+}
 
 initMercadoPago(PUBLIC_KEY, {
   locale: "es-PE",
@@ -20,7 +27,7 @@ interface MercadoPagoBrickProps {
   currency: string;
 }
 
-export function MercadoPagoBrick({ orderId, totalAmount, currency }: MercadoPagoBrickProps) {
+export function MercadoPagoBrick({ orderId, totalAmount }: MercadoPagoBrickProps) {
   const { user } = useAuthStore();
   const router = useRouter();
   
@@ -29,20 +36,17 @@ export function MercadoPagoBrick({ orderId, totalAmount, currency }: MercadoPago
 
   useEffect(() => {
     setLoading(true);
-    api.post("/payments/session", {
-      orderId: orderId,
-      paymentMethod: "mercado_pago",
-      currency: currency,
-    })
-    .then(({ data }) => {
-      setPreferenceId(data.preferenceId);
-      setLoading(false);
-    })
-    .catch((err) => {
-      console.error("Error al obtener la sesión de Mercado Pago:", err);
-      setLoading(false);
-    });
-  }, [orderId, currency]);
+    paymentsService.mercadoPago
+      .createPreference({ orderId })
+      .then(({ preferenceId }) => {
+        setPreferenceId(preferenceId);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.warn("Error al obtener la sesión de Mercado Pago:", err);
+        setLoading(false);
+      });
+  }, [orderId]);
 
   if (loading) {
     return (
@@ -81,28 +85,36 @@ export function MercadoPagoBrick({ orderId, totalAmount, currency }: MercadoPago
   };
 
   const onSubmit = async (param: any) => {
+    const { selectedPaymentMethod, formData } = param;
+
+    // Con la Billetera de Mercado Pago, el propio SDK redirige al comprador
+    // a MP usando la preferencia — no hay formData de tarjeta que enviar.
+    if (selectedPaymentMethod === "wallet_purchase" || !formData) {
+      return;
+    }
+
     try {
-      const { formData } = param;
-      
-      const { data } = await api.post("/payments/mercadopago/brick", {
+      const data = await paymentsService.mercadoPago.processBrickPayment({
         orderId,
-        ...formData,
+        token: formData.token,
+        payment_method_id: formData.payment_method_id,
+        issuer_id: formData.issuer_id,
+        installments: formData.installments,
+        payer: { email: formData.payer.email },
       });
 
-      if (data.success) {
-        toast.success("¡Matrícula procesada y aprobada con éxito!");
-<<<<<<< HEAD
-        // 🚀 REDIRECCIÓN CON PARÁMETRO DE ORDEN PARA CONECTAR CON EL POLLING DE LA BOLETA
-        router.push(`/checkout/success?orderId=${orderId}`);
-=======
-        router.push(`/checkout/success?order=${orderId}`);
->>>>>>> d6f3dd424ae0733704a7215f647c85a1b0fbb2e8
-      } else {
-        toast.error("La transacción no pudo ser validada.");
+      if (!data.success) {
+        throw new Error("La transacción no pudo ser validada.");
       }
+
+      toast.success("¡Matrícula procesada y aprobada con éxito!");
+      // 🚀 REDIRECCIÓN CON PARÁMETRO DE ORDEN PARA CONECTAR CON EL POLLING DE LA BOLETA
+      router.push(`/checkout/success?orderId=${orderId}`);
     } catch (error: any) {
-      console.error("Error al capturar el cobro:", error);
-      toast.error("Error de comunicación en el servidor transaccional.");
+      console.warn("Error al capturar el cobro:", error);
+      const backendMessage = error?.response?.data?.message;
+      toast.error(backendMessage || "La transacción no pudo ser validada.");
+      throw error;
     }
   };
 
@@ -113,7 +125,7 @@ export function MercadoPagoBrick({ orderId, totalAmount, currency }: MercadoPago
           initialization={initialization}
           customization={customization}
           onSubmit={onSubmit}
-          onError={(err) => console.error("Error en Brick Completo:", err)}
+          onError={(err) => console.warn("Error en Brick Completo:", err)}
         />
       ) : (
         <div className="text-center py-10 text-xs text-red-500">

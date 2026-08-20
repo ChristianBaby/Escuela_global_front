@@ -77,8 +77,7 @@ function CursosContent() {
   const searchParams = useSearchParams();
   
   // 🚀 CAMBIO 2: Extraemos el estado de autenticación
-  const { isAuthenticated } = useAuthStore(); 
-  const [demoEnrollments, setDemoEnrollments] = useState<any[]>([]);
+  const { isAuthenticated } = useAuthStore();
 
   const { filters, sort, search, page } = parseFiltersFromUrl(searchParams);
 
@@ -95,18 +94,6 @@ function CursosContent() {
     queryFn: studentService.getMyEnrollments,
     enabled: isAuthenticated,
   });
-
-  // 🚀 CAMBIO 4: Cargamos las matrículas de la simulación del localStorage
-  useEffect(() => {
-    if (isAuthenticated) {
-      const stored = localStorage.getItem("demo_enrollments");
-      if (stored) {
-        setDemoEnrollments(JSON.parse(stored));
-      }
-    } else {
-      setDemoEnrollments([]);
-    }
-  }, [isAuthenticated]);
 
   const pushUrl = useCallback(
     (f: FiltersState, s: string, q: string, pg: number) => {
@@ -175,11 +162,8 @@ function CursosContent() {
 
   const allCourses = coursesData?.data ?? [];
 
-  // 🚀 CAMBIO 5: ESCUDO HÍBRIDO DE CATÁLOGO (Filtramos los cursos que el alumno ya posee)
-  const enrolledCourseIds = new Set([
-    ...serverEnrollments.map((e: any) => e.course_id),
-    ...demoEnrollments.map((e: any) => e.course_id),
-  ]);
+  // Filtramos los cursos que el alumno ya posee, según las matrículas reales del servidor
+  const enrolledCourseIds = new Set(serverEnrollments.map((e: any) => e.course_id));
 
   const courses = isAuthenticated
     ? allCourses.filter((course: any) => !enrolledCourseIds.has(course.id))

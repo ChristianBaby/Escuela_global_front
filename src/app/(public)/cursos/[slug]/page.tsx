@@ -29,7 +29,10 @@ import { PublicLayout } from "@/components/templates";
 import { Skeleton } from "@/components/atoms";
 import { StarRating } from "@/components/atoms";
 import { cursosService } from "@/lib/services/courses";
+import { cartService } from "@/lib/services/cart";
 import { useCartStore } from "@/store/cartStore";
+import { useAuthStore } from "@/store/authStore";
+import { getGuestSessionToken } from "@/lib/session";
 import type { Course, Instructor } from "@/types";
 import type { ModuleListItem } from "@/lib/services/courses/courses.service";
 
@@ -129,6 +132,7 @@ function AddToCartButton({
 }) {
   const router = useRouter();
   const { addItem, hasItem } = useCartStore();
+  const { isAuthenticated } = useAuthStore();
   const inCart = hasItem(course.id);
 
   function handleClick() {
@@ -137,6 +141,9 @@ function AddToCartButton({
       return;
     }
     addItem(course);
+    cartService
+      .add(course.id, isAuthenticated ? undefined : getGuestSessionToken())
+      .catch(() => toast.error("No se pudo sincronizar el carrito con el servidor"));
     toast.success("Curso agregado al carrito", {
       action: { label: "Ver carrito", onClick: () => router.push("/carrito") },
     });
@@ -174,9 +181,16 @@ function AddToCartButton({
 function BuyNowButton({ course }: { course: Course }) {
   const router = useRouter();
   const { addItem } = useCartStore();
+  const { isAuthenticated } = useAuthStore();
 
-  function handleClick() {
+  async function handleClick() {
     addItem(course);
+    try {
+      await cartService.add(course.id, isAuthenticated ? undefined : getGuestSessionToken());
+    } catch {
+      toast.error("No se pudo agregar el curso al carrito. Intenta nuevamente.");
+      return;
+    }
     router.push("/checkout"); // el proxy redirige a login si no está autenticado
   }
 
