@@ -80,12 +80,12 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
       >
         {/* Logo */}
         <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
-          <Link href="/dashboard" className="flex-1 min-w-0">
+          <Link href="/" className="flex-1 min-w-0">
             <Image
-              src="/Logo_escuela_global.png"
+              src="/logo_full_escuela_global.svg"
               alt="Escuela Global"
-              width={160}
-              height={48}
+              width={164}
+              height={40}
               className="h-10 w-auto object-contain"
               priority
             />

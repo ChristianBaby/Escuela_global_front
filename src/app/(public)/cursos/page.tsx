@@ -316,7 +316,7 @@ function CursosContent() {
                     <SheetHeader>
                       <SheetTitle>Filtros</SheetTitle>
                     </SheetHeader>
-                    <div className="mt-4">
+                    <div className="mt-4 px-4 pb-6">
                       <CourseFilters
                         filters={filters}
                         onChange={handleFiltersChange}

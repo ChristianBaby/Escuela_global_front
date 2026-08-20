@@ -229,12 +229,12 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
       >
         {/* Logo */}
         <div className="h-16 flex items-center gap-2 px-4 border-b border-gray-200">
-          <Link href="/panel" className="flex items-center gap-2 flex-1 min-w-0">
+          <Link href="/" className="flex items-center gap-2 flex-1 min-w-0">
             <Image
-              src="/Logo_escuela_global.png"
+              src="/logo_full_escuela_global.svg"
               alt="Escuela Global"
-              width={140}
-              height={40}
+              width={147}
+              height={36}
               className="h-9 w-auto object-contain"
               priority
             />
