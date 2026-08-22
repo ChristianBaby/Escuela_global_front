@@ -1,22 +1,23 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   certificateTemplatesService,
   type CreateCertificateTemplateDto,
+  type CertificateTemplateOwnerType,
 } from "@/lib/services/certificates";
 import { toast } from "sonner";
 import {
   Upload,
   X,
   ImageIcon,
-  CheckCircle2,
-  Zap,
   Trash2,
   Pencil,
   Crosshair,
   Settings,
+  ArrowLeft,
 } from "lucide-react";
 import type { CertificateTemplate, XYPosition } from "@/types";
 
@@ -456,7 +457,44 @@ function PositionEditor({
 
 // ── Página principal ──────────────────────────────────────────────────────────
 export default function PlantillasPage() {
+  return (
+    <Suspense fallback={null}>
+      <PlantillasPageContent />
+    </Suspense>
+  );
+}
+
+function PlantillasPageContent() {
   const queryClient = useQueryClient();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Contexto de dueño (llegado por query string desde la página de
+  // certificaciones de un curso): scoped a un curso (certificado/constancia)
+  // o a un módulo. Sin estos params, la página funciona como galería de
+  // referencia de solo edición (sin crear plantillas "sueltas").
+  const scopedCourseId = searchParams.get("course_id");
+  const scopedModuleId = searchParams.get("module_id");
+  const scopedKind = searchParams.get("kind"); // "certificado" | "constancia"
+  const scopedTemplateId = searchParams.get("template_id");
+  const isScoped = !!scopedCourseId || !!scopedModuleId;
+
+  const ownerType: CertificateTemplateOwnerType | null = scopedModuleId
+    ? "module"
+    : scopedCourseId
+    ? scopedKind === "constancia"
+      ? "course_constancia"
+      : "course_certificado"
+    : null;
+  const ownerId = scopedModuleId ?? scopedCourseId ?? null;
+
+  const goBack = () => {
+    if (scopedCourseId) {
+      router.push(`/panel/soporte/cursos/${scopedCourseId}/certificaciones`);
+    } else {
+      router.back();
+    }
+  };
 
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<CertificateTemplate | null>(null);
@@ -472,7 +510,27 @@ export default function PlantillasPage() {
   const { data: templates = [], isLoading, isError } = useQuery({
     queryKey: ["certificate-templates"],
     queryFn: certificateTemplatesService.list,
+    enabled: !isScoped,
   });
+
+  const { data: scopedTemplate, isFetched: scopedTemplateFetched } = useQuery({
+    queryKey: ["certificate-template", scopedTemplateId],
+    queryFn: () => certificateTemplatesService.getById(scopedTemplateId as string),
+    enabled: !!scopedTemplateId,
+  });
+
+  // En modo scoped, el modal se abre automáticamente: editando la plantilla
+  // existente del dueño (si ya tiene una) o en blanco para crear la primera.
+  useEffect(() => {
+    if (!isScoped || showModal) return;
+    if (scopedTemplateId && !scopedTemplateFetched) return; // esperando el fetch
+    if (scopedTemplate) {
+      openEdit(scopedTemplate);
+    } else {
+      openCreate();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isScoped, scopedTemplateId, scopedTemplateFetched, scopedTemplate]);
 
   // ── Mutations ──
   const createMut = useMutation({
@@ -481,7 +539,8 @@ export default function PlantillasPage() {
     onSuccess: () => {
       toast.success("Plantilla creada correctamente");
       queryClient.invalidateQueries({ queryKey: ["certificate-templates"] });
-      closeModal();
+      if (isScoped) goBack();
+      else closeModal();
     },
     onError: (e: unknown) => toast.error(errMsg(e)),
   });
@@ -497,16 +556,8 @@ export default function PlantillasPage() {
     onSuccess: () => {
       toast.success("Plantilla actualizada");
       queryClient.invalidateQueries({ queryKey: ["certificate-templates"] });
-      closeModal();
-    },
-    onError: (e: unknown) => toast.error(errMsg(e)),
-  });
-
-  const activateMut = useMutation({
-    mutationFn: (id: string) => certificateTemplatesService.activate(id),
-    onSuccess: () => {
-      toast.success("Plantilla activada — se usará en los próximos certificados");
-      queryClient.invalidateQueries({ queryKey: ["certificate-templates"] });
+      if (isScoped) goBack();
+      else closeModal();
     },
     onError: (e: unknown) => toast.error(errMsg(e)),
   });
@@ -593,28 +644,164 @@ export default function PlantillasPage() {
       setActiveTab("config");
       return;
     }
-
-    const dto: CreateCertificateTemplateDto = {
-      name: form.name,
-      background_image: imageFile ?? undefined,
-      back_image: backImageFile ?? undefined,
-      student_name_position: form.student_name_position,
-      qr_position: form.qr_position,
-      qr_size: form.qr_size,
-      font_family: form.font_family,
-      font_sizes: form.font_sizes,
-    };
+    if (!editing && (!ownerType || !ownerId)) {
+      toast.error("Esta plantilla debe crearse desde un curso o módulo específico");
+      return;
+    }
 
     if (editing) {
+      const dto: Partial<CreateCertificateTemplateDto> = {
+        name: form.name,
+        background_image: imageFile ?? undefined,
+        back_image: backImageFile ?? undefined,
+        student_name_position: form.student_name_position,
+        qr_position: form.qr_position,
+        qr_size: form.qr_size,
+        font_family: form.font_family,
+        font_sizes: form.font_sizes,
+      };
       updateMut.mutate({ id: editing.id, dto });
     } else {
+      const dto: CreateCertificateTemplateDto = {
+        name: form.name,
+        owner_type: ownerType as CertificateTemplateOwnerType,
+        owner_id: ownerId as string,
+        background_image: imageFile ?? undefined,
+        back_image: backImageFile ?? undefined,
+        student_name_position: form.student_name_position,
+        qr_position: form.qr_position,
+        qr_size: form.qr_size,
+        font_family: form.font_family,
+        font_sizes: form.font_sizes,
+      };
       createMut.mutate(dto);
     }
   };
 
   const isPending = createMut.isPending || updateMut.isPending;
+  const handleCancel = () => (isScoped ? goBack() : closeModal());
+
+  const modalNode = showModal && (
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl w-full max-w-3xl shadow-2xl max-h-[92vh] flex flex-col">
+        {/* Cabecera */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 flex-shrink-0">
+          <h2 className="font-semibold text-brand-primary text-base">
+            {editing ? "Editar plantilla" : "Nueva plantilla de certificado"}
+          </h2>
+          <button
+            onClick={handleCancel}
+            className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+          >
+            &times;
+          </button>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex border-b border-gray-200 flex-shrink-0 px-6">
+          {(
+            [
+              { key: "config", label: "Configuración", Icon: Settings },
+              { key: "positions", label: "Posiciones", Icon: Crosshair },
+            ] as const
+          ).map(({ key, label, Icon }) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setActiveTab(key)}
+              className={`flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors ${
+                activeTab === key
+                  ? "border-[#084D95] text-[#084D95]"
+                  : "border-transparent text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              <Icon size={14} />
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* Contenido del form */}
+        <form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex-1 overflow-y-auto p-6">
+            {activeTab === "config" ? (
+              <ConfigTab
+                form={form}
+                imagePreview={imagePreview}
+                backImagePreview={backImagePreview}
+                onChange={(patch) => setForm((prev) => ({ ...prev, ...patch }))}
+                onImageChange={handleImageChange}
+                onBackImageChange={handleBackImageChange}
+              />
+            ) : (
+              <PositionEditor
+                form={form}
+                backgroundPreview={imagePreview}
+                backPreview={backImagePreview}
+                onChangePosition={handlePositionChange}
+              />
+            )}
+          </div>
+
+          {/* Footer del modal */}
+          <div className="px-6 py-4 border-t border-gray-200 flex justify-between items-center flex-shrink-0 bg-white">
+            <p className="text-xs text-gray-400">
+              {activeTab === "config"
+                ? "Configura el nombre, fuente e imagen de fondo"
+                : "Haz clic en la imagen para posicionar cada campo"}
+            </p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={handleCancel}
+                className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                Cancelar
+              </button>
+              {activeTab === "config" && (
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("positions")}
+                  className="px-4 py-2 text-sm border border-[#084D95] text-[#084D95] rounded-lg hover:bg-[#084D95]/5"
+                >
+                  Siguiente →
+                </button>
+              )}
+              <button
+                type="submit"
+                disabled={isPending}
+                className="px-4 py-2 text-sm bg-[#084D95] text-white rounded-lg hover:bg-[#084D95]/90 disabled:opacity-50"
+              >
+                {isPending
+                  ? "Guardando..."
+                  : editing
+                  ? "Guardar cambios"
+                  : "Crear plantilla"}
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
 
   // ── Render ──
+  if (isScoped) {
+    // En modo scoped no se renderiza la galería — solo el modal de
+    // creación/edición, que se abre automáticamente vía el useEffect de arriba.
+    return (
+      <div>
+        <button
+          onClick={goBack}
+          className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 mb-4"
+        >
+          <ArrowLeft size={14} /> Volver
+        </button>
+        {modalNode}
+      </div>
+    );
+  }
+
   return (
     <div>
       {/* Header */}
@@ -624,16 +811,10 @@ export default function PlantillasPage() {
             Plantillas de Certificado
           </h1>
           <p className="text-gray-500 text-sm mt-0.5">
-            Solo una plantilla puede estar activa — todos los certificados
-            nuevos usarán la activa
+            Referencia de solo lectura — las plantillas nuevas se crean desde
+            un curso o módulo específico
           </p>
         </div>
-        <button
-          onClick={openCreate}
-          className="bg-[#084D95] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#084D95]/90 transition-colors"
-        >
-          + Nueva plantilla
-        </button>
       </div>
 
       {/* Lista */}
@@ -652,14 +833,8 @@ export default function PlantillasPage() {
           </div>
           <p className="font-semibold text-gray-700">Sin plantillas todavía</p>
           <p className="text-sm text-gray-400 mt-1">
-            Crea la primera plantilla para comenzar a emitir certificados
+            Crea plantillas desde la sección de certificaciones de cada curso
           </p>
-          <button
-            onClick={openCreate}
-            className="mt-5 bg-[#084D95] text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-[#084D95]/90"
-          >
-            Crear plantilla
-          </button>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
@@ -668,118 +843,14 @@ export default function PlantillasPage() {
               key={t.id}
               template={t}
               onEdit={openEdit}
-              onActivate={(id) => activateMut.mutate(id)}
               onDelete={(id) => setConfirmDeleteId(id)}
-              activating={activateMut.isPending}
             />
           ))}
         </div>
       )}
 
       {/* ── Modal crear / editar ── */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl w-full max-w-3xl shadow-2xl max-h-[92vh] flex flex-col">
-            {/* Cabecera */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 flex-shrink-0">
-              <h2 className="font-semibold text-brand-primary text-base">
-                {editing ? "Editar plantilla" : "Nueva plantilla de certificado"}
-              </h2>
-              <button
-                onClick={closeModal}
-                className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
-              >
-                &times;
-              </button>
-            </div>
-
-            {/* Tabs */}
-            <div className="flex border-b border-gray-200 flex-shrink-0 px-6">
-              {(
-                [
-                  { key: "config", label: "Configuración", Icon: Settings },
-                  { key: "positions", label: "Posiciones", Icon: Crosshair },
-                ] as const
-              ).map(({ key, label, Icon }) => (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => setActiveTab(key)}
-                  className={`flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors ${
-                    activeTab === key
-                      ? "border-[#084D95] text-[#084D95]"
-                      : "border-transparent text-gray-500 hover:text-gray-700"
-                  }`}
-                >
-                  <Icon size={14} />
-                  {label}
-                </button>
-              ))}
-            </div>
-
-            {/* Contenido del form */}
-            <form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-hidden">
-              <div className="flex-1 overflow-y-auto p-6">
-                {activeTab === "config" ? (
-                  <ConfigTab
-                    form={form}
-                    imagePreview={imagePreview}
-                    backImagePreview={backImagePreview}
-                    onChange={(patch) => setForm((prev) => ({ ...prev, ...patch }))}
-                    onImageChange={handleImageChange}
-                    onBackImageChange={handleBackImageChange}
-                  />
-                ) : (
-                  <PositionEditor
-                    form={form}
-                    backgroundPreview={imagePreview}
-                    backPreview={backImagePreview}
-                    onChangePosition={handlePositionChange}
-                  />
-                )}
-              </div>
-
-              {/* Footer del modal */}
-              <div className="px-6 py-4 border-t border-gray-200 flex justify-between items-center flex-shrink-0 bg-white">
-                <p className="text-xs text-gray-400">
-                  {activeTab === "config"
-                    ? "Configura el nombre, fuente e imagen de fondo"
-                    : "Haz clic en la imagen para posicionar cada campo"}
-                </p>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={closeModal}
-                    className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
-                  >
-                    Cancelar
-                  </button>
-                  {activeTab === "config" && (
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab("positions")}
-                      className="px-4 py-2 text-sm border border-[#084D95] text-[#084D95] rounded-lg hover:bg-[#084D95]/5"
-                    >
-                      Siguiente →
-                    </button>
-                  )}
-                  <button
-                    type="submit"
-                    disabled={isPending}
-                    className="px-4 py-2 text-sm bg-[#084D95] text-white rounded-lg hover:bg-[#084D95]/90 disabled:opacity-50"
-                  >
-                    {isPending
-                      ? "Guardando..."
-                      : editing
-                      ? "Guardar cambios"
-                      : "Crear plantilla"}
-                  </button>
-                </div>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {modalNode}
 
       {/* ── Confirmar eliminación ── */}
       {confirmDeleteId && (
@@ -789,8 +860,8 @@ export default function PlantillasPage() {
               ¿Eliminar esta plantilla?
             </h2>
             <p className="text-sm text-gray-500 mb-5">
-              Esta acción no se puede deshacer. Las plantillas activas no se
-              pueden eliminar.
+              Esta acción no se puede deshacer. Las plantillas asignadas a un
+              curso, módulo o ya usadas en certificados no se pueden eliminar.
             </p>
             <div className="flex justify-end gap-3">
               <button
@@ -818,15 +889,11 @@ export default function PlantillasPage() {
 function TemplateCard({
   template: t,
   onEdit,
-  onActivate,
   onDelete,
-  activating,
 }: {
   template: CertificateTemplate;
   onEdit: (t: CertificateTemplate) => void;
-  onActivate: (id: string) => void;
   onDelete: (id: string) => void;
-  activating: boolean;
 }) {
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
@@ -843,39 +910,13 @@ function TemplateCard({
             <ImageIcon size={32} className="text-gray-300" />
           </div>
         )}
-        {t.is_active && (
-          <div className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1 shadow-sm">
-            <CheckCircle2 size={11} />
-            Activa
-          </div>
-        )}
       </div>
 
       {/* Info + acciones */}
       <div className="p-4">
-        <div className="flex items-start justify-between gap-2 mb-1">
-          <h3 className="font-semibold text-brand-primary text-sm leading-tight">
-            {t.name}
-          </h3>
-          <span
-            className="text-xs px-2 py-0.5 rounded-full border flex-shrink-0"
-            style={
-              t.is_active
-                ? {
-                    color: "#166534",
-                    backgroundColor: "#dcfce7",
-                    borderColor: "#86efac",
-                  }
-                : {
-                    color: "#6b7280",
-                    backgroundColor: "#f3f4f6",
-                    borderColor: "#e5e7eb",
-                  }
-            }
-          >
-            {t.is_active ? "Activa" : "Inactiva"}
-          </span>
-        </div>
+        <h3 className="font-semibold text-brand-primary text-sm leading-tight mb-1">
+          {t.name}
+        </h3>
         <p className="text-xs text-gray-400 mb-3">
           {new Date(t.created_at).toLocaleDateString("es-PE", {
             day: "2-digit",
@@ -887,16 +928,6 @@ function TemplateCard({
         </p>
 
         <div className="flex gap-2">
-          {!t.is_active && (
-            <button
-              onClick={() => onActivate(t.id)}
-              disabled={activating}
-              className="flex-1 text-xs py-1.5 rounded-lg border border-green-200 text-green-700 hover:bg-green-50 transition-colors flex items-center justify-center gap-1 disabled:opacity-50"
-            >
-              <Zap size={11} />
-              Activar
-            </button>
-          )}
           <button
             onClick={() => onEdit(t)}
             className="flex-1 text-xs py-1.5 rounded-lg border border-[#084D95]/30 text-[#084D95] hover:bg-[#084D95]/5 transition-colors flex items-center justify-center gap-1"
@@ -904,15 +935,13 @@ function TemplateCard({
             <Pencil size={11} />
             Editar
           </button>
-          {!t.is_active && (
-            <button
-              onClick={() => onDelete(t.id)}
-              className="flex-1 text-xs py-1.5 rounded-lg border border-red-200 text-red-500 hover:bg-red-50 transition-colors flex items-center justify-center gap-1"
-            >
-              <Trash2 size={11} />
-              Eliminar
-            </button>
-          )}
+          <button
+            onClick={() => onDelete(t.id)}
+            className="flex-1 text-xs py-1.5 rounded-lg border border-red-200 text-red-500 hover:bg-red-50 transition-colors flex items-center justify-center gap-1"
+          >
+            <Trash2 size={11} />
+            Eliminar
+          </button>
         </div>
       </div>
     </div>

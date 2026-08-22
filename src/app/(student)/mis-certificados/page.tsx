@@ -29,11 +29,13 @@ export default function MisCertificadosPage() {
     queryFn: () => studentService.getMyCertificates(),
   });
 
-  async function handleDownload(certId: string, courseTitle: string) {
+  async function handleDownload(certId: string, courseTitle: string, scope: "course" | "module") {
     if (downloadingId) return;
     setDownloadingId(certId);
     try {
-      const blob = await studentService.downloadCertificate(certId);
+      const blob = scope === "module"
+        ? await studentService.downloadModuleCertificate(certId)
+        : await studentService.downloadCertificate(certId);
       downloadBlob(blob, `certificado-${courseTitle}.pdf`);
     } finally {
       setDownloadingId(null);
@@ -101,6 +103,9 @@ export default function MisCertificadosPage() {
                 {/* Info */}
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold text-brand-primary truncate">{cert.course_title}</h3>
+                  {cert.scope === "module" && cert.module_title && (
+                    <p className="text-xs text-[#084D95] font-medium mt-0.5">Módulo: {cert.module_title}</p>
+                  )}
                   <p className="text-xs text-gray-400 mt-0.5">Emitido el {formatDate(cert.issued_at)}</p>
                   {cert.verification_code && (
                     <p className="font-mono text-xs text-gray-500 mt-1 truncate">
@@ -112,7 +117,7 @@ export default function MisCertificadosPage() {
                 {/* Acciones */}
                 <div className="flex items-center gap-2 shrink-0">
                   <Link
-                    href={`/certificado/${cert.enrollment_id}`}
+                    href={cert.scope === "module" ? `/certificado/modulo/${cert.id}` : `/certificado/${cert.enrollment_id}`}
                     className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
                   >
                     <ExternalLink size={13} />
@@ -120,7 +125,7 @@ export default function MisCertificadosPage() {
                   </Link>
 
                   <button
-                    onClick={() => handleDownload(cert.id, cert.course_title)}
+                    onClick={() => handleDownload(cert.id, cert.course_title, cert.scope)}
                     disabled={!!downloadingId}
                     className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#084D95] text-white text-xs font-medium hover:bg-[#084D95]/90 transition-colors disabled:opacity-60"
                   >

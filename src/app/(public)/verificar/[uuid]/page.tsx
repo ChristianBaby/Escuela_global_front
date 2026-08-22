@@ -197,9 +197,14 @@ export default function VerificarCertificadoPage() {
                   <p className="font-semibold text-emerald-800">
                     Certificado auténtico
                   </p>
-                  <p className="text-emerald-600 text-sm truncate">
+                  <p className="text-emerald-700 text-sm truncate">
+                    {cert.scope === "module"
+                      ? `Certifica: Módulo — ${cert.module_title}`
+                      : `Certifica: Curso completo — ${cert.course_title}`}
+                  </p>
+                  <p className="text-emerald-600 text-xs truncate">
                     Verificado por Escuela Global ·{" "}
-                    <span className="font-mono text-xs">
+                    <span className="font-mono">
                       {cert.verification_code}
                     </span>
                   </p>
@@ -229,7 +234,7 @@ export default function VerificarCertificadoPage() {
                     Duración
                   </p>
                   <p className="text-sm font-semibold text-gray-800">
-                    {cert.total_hours} horas
+                    {cert.total_hours !== null ? `${cert.total_hours} horas` : "—"}
                   </p>
                 </div>
                 <div className="px-5 py-4 text-center">

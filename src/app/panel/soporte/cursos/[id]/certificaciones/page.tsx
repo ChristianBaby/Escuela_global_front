@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -13,22 +13,13 @@ import {
   FileCheck,
   Loader2,
   CheckCircle,
-  RefreshCw,
   ChevronDown,
+  Pencil,
+  Plus,
 } from "lucide-react";
 import { certificationsService } from "@/lib/services/certificates/certifications.service";
-import { certificateTemplatesService } from "@/lib/services/certificates";
-import { cursosService } from "@/lib/services/courses";
-import type { CertificateTemplate } from "@/types";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
-
-function resolveUrl(url: string): string {
-  if (!url) return "";
-  if (url.startsWith("http")) return url;
-  if (url.startsWith("/")) return url;
-  return `/${url}`;
-}
 
 function downloadBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
@@ -47,26 +38,9 @@ export default function CertificacionesPage() {
   const queryClient = useQueryClient();
   const importRef = useRef<HTMLInputElement>(null);
 
-  const [certTemplateId, setCertTemplateId] = useState<string>("");
-  const [constanciaTemplateId, setConstanciaTemplateId] = useState<string>("");
-  const [templateInitialized, setTemplateInitialized] = useState(false);
-
   const { data, isLoading, isError } = useQuery({
     queryKey: ["certifications", courseId],
     queryFn: () => certificationsService.get(courseId),
-  });
-
-  useEffect(() => {
-    if (data && !templateInitialized) {
-      setCertTemplateId(data.certificate_template?.id ?? "");
-      setConstanciaTemplateId(data.constancia_template?.id ?? "");
-      setTemplateInitialized(true);
-    }
-  }, [data, templateInitialized]);
-
-  const { data: plantillas } = useQuery({
-    queryKey: ["certificate-templates"],
-    queryFn: certificateTemplatesService.list,
   });
 
   // ── Export Excel ──────────────────────────────────────────────────────────
@@ -107,12 +81,14 @@ export default function CertificacionesPage() {
       type: "Certificado" | "Constancia";
     }) => {
       const templateId =
-        vars.type === "Certificado" ? certTemplateId : constanciaTemplateId;
+        vars.type === "Certificado"
+          ? data?.certificate_template?.id
+          : data?.constancia_template?.id;
       if (!templateId) {
         throw new Error(
           vars.type === "Certificado"
-            ? "Este curso no tiene una plantilla de certificado asignada. Configúrala en Editar curso."
-            : "Este curso no tiene una plantilla de constancia asignada. Configúrala en Editar curso."
+            ? "Este curso no tiene una plantilla de certificado asignada. Créala arriba."
+            : "Este curso no tiene una plantilla de constancia asignada. Créala arriba."
         );
       }
       return certificationsService.emit(courseId, {
@@ -142,24 +118,6 @@ export default function CertificacionesPage() {
     },
     onError: () => toast.error("Error al eliminar"),
   });
-
-  // ── Save templates ────────────────────────────────────────────────────────
-  const saveTemplatesMutation = useMutation({
-    mutationFn: () =>
-      cursosService.update(courseId, {
-        certificate_template_id: certTemplateId || null,
-        constancia_template_id: constanciaTemplateId || null,
-      }),
-    onSuccess: () => {
-      toast.success("Plantillas actualizadas");
-      queryClient.invalidateQueries({ queryKey: ["certifications", courseId] });
-    },
-    onError: () => toast.error("Error al actualizar las plantillas"),
-  });
-
-  // ── Derived ───────────────────────────────────────────────────────────────
-  const selectedCertTemplate = plantillas?.find((t) => t.id === certTemplateId);
-  const selectedConstanciaTemplate = plantillas?.find((t) => t.id === constanciaTemplateId);
 
   // ── Stats ─────────────────────────────────────────────────────────────────
   const stats = data
@@ -270,83 +228,38 @@ export default function CertificacionesPage() {
             </span>
           </div>
 
-          <div className="flex items-center gap-4 flex-wrap">
-            <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-1.5">
               <span className="text-xs font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
                 Certificado
               </span>
-              <select
-                value={certTemplateId}
-                onChange={(e) => setCertTemplateId(e.target.value)}
-                className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#084D95]/20 bg-white"
+              <Link
+                href={`/panel/soporte/certificados/plantillas?course_id=${courseId}&kind=certificado${
+                  data.certificate_template ? `&template_id=${data.certificate_template.id}` : ""
+                }`}
+                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors"
               >
-                <option value="">Sin plantilla</option>
-                {plantillas?.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name}
-                  </option>
-                ))}
-              </select>
+                {data.certificate_template ? <Pencil size={11} /> : <Plus size={11} />}
+                {data.certificate_template?.name ?? "Crear plantilla"}
+              </Link>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <span className="text-xs font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded">
                 Constancia
               </span>
-              <select
-                value={constanciaTemplateId}
-                onChange={(e) => setConstanciaTemplateId(e.target.value)}
-                className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#084D95]/20 bg-white"
+              <Link
+                href={`/panel/soporte/certificados/plantillas?course_id=${courseId}&kind=constancia${
+                  data.constancia_template ? `&template_id=${data.constancia_template.id}` : ""
+                }`}
+                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors"
               >
-                <option value="">Sin plantilla</option>
-                {plantillas?.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name}
-                  </option>
-                ))}
-              </select>
+                {data.constancia_template ? <Pencil size={11} /> : <Plus size={11} />}
+                {data.constancia_template?.name ?? "Crear plantilla"}
+              </Link>
             </div>
-
-            <button
-              onClick={() => saveTemplatesMutation.mutate()}
-              disabled={saveTemplatesMutation.isPending}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs bg-[#084D95] text-white rounded-lg hover:bg-[#084D95]/90 disabled:opacity-50 transition-colors"
-            >
-              {saveTemplatesMutation.isPending ? (
-                <Loader2 size={12} className="animate-spin" />
-              ) : (
-                <RefreshCw size={12} />
-              )}
-              Guardar plantillas
-            </button>
           </div>
         </div>
-
-        {/* Vista previa de plantillas */}
-        {(selectedCertTemplate || selectedConstanciaTemplate) && (
-          <div
-            className={`grid gap-4 pt-2 border-t border-gray-100 ${
-              selectedCertTemplate && selectedConstanciaTemplate
-                ? "grid-cols-2"
-                : "grid-cols-1 max-w-sm"
-            }`}
-          >
-            {selectedCertTemplate && (
-              <TemplatePreview
-                template={selectedCertTemplate}
-                label="Certificado"
-                labelColor="#059669"
-              />
-            )}
-            {selectedConstanciaTemplate && (
-              <TemplatePreview
-                template={selectedConstanciaTemplate}
-                label="Constancia"
-                labelColor="#D97706"
-              />
-            )}
-          </div>
-        )}
       </div>
 
       {/* ── Stats ───────────────────────────────────────────────────────────── */}
@@ -385,11 +298,21 @@ export default function CertificacionesPage() {
                     className="text-center px-3 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap max-w-[120px]"
                     title={m.title}
                   >
-                    <span className="block truncate max-w-[100px]">
+                    <span className="block truncate max-w-[100px] normal-case font-medium text-gray-700 mb-1">
                       {m.title.length > 12
                         ? m.title.slice(0, 12) + "…"
                         : m.title}
                     </span>
+                    <Link
+                      href={`/panel/soporte/certificados/plantillas?module_id=${m.id}&course_id=${courseId}${
+                        m.certificate_template ? `&template_id=${m.certificate_template.id}` : ""
+                      }`}
+                      className="inline-flex items-center gap-0.5 text-[10px] font-normal normal-case text-gray-400 hover:text-[#084D95]"
+                      title={m.certificate_template ? `Editar plantilla: ${m.certificate_template.name}` : "Crear plantilla de este módulo"}
+                    >
+                      {m.certificate_template ? <Pencil size={9} /> : <Plus size={9} />}
+                      Plantilla
+                    </Link>
                   </th>
                 ))}
                 <th className="text-center px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">
@@ -439,17 +362,23 @@ export default function CertificacionesPage() {
                       {/* Notas por módulo */}
                       {data.modules.map((m) => {
                         const grade = student.module_grades[m.id];
+                        const hasModuleCert = !!student.module_certificates[m.id];
                         return (
                           <td key={m.id} className="px-3 py-3.5 text-center">
                             {grade !== undefined ? (
-                              <span
-                                className={`font-medium ${
-                                  grade >= 14
-                                    ? "text-emerald-600"
-                                    : "text-red-500"
-                                }`}
-                              >
-                                {grade}
+                              <span className="inline-flex items-center gap-1">
+                                <span
+                                  className={`font-medium ${
+                                    grade >= 14
+                                      ? "text-emerald-600"
+                                      : "text-red-500"
+                                  }`}
+                                >
+                                  {grade}
+                                </span>
+                                {hasModuleCert && (
+                                  <Award size={11} className="text-emerald-500" aria-label="Certificado de módulo emitido" />
+                                )}
                               </span>
                             ) : (
                               <span className="text-gray-300">—</span>
@@ -553,139 +482,3 @@ export default function CertificacionesPage() {
   );
 }
 
-// ── TemplatePreview ───────────────────────────────────────────────────────────
-const CERT_W = 3508;
-const CERT_H = 2480;
-
-function TemplatePreview({
-  template,
-  label,
-  labelColor,
-}: {
-  template: CertificateTemplate;
-  label: string;
-  labelColor: string;
-}) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [containerWidth, setContainerWidth] = useState(0);
-
-  useEffect(() => {
-    if (!containerRef.current) return;
-    const ro = new ResizeObserver((entries) =>
-      setContainerWidth(entries[0].contentRect.width)
-    );
-    ro.observe(containerRef.current);
-    return () => ro.disconnect();
-  }, []);
-
-  const scale = containerWidth > 0 ? containerWidth / CERT_W : 0;
-  const namePos = template.student_name_position;
-  const qrPos = template.qr_position;
-  const fontSize = scale > 0 ? Math.max(6, (template.font_sizes?.student_name ?? 200) * scale) : 12;
-  const qrPx = scale > 0 ? Math.max(12, (template.qr_size ?? 300) * scale) : 24;
-  const bgUrl = resolveUrl(template.background_image_url);
-  const backUrl = template.back_image_url ? resolveUrl(template.back_image_url) : "";
-
-  return (
-    <div className="space-y-1.5">
-      <div className="flex items-center gap-1.5">
-        <span
-          className="text-xs font-medium px-2 py-0.5 rounded"
-          style={{ backgroundColor: `${labelColor}18`, color: labelColor }}
-        >
-          {label}
-        </span>
-        <span className="text-xs text-gray-400 truncate">{template.name}</span>
-      </div>
-      <div className="space-y-2">
-        {/* Cara (portada) */}
-        <div
-          ref={containerRef}
-          className="relative w-full rounded-lg overflow-hidden border border-gray-200"
-          style={{ aspectRatio: `${CERT_W}/${CERT_H}` }}
-        >
-          {bgUrl ? (
-            <img
-              src={bgUrl}
-              alt=""
-              className="absolute inset-0 w-full h-full object-fill"
-              draggable={false}
-            />
-          ) : (
-            <div className="absolute inset-0 bg-gray-100" />
-          )}
-          <div
-            style={{
-              position: "absolute",
-              left: `${(namePos.x / CERT_W) * 100}%`,
-              top: `${(namePos.y / CERT_H) * 100}%`,
-              transform: "translate(-50%, -50%)",
-              fontSize,
-              fontFamily: template.font_family,
-              color: "#084D95",
-              whiteSpace: "nowrap",
-              textShadow: "0 1px 4px rgba(0,0,0,0.6)",
-              userSelect: "none",
-              pointerEvents: "none",
-            }}
-          >
-            Nombre del Estudiante
-          </div>
-          <span className="absolute top-1 left-1 text-[9px] bg-black/40 text-white px-1.5 py-0.5 rounded">
-            Cara
-          </span>
-        </div>
-
-        {/* Contraportada */}
-        <div
-          className="relative w-full rounded-lg overflow-hidden border border-gray-200"
-          style={{ aspectRatio: `${CERT_W}/${CERT_H}` }}
-        >
-          {backUrl ? (
-            <img
-              src={backUrl}
-              alt=""
-              className="absolute inset-0 w-full h-full object-fill"
-              draggable={false}
-            />
-          ) : (
-            <div className="absolute inset-0 bg-gray-100 flex items-center justify-center">
-              <span className="text-xs text-gray-400">Sin contraportada</span>
-            </div>
-          )}
-          <div
-            style={{
-              position: "absolute",
-              left: `${(qrPos.x / CERT_W) * 100}%`,
-              top: `${(qrPos.y / CERT_H) * 100}%`,
-              transform: "translate(-50%, -50%)",
-              width: qrPx,
-              height: qrPx,
-              border: "2px dashed #805AD5",
-              backgroundColor: "#805AD522",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              userSelect: "none",
-              pointerEvents: "none",
-            }}
-          >
-            <span
-              style={{
-                fontSize: Math.max(6, qrPx * 0.2),
-                color: "#805AD5",
-                fontFamily: "monospace",
-                fontWeight: "bold",
-              }}
-            >
-              QR
-            </span>
-          </div>
-          <span className="absolute top-1 left-1 text-[9px] bg-black/40 text-white px-1.5 py-0.5 rounded">
-            Contraportada
-          </span>
-        </div>
-      </div>
-    </div>
-  );
-}

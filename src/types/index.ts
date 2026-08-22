@@ -94,6 +94,7 @@ export interface Module {
   title: string;
   description?: string;
   display_order: number;
+  certificate_template_id?: string | null;
   sessions?: Session[];
   created_at: string;
 }
@@ -237,8 +238,10 @@ export interface CertificateTemplate {
 
 export interface CertificateSummary {
   id: string;
+  scope: "course" | "module";
   enrollment_id: string;
   course_title: string;
+  module_title: string | null;
   verification_code: string | null;
   issued_at: string;
 }
@@ -251,6 +254,15 @@ export interface CertificateDetail {
   issued_at: string;
   total_hours: number;
   instructors?: string[];
+}
+
+export interface ModuleCertificateDetail {
+  id: string;
+  verification_code: string | null;
+  course_title: string;
+  module_title: string;
+  student_name: string;
+  issued_at: string;
 }
 
 // ─── Marketing ────────────────────────────────────────────────────────────────

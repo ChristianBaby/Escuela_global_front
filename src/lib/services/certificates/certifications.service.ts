@@ -6,7 +6,12 @@ export interface CourseCertificationData {
   certification_mode: "auto" | "manual";
   certificate_template: { id: string; name: string } | null;
   constancia_template: { id: string; name: string } | null;
-  modules: { id: string; title: string; display_order: number }[];
+  modules: {
+    id: string;
+    title: string;
+    display_order: number;
+    certificate_template: { id: string; name: string } | null;
+  }[];
   students: {
     enrollment_id: string;
     user_id: string;
@@ -15,6 +20,7 @@ export interface CourseCertificationData {
     email: string;
     average_grade: number | null;
     module_grades: Record<string, number>;
+    module_certificates: Record<string, boolean>;
     certificate_type: "Certificado" | "Constancia" | null;
     certificate_issued_at: string | null;
     progress_percent: number;

@@ -11,13 +11,15 @@ export interface CertificateTemplateData {
 }
 
 export interface CertificateVerification {
+  scope: "course" | "module";
   verification_code: string;
-  type: "Certificado" | "Constancia";
-  pdf_url: string;
+  type: "Certificado";
+  download_url: string;
   student_name: string;
   course_title: string;
+  module_title: string | null;
   issued_at: string;
-  total_hours: number;
+  total_hours: number | null;
   instructors: string[];
   template: CertificateTemplateData;
 }

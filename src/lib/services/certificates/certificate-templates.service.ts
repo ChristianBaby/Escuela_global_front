@@ -1,8 +1,15 @@
 import { api } from "@/lib/http/api";
 import type { CertificateTemplate, XYPosition, CertificateFontSizes } from "@/types";
 
+export type CertificateTemplateOwnerType =
+  | "course_certificado"
+  | "course_constancia"
+  | "module";
+
 export interface CreateCertificateTemplateDto {
   name: string;
+  owner_type: CertificateTemplateOwnerType;
+  owner_id: string;
   background_image?: File | null;
   back_image?: File | null;
   student_name_position: XYPosition;
@@ -15,6 +22,8 @@ export interface CreateCertificateTemplateDto {
 function buildFormData(data: Partial<CreateCertificateTemplateDto>): FormData {
   const fd = new FormData();
   if (data.name) fd.append("name", data.name);
+  if (data.owner_type) fd.append("owner_type", data.owner_type);
+  if (data.owner_id) fd.append("owner_id", data.owner_id);
   if (data.background_image) fd.append("background_image", data.background_image);
   if (data.back_image) fd.append("back_image", data.back_image);
   if (data.font_family) fd.append("font_family", data.font_family);
@@ -45,9 +54,6 @@ export const certificateTemplatesService = {
         headers: { "Content-Type": "multipart/form-data" },
       })
       .then((r) => r.data),
-
-  activate: (id: string) =>
-    api.post<CertificateTemplate>(`/certificate-templates/${id}/activate`).then((r) => r.data),
 
   delete: (id: string) =>
     api.delete(`/certificate-templates/${id}`).then((r) => r.data),
