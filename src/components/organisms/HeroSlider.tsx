@@ -51,13 +51,13 @@ function CourseSlide({ slider }: { slider: Slider }) {
 
   return (
     <div className="relative w-full h-full">
-      {/* Background image */}
+      {/* Imagen del slider — cubre todo el fondo, de pared a pared. */}
       {hasImage ? (
         <img
           src={slider.image_url}
           alt={slider.title}
-          className="absolute inset-0 w-full h-full object-cover"
           draggable={false}
+          className="absolute inset-0 w-full h-full object-cover"
         />
       ) : (
         <div
@@ -168,14 +168,17 @@ export function HeroSlider() {
 
   if (isLoading) {
     return (
-      <section className="relative w-full h-screen min-h-[600px] animate-pulse bg-brand-dark" />
+      <section className="relative w-full aspect-[16/9] animate-pulse bg-brand-dark" />
     );
   }
 
   if (activeSliders.length === 0) return <FallbackHero />;
 
   return (
-    <section className="relative w-full h-screen min-h-[600px] overflow-hidden bg-brand-dark">
+    <section
+      className="relative w-full aspect-[16/9] overflow-hidden"
+      style={{ background: "linear-gradient(135deg, #052E59 0%, #084D95 65%, #23AFE5 100%)" }}
+    >
       {/* Slides con transición de opacidad */}
       {activeSliders.map((slider, i) => (
         <div
