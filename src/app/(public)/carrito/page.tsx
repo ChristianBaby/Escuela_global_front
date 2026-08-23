@@ -62,10 +62,12 @@ export default function CarritoPage() {
     queryFn: () => cartService.get(isAuthenticated ? undefined : guestSessionToken),
   });
 
-  // Available catalog courses
+  // Pool de candidatos para las sugerencias — se pide un lote más grande que lo
+  // que se muestra, para que haya de dónde elegir por relevancia (categoría,
+  // software compartido, descuento) y no solo los primeros de la lista.
   const { data: catalogData, isLoading: loadingCatalog } = useQuery({
     queryKey: COURSES_KEY,
-    queryFn: () => cursosService.list({ limit: 12 }),
+    queryFn: () => cursosService.list({ limit: 60 }),
     staleTime: 60_000,
   });
 
@@ -133,6 +135,8 @@ export default function CarritoPage() {
         ? Number(i.discountPrice ?? i.course?.discount_price)
         : undefined,
     currency: i.currency ?? i.course?.currency ?? "PEN",
+    category_id: i.category_id ?? i.course?.category_id,
+    software_tools: i.software_tools ?? i.course?.software_tools ?? [],
   }));
 
   // 3. Mapeo de ítems provenientes del Almacenamiento Local (Zustand)
@@ -146,6 +150,8 @@ export default function CarritoPage() {
     price: e.course.price,
     discount_price: e.course.discount_price,
     currency: e.course.currency,
+    category_id: e.course.category_id,
+    software_tools: e.course.software_tools ?? [],
   }));
 
   // El carrito real (backend) manda siempre que tenga datos; si aún no cargó
@@ -163,8 +169,24 @@ export default function CarritoPage() {
   const currency = displayItems[0]?.currency ?? "PEN";
   const symbol = currency === "PEN" ? "S/" : "$";
 
-  // Courses NOT already in cart
-  const suggestedCourses = allCourses.filter((c) => !cartCourseIds.has(c.id));
+  // Sugerencias: cursos que no están ya en el carrito, ordenados por qué tanto
+  // se relacionan con lo que el usuario ya eligió — misma categoría, software
+  // en común, o que estén en descuento — en vez de mostrar cualquier curso.
+  const cartCategoryIds = new Set(displayItems.map((i) => i.category_id).filter(Boolean));
+  const cartSoftwareTools = new Set(displayItems.flatMap((i) => i.software_tools ?? []));
+
+  function relevanceScore(course: Course): number {
+    let score = 0;
+    if (cartCategoryIds.has(course.category_id)) score += 3;
+    const sharedSoftware = course.software_tools?.filter((s) => cartSoftwareTools.has(s)).length ?? 0;
+    score += sharedSoftware;
+    if (course.discount_price !== undefined && course.discount_price < course.price) score += 1;
+    return score;
+  }
+
+  const suggestedCourses = allCourses
+    .filter((c) => !cartCourseIds.has(c.id))
+    .sort((a, b) => relevanceScore(b) - relevanceScore(a));
 
   function handleRemove(item: DisplayItem) {
     if (item.serverId) {
@@ -355,6 +377,8 @@ interface DisplayItem {
   price: number;
   discount_price?: number;
   currency: string;
+  category_id?: string;
+  software_tools?: string[];
 }
 
 // ─── Cart Item Row ─────────────────────────────────────────────────────────────
