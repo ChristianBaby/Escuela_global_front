@@ -129,12 +129,12 @@ export default function CarritoPage() {
     title: i.title ?? i.course?.title ?? "Curso de Especialización",
     slug: i.slug ?? i.course?.slug ?? "",
     thumbnail_url: i.thumbnail ?? i.course?.thumbnail_url ?? "",
-    price: Number(i.price ?? i.course?.price ?? 0),
+    price: Number(i.price ?? i.course?.price_pen ?? 0),
     discount_price:
-      i.discountPrice ?? i.course?.discount_price
-        ? Number(i.discountPrice ?? i.course?.discount_price)
+      i.discountPrice ?? i.course?.discount_price_pen
+        ? Number(i.discountPrice ?? i.course?.discount_price_pen)
         : undefined,
-    currency: i.currency ?? i.course?.currency ?? "PEN",
+    currency: i.currency ?? "PEN",
     category_id: i.category_id ?? i.course?.category_id,
     software_tools: i.software_tools ?? i.course?.software_tools ?? [],
   }));
@@ -147,9 +147,9 @@ export default function CarritoPage() {
     title: e.course.title,
     slug: e.course.slug,
     thumbnail_url: e.course.thumbnail_url,
-    price: e.course.price,
-    discount_price: e.course.discount_price,
-    currency: e.course.currency,
+    price: e.course.price_pen,
+    discount_price: e.course.discount_price_pen,
+    currency: "PEN",
     category_id: e.course.category_id,
     software_tools: e.course.software_tools ?? [],
   }));
@@ -180,7 +180,7 @@ export default function CarritoPage() {
     if (cartCategoryIds.has(course.category_id)) score += 3;
     const sharedSoftware = course.software_tools?.filter((s) => cartSoftwareTools.has(s)).length ?? 0;
     score += sharedSoftware;
-    if (course.discount_price !== undefined && course.discount_price < course.price) score += 1;
+    if (course.discount_price_pen !== undefined && course.discount_price_pen < course.price_pen) score += 1;
     return score;
   }
 
@@ -449,9 +449,8 @@ function CatalogCourseCard({
   onAdd: () => void;
   adding: boolean;
 }) {
-  const displayPrice = course.discount_price ?? course.price;
-  const hasDiscount = course.discount_price !== undefined && course.discount_price < course.price;
-  const symbol = course.currency === "PEN" ? "S/" : "$";
+  const displayPricePen = course.discount_price_pen ?? course.price_pen;
+  const hasDiscount = course.discount_price_pen !== undefined && course.discount_price_pen < course.price_pen;
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md hover:border-gray-300 transition-all flex flex-col">
@@ -490,11 +489,11 @@ function CatalogCourseCard({
         <div className="mt-auto pt-2 border-t border-gray-100 flex items-center justify-between gap-1.5">
           <div>
             <span className="font-bold text-[#084D95] text-sm tabular-nums">
-              {symbol} {displayPrice.toFixed(2)}
+              S/ {displayPricePen.toFixed(2)}
             </span>
             {hasDiscount && (
               <span className="ml-1 text-[10px] text-gray-400 line-through tabular-nums">
-                {symbol} {course.price.toFixed(2)}
+                S/ {course.price_pen.toFixed(2)}
               </span>
             )}
           </div>

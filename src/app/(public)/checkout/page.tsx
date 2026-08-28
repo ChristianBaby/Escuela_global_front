@@ -103,12 +103,12 @@ export default function CheckoutPage() {
       ? cartItemsRaw.map((i: any) => ({
           id: i.courseId ?? i.course?.id ?? i.course_id,
           title: i.title ?? i.course?.title ?? "Curso",
-          price: Number(i.finalPrice ?? i.discountPrice ?? i.price ?? i.course?.discount_price ?? i.course?.price ?? 0),
+          price: Number(i.finalPrice ?? i.discountPrice ?? i.price ?? i.course?.discount_price_pen ?? i.course?.price_pen ?? 0),
         }))
       : localItems.map((e) => ({
           id: e.course.id,
           title: e.course.title,
-          price: Number(e.course.discount_price ?? e.course.price),
+          price: Number(e.course.discount_price_pen ?? e.course.price_pen),
         }));
 
   const localSubtotal = displayItems.reduce((sum: number, i: any) => sum + i.price, 0) || localTotal();

@@ -215,10 +215,19 @@ export default function SoporteCursosPage() {
 
                       {/* Precio */}
                       <td className="px-4 py-3.5">
-                        <span className="font-semibold text-gray-900">{curso.currency} {curso.price}</span>
-                        {curso.discount_price && (
-                          <span className="ml-1.5 text-xs text-gray-400 line-through">{curso.discount_price}</span>
-                        )}
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-gray-900">
+                            S/ {curso.discount_price_pen ?? curso.price_pen}
+                            {curso.discount_price_pen && (
+                              <span className="ml-1.5 text-xs text-gray-400 line-through font-normal">
+                                {curso.price_pen}
+                              </span>
+                            )}
+                          </span>
+                          <span className="text-xs text-gray-400">
+                            $ {curso.discount_price_usd ?? curso.price_usd}
+                          </span>
+                        </div>
                       </td>
 
                       {/* Matriculados */}

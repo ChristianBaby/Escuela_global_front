@@ -19,7 +19,6 @@ import {
   CheckCircle2,
   Award,
   BarChart3,
-  Infinity as InfinityIcon,
   CalendarDays,
   ArrowLeft,
   ChevronRight,
@@ -50,10 +49,13 @@ const LEVEL_COLOR: Record<string, string> = {
   avanzado: "bg-red-100 text-red-700",
 };
 
-const ACCESS_LABEL: Record<string, string> = {
-  "1_year": "1 año de acceso",
-  lifetime: "Acceso de por vida",
-};
+function formatAccessMonths(months: number) {
+  if (months % 12 === 0) {
+    const years = months / 12;
+    return `${years} ${years === 1 ? "año" : "años"} de acceso`;
+  }
+  return `${months} ${months === 1 ? "mes" : "meses"} de acceso`;
+}
 
 function formatDuration(minutes: number) {
   const h = Math.floor(minutes / 60);
@@ -351,12 +353,13 @@ export default function CourseDetailPage({
   if (isLoading) return <LoadingSkeleton />;
   if (isError || !course) return <CourseNotFound />;
 
-  const displayPrice   = course.discount_price ?? course.price;
-  const hasDiscount    = course.discount_price !== undefined && course.discount_price < course.price;
-  const symbol         = course.currency === "PEN" ? "S/" : "$";
-  const totalSessions  = modules.reduce((s, m) => s + (m.sessions_count ?? 0), 0);
-  const discountPct    = hasDiscount
-    ? Math.round(((course.price - displayPrice) / course.price) * 100)
+  const displayPricePen = course.discount_price_pen ?? course.price_pen;
+  const displayPriceUsd = course.discount_price_usd ?? course.price_usd;
+  const hasDiscountPen  = course.discount_price_pen !== undefined && course.discount_price_pen < course.price_pen;
+  const hasDiscountUsd  = course.discount_price_usd !== undefined && course.discount_price_usd < course.price_usd;
+  const totalSessions   = modules.reduce((s, m) => s + (m.sessions_count ?? 0), 0);
+  const discountPct     = hasDiscountPen
+    ? Math.round(((course.price_pen - displayPricePen) / course.price_pen) * 100)
     : 0;
 
   // ── Sidebar card (reutilizado en hero desktop y content desktop) ────────────
@@ -372,20 +375,32 @@ export default function CourseDetailPage({
 
       <div className="p-5 space-y-4">
         {/* Precio */}
-        <div className="flex items-baseline gap-2 flex-wrap">
-          <span className="text-3xl font-bold text-gray-900">
-            {symbol} {displayPrice.toFixed(2)}
-          </span>
-          {hasDiscount && (
-            <>
-              <span className="text-lg text-gray-400 line-through">
-                {symbol} {course.price.toFixed(2)}
+        <div className="space-y-1">
+          <div className="flex items-baseline gap-2 flex-wrap">
+            <span className="text-3xl font-bold text-gray-900">
+              S/ {displayPricePen.toFixed(2)}
+            </span>
+            {hasDiscountPen && (
+              <>
+                <span className="text-lg text-gray-400 line-through">
+                  S/ {course.price_pen.toFixed(2)}
+                </span>
+                <span className="text-sm font-semibold text-[#23AFE5] ml-auto">
+                  -{discountPct}%
+                </span>
+              </>
+            )}
+          </div>
+          <div className="flex items-baseline gap-2">
+            <span className="text-sm font-medium text-gray-500">
+              $ {displayPriceUsd.toFixed(2)}
+            </span>
+            {hasDiscountUsd && (
+              <span className="text-xs text-gray-400 line-through">
+                $ {course.price_usd.toFixed(2)}
               </span>
-              <span className="text-sm font-semibold text-[#23AFE5] ml-auto">
-                {discountPct}% dto.
-              </span>
-            </>
-          )}
+            )}
+          </div>
         </div>
 
         {/* CTAs */}
@@ -413,11 +428,8 @@ export default function CourseDetailPage({
             {LEVEL_LABEL[course.level] ?? course.level}
           </div>
           <div className="flex items-center gap-2">
-            {course.access_duration === "lifetime"
-              ? <InfinityIcon size={14} className="text-gray-400 shrink-0" />
-              : <CalendarDays size={14} className="text-gray-400 shrink-0" />
-            }
-            {ACCESS_LABEL[course.access_duration] ?? course.access_duration}
+            <CalendarDays size={14} className="text-gray-400 shrink-0" />
+            {formatAccessMonths(course.access_duration_months)}
           </div>
           <div className="flex items-center gap-2">
             <Award size={14} className="text-gray-400 shrink-0" />
@@ -513,11 +525,22 @@ export default function CourseDetailPage({
               )}
 
               {/* Precio + botones mobile */}
-              <div className="flex items-baseline gap-3 lg:hidden">
-                <span className="text-3xl font-bold">{symbol} {displayPrice.toFixed(2)}</span>
-                {hasDiscount && (
-                  <span className="text-lg text-white/50 line-through">{symbol} {course.price.toFixed(2)}</span>
-                )}
+              <div className="lg:hidden space-y-1">
+                <div className="flex items-baseline gap-3">
+                  <span className="text-3xl font-bold">S/ {displayPricePen.toFixed(2)}</span>
+                  {hasDiscountPen && (
+                    <>
+                      <span className="text-lg text-white/50 line-through">S/ {course.price_pen.toFixed(2)}</span>
+                      <span className="text-sm font-semibold text-[#23AFE5]">-{discountPct}%</span>
+                    </>
+                  )}
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-sm text-white/60">$ {displayPriceUsd.toFixed(2)}</span>
+                  {hasDiscountUsd && (
+                    <span className="text-xs text-white/40 line-through">$ {course.price_usd.toFixed(2)}</span>
+                  )}
+                </div>
               </div>
               <div className="flex flex-col sm:flex-row gap-3 lg:hidden">
                 <BuyNowButton course={course} />
@@ -532,10 +555,11 @@ export default function CourseDetailPage({
       {/* ── Barra sticky mobile ────────────────────────────────────────────── */}
       <div className="lg:hidden sticky top-0 z-20 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm">
         <div className="flex items-baseline gap-2">
-          <span className="text-xl font-bold text-gray-900">{symbol} {displayPrice.toFixed(2)}</span>
-          {hasDiscount && (
-            <span className="text-gray-400 line-through text-sm">{symbol} {course.price.toFixed(2)}</span>
+          <span className="text-xl font-bold text-gray-900">S/ {displayPricePen.toFixed(2)}</span>
+          {hasDiscountPen && (
+            <span className="text-gray-400 line-through text-sm">S/ {course.price_pen.toFixed(2)}</span>
           )}
+          <span className="text-xs text-gray-400">· $ {displayPriceUsd.toFixed(2)}</span>
         </div>
         <AddToCartButton course={course} variant="solid" />
       </div>
@@ -594,11 +618,8 @@ export default function CourseDetailPage({
                     {modules.length} módulos · {totalSessions} clases
                   </span>
                   <span className="flex items-center gap-1.5">
-                    {course.access_duration === "lifetime"
-                      ? <InfinityIcon size={15} className="text-[#084D95]" />
-                      : <CalendarDays size={15} className="text-[#084D95]" />
-                    }
-                    {ACCESS_LABEL[course.access_duration] ?? course.access_duration}
+                    <CalendarDays size={15} className="text-[#084D95]" />
+                    {formatAccessMonths(course.access_duration_months)}
                   </span>
                 </div>
               </section>

@@ -35,7 +35,7 @@ export const useCartStore = create<CartState>()(
 
       total: () =>
         get().items.reduce((sum, { course }) => {
-          const price = course.discount_price ?? course.price;
+          const price = course.discount_price_pen ?? course.price_pen;
           return sum + price;
         }, 0),
     }),

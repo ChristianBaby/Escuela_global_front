@@ -85,8 +85,8 @@ export function CartModal({ open, onOpenChange }: CartModalProps) {
             ) : (
               <ul className="space-y-2 pr-1">
                 {items.map(({ course }) => {
-                  const symbol = course.currency === "PEN" ? "S/" : "$";
-                  const price = course.discount_price ?? course.price;
+                  const symbol = "S/";
+                  const price = course.discount_price_pen ?? course.price_pen;
                   return (
                     <li
                       key={course.id}
@@ -144,8 +144,8 @@ export function CartModal({ open, onOpenChange }: CartModalProps) {
               </p>
             ) : (
               courses.map((course) => {
-                const symbol = course.currency === "PEN" ? "S/" : "$";
-                const price = course.discount_price ?? course.price;
+                const symbol = "S/";
+                const price = course.discount_price_pen ?? course.price_pen;
                 const inCart = hasItem(course.id);
                 return (
                   <div
