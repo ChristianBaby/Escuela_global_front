@@ -4,6 +4,7 @@ export interface LoginDto {
   email: string;
   password: string;
   remember_me: boolean;
+  turnstileToken: string;
 }
 
 export interface LoginResponse {
@@ -20,6 +21,7 @@ export interface RegisterDto {
   country?: string;
   profession?: string;
   password: string;
+  turnstileToken: string;
 }
 
 export interface RegisterResponse {
@@ -34,12 +36,13 @@ export interface CheckEmailResponse {
 
 export interface ForgotPasswordDto {
   email: string;
-  captcha_token?: string;
+  turnstileToken: string;
 }
 
 export interface ResetPasswordDto {
   token: string;
   password: string;
+  turnstileToken: string;
 }
 
 export interface VerifyEmailDto {
