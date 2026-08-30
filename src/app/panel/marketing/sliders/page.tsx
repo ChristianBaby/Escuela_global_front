@@ -1,11 +1,46 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { slidersService, eventTypesService, type CreateSliderDto } from "@/lib/services/marketing";
 import { toast } from "sonner";
-import { Upload, X, ImageIcon, Plus, Check } from "lucide-react";
+import { X, ImageIcon, Plus, Check, GripVertical } from "lucide-react";
+import { ImageUploader } from "@/components/molecules";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import { SortableContext, verticalListSortingStrategy, arrayMove, useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import type { Slider } from "@/types";
+
+// ── Fila de tabla arrastrable — el drag solo se activa desde el ícono de agarre ──
+function SortableRow({
+  id,
+  children,
+}: {
+  id: string;
+  children: (drag: { attributes: ReturnType<typeof useSortable>["attributes"]; listeners: ReturnType<typeof useSortable>["listeners"] }) => React.ReactNode;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.6 : 1,
+    position: "relative",
+    zIndex: isDragging ? 10 : undefined,
+    background: isDragging ? "white" : undefined,
+  };
+  return (
+    <tr ref={setNodeRef} style={style} className="hover:bg-gray-50">
+      {children({ attributes, listeners })}
+    </tr>
+  );
+}
 
 const empty: CreateSliderDto = {
   title: "",
@@ -19,123 +54,6 @@ const empty: CreateSliderDto = {
   status: "inactive",
   show_content: true,
 };
-
-// ── Image uploader reutilizable ────────────────────────────────────────────────
-function ImageUploader({
-  value,
-  preview,
-  onChange,
-  onFileSelect,
-  aspectRatio = "16/9",
-  label = "Imagen del slider",
-}: {
-  value: string;
-  preview?: string;
-  onChange: (url: string) => void;
-  onFileSelect?: (file: File) => void;
-  aspectRatio?: string;
-  label?: string;
-}) {
-  const fileRef = useRef<HTMLInputElement>(null);
-  const [dragging, setDragging] = useState(false);
-
-  const handleFile = (file: File) => {
-    if (!file.type.startsWith("image/")) { toast.error("Selecciona un archivo de imagen"); return; }
-    if (file.size > 5 * 1024 * 1024) { toast.error("La imagen no debe superar 5 MB"); return; }
-    if (onFileSelect) {
-      onFileSelect(file);
-    } else {
-      const reader = new FileReader();
-      reader.onload = (e) => onChange((e.target?.result as string) ?? "");
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setDragging(false);
-    const file = e.dataTransfer.files[0];
-    if (file) handleFile(file);
-  };
-
-  const displayPreview = preview || value;
-
-  return (
-    <div className="space-y-2">
-      <label className="text-sm font-medium text-gray-700">{label}</label>
-
-      {displayPreview ? (
-        <div className="relative rounded-xl overflow-hidden border border-gray-200 group">
-          <img
-            src={displayPreview}
-            alt="Vista previa"
-            className="w-full object-cover"
-            style={{ aspectRatio }}
-          />
-          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100">
-            <button
-              type="button"
-              onClick={() => fileRef.current?.click()}
-              className="bg-white text-gray-800 rounded-lg px-3 py-1.5 text-xs font-medium flex items-center gap-1.5 hover:bg-gray-100"
-            >
-              <Upload size={12} /> Cambiar
-            </button>
-            <button
-              type="button"
-              onClick={() => { onChange(""); onFileSelect?.(null as unknown as File); }}
-              className="bg-red-500 text-white rounded-lg px-3 py-1.5 text-xs font-medium flex items-center gap-1.5 hover:bg-red-600"
-            >
-              <X size={12} /> Quitar
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div
-          onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
-          onDragLeave={() => setDragging(false)}
-          onDrop={handleDrop}
-          onClick={() => fileRef.current?.click()}
-          className={`relative border-2 border-dashed rounded-xl cursor-pointer transition-all flex flex-col items-center justify-center gap-3 text-sm
-            ${dragging ? "border-[#084D95] bg-[#084D95]/5" : "border-gray-300 hover:border-[#084D95]/50 hover:bg-gray-50"}`}
-          style={{ aspectRatio, minHeight: "120px" }}
-        >
-          <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-            <ImageIcon size={18} className="text-gray-400" />
-          </div>
-          <div className="text-center">
-            <p className="font-medium text-gray-600">Arrastra aquí o haz clic</p>
-            <p className="text-xs text-gray-400 mt-0.5">PNG, JPG, WEBP · máx. 5 MB</p>
-          </div>
-        </div>
-      )}
-
-      <input
-        ref={fileRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = ""; }}
-      />
-
-      {!onFileSelect && (
-        <>
-          <div className="flex items-center gap-2">
-            <div className="h-px flex-1 bg-gray-200" />
-            <span className="text-xs text-gray-400">o pega una URL</span>
-            <div className="h-px flex-1 bg-gray-200" />
-          </div>
-          <input
-            type="url"
-            placeholder="https://..."
-            value={value.startsWith("data:") ? "" : value}
-            onChange={(e) => onChange(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#084D95]/30"
-          />
-        </>
-      )}
-    </div>
-  );
-}
 
 // ── Página principal ───────────────────────────────────────────────────────────
 export default function SlidersPage() {
@@ -153,6 +71,11 @@ export default function SlidersPage() {
     queryKey: ["sliders"],
     queryFn: slidersService.list,
   });
+
+  // Excluimos type "catalog" — esos se administran en Banner Catálogo, no acá
+  const homeSliders = (sliders ?? [])
+    .filter((s) => s.type !== "catalog")
+    .sort((a, b) => a.display_order - b.display_order);
 
   const { data: eventTypes = [] } = useQuery({
     queryKey: ["event-types"],
@@ -181,6 +104,38 @@ export default function SlidersPage() {
     mutationFn: ({ id, file }: { id: string; file: File }) => slidersService.uploadImage(id, file),
     onError: (err: unknown) => toast.error((err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? "Error subiendo imagen"),
   });
+
+  // Mutación silenciosa para el reorden por drag & drop — sin toast ni cerrar el modal en cada fila movida
+  const reorderMutation = useMutation({
+    mutationFn: ({ id, display_order }: { id: string; display_order: number }) =>
+      slidersService.update(id, { display_order }),
+    onError: () => toast.error("No se pudo guardar el nuevo orden"),
+  });
+
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = homeSliders.findIndex((s) => s.id === active.id);
+    const newIndex = homeSliders.findIndex((s) => s.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const reordered = arrayMove(homeSliders, oldIndex, newIndex);
+
+    queryClient.setQueryData<Slider[]>(["sliders"], (old) => {
+      if (!old) return old;
+      const newOrder = new Map(reordered.map((s, idx) => [s.id, idx]));
+      return old.map((s) => (newOrder.has(s.id) ? { ...s, display_order: newOrder.get(s.id)! } : s));
+    });
+
+    reordered.forEach((s, idx) => {
+      if (s.display_order !== idx) {
+        reorderMutation.mutate({ id: s.id, display_order: idx });
+      }
+    });
+  };
 
   const createEventTypeMutation = useMutation({
     mutationFn: eventTypesService.create,
@@ -277,50 +232,71 @@ export default function SlidersPage() {
           <div className="p-8 text-center text-red-500 text-sm">Error al cargar sliders</div>
         ) : (
           <div className="overflow-x-auto">
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
+                <th className="w-8"></th>
                 <th className="text-left px-4 py-3 text-gray-600 font-medium w-16">Vista</th>
                 <th className="text-left px-4 py-3 text-gray-600 font-medium">Título</th>
                 <th className="text-left px-4 py-3 text-gray-600 font-medium">Estado</th>
                 <th className="text-right px-4 py-3 text-gray-600 font-medium">Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
-              {sliders?.length === 0 ? (
-                <tr><td colSpan={4} className="text-center py-8 text-gray-400">Sin sliders</td></tr>
-              ) : (
-                sliders?.map((s) => (
-                  <tr key={s.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3">
-                      {s.image_url ? (
-                        <img src={s.image_url} alt="" className="w-16 h-10 object-cover rounded-lg bg-gray-100" />
-                      ) : (
-                        <div className="w-16 h-10 rounded-lg bg-gradient-to-br from-[#084D95]/20 to-[#23AFE5]/20 flex items-center justify-center">
-                          <ImageIcon size={14} className="text-[#084D95]/50" />
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 font-medium text-gray-900">{s.title}</td>
-                    <td className="px-4 py-3">
-                      <button
-                        onClick={() => toggleStatus(s)}
-                        className={`text-xs px-2 py-1 rounded-full transition-colors ${
-                          s.status === "active" ? "bg-green-50 text-green-700 hover:bg-green-100" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                        }`}
-                      >
-                        {s.status === "active" ? "Activo" : "Inactivo"}
-                      </button>
-                    </td>
-                    <td className="px-4 py-3 text-right space-x-3">
-                      <button onClick={() => openEdit(s)} className="text-[#084D95] hover:underline text-xs">Editar</button>
-                      <button onClick={() => setConfirmDelete(s.id)} className="text-red-500 hover:underline text-xs">Eliminar</button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
+            {homeSliders.length === 0 ? (
+              <tbody className="divide-y divide-gray-100">
+                <tr><td colSpan={5} className="text-center py-8 text-gray-400">Sin sliders</td></tr>
+              </tbody>
+            ) : (
+                <SortableContext items={homeSliders.map((s) => s.id)} strategy={verticalListSortingStrategy}>
+                  <tbody className="divide-y divide-gray-100">
+                    {homeSliders.map((s) => (
+                      <SortableRow key={s.id} id={s.id}>
+                        {({ attributes, listeners }) => (
+                          <>
+                            <td className="pl-3">
+                              <button
+                                {...attributes}
+                                {...listeners}
+                                className="cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 touch-none"
+                                aria-label="Arrastrar para reordenar"
+                              >
+                                <GripVertical size={16} />
+                              </button>
+                            </td>
+                            <td className="px-4 py-3">
+                              {s.image_url ? (
+                                <img src={s.image_url} alt="" className="w-16 h-10 object-cover rounded-lg bg-gray-100" />
+                              ) : (
+                                <div className="w-16 h-10 rounded-lg bg-gradient-to-br from-[#084D95]/20 to-[#23AFE5]/20 flex items-center justify-center">
+                                  <ImageIcon size={14} className="text-[#084D95]/50" />
+                                </div>
+                              )}
+                            </td>
+                            <td className="px-4 py-3 font-medium text-gray-900">{s.title}</td>
+                            <td className="px-4 py-3">
+                              <button
+                                onClick={() => toggleStatus(s)}
+                                className={`text-xs px-2 py-1 rounded-full transition-colors ${
+                                  s.status === "active" ? "bg-green-50 text-green-700 hover:bg-green-100" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                                }`}
+                              >
+                                {s.status === "active" ? "Activo" : "Inactivo"}
+                              </button>
+                            </td>
+                            <td className="px-4 py-3 text-right space-x-3">
+                              <button onClick={() => openEdit(s)} className="text-[#084D95] hover:underline text-xs">Editar</button>
+                              <button onClick={() => setConfirmDelete(s.id)} className="text-red-500 hover:underline text-xs">Eliminar</button>
+                            </td>
+                          </>
+                        )}
+                      </SortableRow>
+                    ))}
+                  </tbody>
+                </SortableContext>
+            )}
           </table>
+          </DndContext>
           </div>
         )}
       </div>
@@ -439,7 +415,8 @@ export default function SlidersPage() {
               </div>
 
               <ImageUploader
-                label="Imagen del banner (fondo del slide)"
+                label="Imagen del banner (fondo del slide en el home)"
+                hint="Tamaño recomendado: 1600 × 900 px (o 1920 × 1080 — lo importante es la proporción 16:9, que es la que usa el Hero del home a pantalla casi completa)"
                 value={form.image_url ?? ""}
                 preview={imagePreview}
                 onChange={(url) => setForm({ ...form, image_url: url })}
@@ -447,7 +424,7 @@ export default function SlidersPage() {
                   setImageFile(file);
                   setImagePreview(URL.createObjectURL(file));
                 }}
-                aspectRatio="16/5"
+                aspectRatio="16/9"
               />
 
               {/* Link asesor comercial (WhatsApp) */}

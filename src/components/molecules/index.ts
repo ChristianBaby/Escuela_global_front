@@ -4,3 +4,4 @@ export { TurnstileWidget } from "./TurnstileWidget";
 export { CourseCard, CourseCardSkeleton } from "./CourseCard";
 export { SearchBar } from "./SearchBar";
 export { WhatsAppButton } from "./WhatsAppButton";
+export { ImageUploader } from "./ImageUploader";
