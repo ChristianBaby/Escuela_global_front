@@ -1,10 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Autoplay, Navigation } from "swiper/modules";
+import "swiper/css";
+import "swiper/css/navigation";
 import {
   ShoppingCart,
   Trash2,
@@ -12,6 +16,8 @@ import {
   BookOpen,
   ShoppingBag,
   ArrowRight,
+  ChevronLeft,
+  ChevronRight,
   Clock,
   Star,
   Plus,
@@ -46,6 +52,8 @@ export default function CarritoPage() {
   const queryClient = useQueryClient();
   const { isAuthenticated } = useAuthStore();
   const [guestSessionToken] = useState(() => getGuestSessionToken());
+  const catalogPrevRef = useRef<HTMLButtonElement>(null);
+  const catalogNextRef = useRef<HTMLButtonElement>(null);
 
   // Espejo local (localStorage) para feedback instantáneo en la UI
   const {
@@ -346,18 +354,58 @@ export default function CarritoPage() {
               <p className="text-gray-600 font-medium">Ya tienes todos los cursos disponibles en tu carrito</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {(displayItems.length === 0 ? allCourses : suggestedCourses).map((course) => (
-                <CatalogCourseCard
-                  key={course.id}
-                  course={course}
-                  inCart={cartCourseIds.has(course.id)}
-                  onAdd={() => handleAddFromCatalog(course)}
-                  adding={
-                    serverAddMutation.isPending && serverAddMutation.variables === course.id
+            <div className="relative">
+              <Swiper
+                modules={[Autoplay, Navigation]}
+                autoplay={{ delay: 4000, disableOnInteraction: false }}
+                navigation
+                onBeforeInit={(swiper) => {
+                  const nav = swiper.params.navigation;
+                  if (nav && typeof nav !== "boolean") {
+                    nav.prevEl = catalogPrevRef.current;
+                    nav.nextEl = catalogNextRef.current;
                   }
-                />
-              ))}
+                }}
+                loop={(displayItems.length === 0 ? allCourses : suggestedCourses).length > 4}
+                centerInsufficientSlides
+                spaceBetween={16}
+                slidesPerView={1}
+                breakpoints={{
+                  640: { slidesPerView: 2, spaceBetween: 16 },
+                  // A 1024px muchos laptops "normales" (con escalado de Windows)
+                  // ya quedan por debajo de 1280px CSS reales.
+                  1024: { slidesPerView: 4, spaceBetween: 16 },
+                }}
+                className="!pb-2"
+              >
+                {(displayItems.length === 0 ? allCourses : suggestedCourses).map((course) => (
+                  <SwiperSlide key={course.id} className="h-auto py-1">
+                    <CatalogCourseCard
+                      course={course}
+                      inCart={cartCourseIds.has(course.id)}
+                      onAdd={() => handleAddFromCatalog(course)}
+                      adding={
+                        serverAddMutation.isPending && serverAddMutation.variables === course.id
+                      }
+                    />
+                  </SwiperSlide>
+                ))}
+              </Swiper>
+
+              <button
+                ref={catalogPrevRef}
+                aria-label="Anterior"
+                className="absolute -left-4 sm:left-0 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full backdrop-blur-sm transition-all flex items-center justify-center bg-white text-[#084D95] border border-gray-200 shadow-md hover:bg-gray-50 [&.swiper-button-disabled]:opacity-0 [&.swiper-button-disabled]:pointer-events-none"
+              >
+                <ChevronLeft size={22} />
+              </button>
+              <button
+                ref={catalogNextRef}
+                aria-label="Siguiente"
+                className="absolute -right-4 sm:right-0 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full backdrop-blur-sm transition-all flex items-center justify-center bg-white text-[#084D95] border border-gray-200 shadow-md hover:bg-gray-50 [&.swiper-button-disabled]:opacity-0 [&.swiper-button-disabled]:pointer-events-none"
+              >
+                <ChevronRight size={22} />
+              </button>
             </div>
           )}
         </section>
