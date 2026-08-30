@@ -127,6 +127,12 @@ const NAV_SECTIONS: NavSection[] = [
         roles: ["admin", "marketing"],
       },
       {
+        label: "Banner Catálogo",
+        href: "/panel/marketing/banner-catalogo",
+        icon: <ImageIcon size={18} />,
+        roles: ["admin", "marketing"],
+      },
+      {
         label: "Próximos Lanzamientos",
         href: "/panel/marketing/lanzamientos",
         icon: <Rocket size={18} />,
