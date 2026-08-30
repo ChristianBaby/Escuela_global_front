@@ -27,6 +27,7 @@ import {
 import { PublicLayout } from "@/components/templates";
 import { Skeleton } from "@/components/atoms";
 import { StarRating } from "@/components/atoms";
+import { CourseCarousel } from "@/components/organisms";
 import { cursosService } from "@/lib/services/courses";
 import { cartService } from "@/lib/services/cart";
 import { useCartStore } from "@/store/cartStore";
@@ -281,28 +282,30 @@ function ReviewCard({ review }: { review: ReviewPreview }) {
 function LoadingSkeleton() {
   return (
     <PublicLayout>
-      <div className="bg-[#084D95] py-12">
+      <div className="bg-[#084D95] py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <Skeleton className="h-4 w-40 mb-5 bg-white/10" />
-          <Skeleton className="h-9 w-2/3 mb-3 bg-white/10" />
-          <Skeleton className="h-5 w-1/2 mb-6 bg-white/10" />
-          <Skeleton className="h-4 w-64 bg-white/10" />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 lg:items-start">
+            <div className="lg:col-span-2">
+              <Skeleton className="h-4 w-40 mb-5 bg-white/10" />
+              <Skeleton className="h-9 w-2/3 mb-3 bg-white/10" />
+              <Skeleton className="h-5 w-1/2 mb-6 bg-white/10" />
+              <Skeleton className="h-4 w-64 bg-white/10" />
+            </div>
+            <div className="hidden lg:block">
+              <Skeleton className="h-96 rounded-xl bg-white/10" />
+            </div>
+          </div>
         </div>
       </div>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-6">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-white rounded-xl border border-gray-200 p-6 space-y-3">
-                <Skeleton className="h-5 w-1/3" />
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-3/4" />
-              </div>
-            ))}
-          </div>
-          <div className="hidden lg:block">
-            <Skeleton className="h-96 rounded-xl" />
-          </div>
+        <div className="max-w-4xl space-y-6">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="bg-white rounded-xl border border-gray-200 p-6 space-y-3">
+              <Skeleton className="h-5 w-1/3" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-3/4" />
+            </div>
+          ))}
         </div>
       </div>
     </PublicLayout>
@@ -350,6 +353,14 @@ export default function CourseDetailPage({
     staleTime: 2 * 60_000,
   });
 
+  // "Cursos relacionados" — mismo criterio de relevancia que en el carrito:
+  // misma categoría, software en común, o que esté en descuento.
+  const { data: catalogData, isLoading: loadingRelated } = useQuery({
+    queryKey: ["catalog-for-related"],
+    queryFn: () => cursosService.list({ limit: 60 }),
+    staleTime: 60_000,
+  });
+
   if (isLoading) return <LoadingSkeleton />;
   if (isError || !course) return <CourseNotFound />;
 
@@ -361,6 +372,22 @@ export default function CourseDetailPage({
   const discountPct     = hasDiscountPen
     ? Math.round(((course.price_pen - displayPricePen) / course.price_pen) * 100)
     : 0;
+
+  // Relevancia: misma categoría (+3), cada software en común (+1), en descuento (+1) —
+  // igual que en /carrito, pero relativo a ESTE curso en vez de a los del carrito.
+  const courseSoftware = new Set(course.software_tools ?? []);
+  const relatedScore = (candidate: Course): number => {
+    let score = 0;
+    if (candidate.category_id === course.category_id) score += 3;
+    const sharedSoftware = candidate.software_tools?.filter((s) => courseSoftware.has(s)).length ?? 0;
+    score += sharedSoftware;
+    if (candidate.discount_price_pen !== undefined && candidate.discount_price_pen < candidate.price_pen) score += 1;
+    return score;
+  };
+  const relatedCourses = (catalogData?.data ?? [])
+    .filter((c) => c.id !== course.id)
+    .sort((a, b) => relatedScore(b) - relatedScore(a))
+    .slice(0, 8);
 
   // ── Sidebar card (reutilizado en hero desktop y content desktop) ────────────
   const SidebarCard = (
@@ -458,93 +485,222 @@ export default function CourseDetailPage({
 
   return (
     <PublicLayout>
-      {/* ── Hero full-width ───────────────────────────────────────────────── */}
-      <div className="bg-[#084D95] text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-          <div className="space-y-4">
+      {/* ── Hero + contenido, en un solo grid continuo ──────────────────────
+          En desktop el azul es una capa de fondo de alto fijo (~300px) detrás del
+          bloque de texto, para que la tarjeta (más alta) sobresalga hacia el blanco.
+          En mobile no hay tarjeta al lado (va aparte, hidden lg:block), así que ahí
+          el azul simplemente envuelve el bloque de texto con su alto natural — nada
+          de adivinar un número fijo, porque en mobile ese bloque incluye también la
+          imagen del curso y es más alto que en desktop.
+          La columna de texto+contenido y la tarjeta comparten la MISMA fila del grid,
+          así el sticky tiene toda esa altura para seguir pegado durante el scroll. */}
+      <div className="relative">
+        <div className="hidden lg:block absolute inset-x-0 top-0 h-[300px] bg-[#084D95]" />
 
-            {/* Info del curso */}
-            <div className="space-y-4">
-              {/* Breadcrumb */}
-              <nav className="flex items-center gap-1.5 text-xs text-white/50">
-                <Link href="/cursos" className="hover:text-white transition-colors flex items-center gap-1">
-                  <ArrowLeft size={12} />
-                  Cursos
-                </Link>
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-0 pb-8 lg:pt-8">
+          {/* Sin items-start: la celda de la tarjeta debe estirarse (stretch, el default) a
+              todo el alto de la fila para que el sticky de adentro tenga espacio donde pegarse */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 lg:gap-8">
+
+            {/* Columna izquierda — texto del hero + todo el contenido del curso */}
+            <div className="lg:col-span-2 space-y-10">
+
+              {/* Bloque de texto del hero — en mobile lleva su propio fondo azul (alto natural,
+                  bordes a bordes vía margen negativo); en desktop es transparente porque el
+                  rectángulo de arriba ya pinta el fondo detrás de todo el grid */}
+              <div className="-mx-4 sm:-mx-6 px-4 sm:px-6 pt-2 pb-6 lg:mx-0 lg:px-0 lg:pt-0 lg:pb-0 bg-[#084D95] lg:bg-transparent text-white space-y-4">
+                {/* Imagen del curso — solo mobile (en desktop ya se ve en la tarjeta de al lado) */}
+                <div className="lg:hidden h-48 sm:h-56 rounded-xl overflow-hidden bg-white/10 flex items-center justify-center">
+                  {course.thumbnail_url ? (
+                    <img src={course.thumbnail_url} alt={course.title} className="w-full h-full object-cover" />
+                  ) : (
+                    <BookOpen size={40} className="text-white/30" />
+                  )}
+                </div>
+
+                {/* Breadcrumb */}
+                <nav className="flex items-center gap-1.5 text-xs text-white/50">
+                  <Link href="/cursos" className="hover:text-white transition-colors flex items-center gap-1">
+                    <ArrowLeft size={12} />
+                    Cursos
+                  </Link>
+                  {course.category && (
+                    <>
+                      <ChevronRight size={12} />
+                      <span className="text-white/50">{course.category.name}</span>
+                    </>
+                  )}
+                  <ChevronRight size={12} />
+                  <span className="text-white/70 truncate max-w-xs">{course.title}</span>
+                </nav>
+
+                {/* Categoría */}
                 {course.category && (
-                  <>
-                    <ChevronRight size={12} />
-                    <span className="text-white/50">{course.category.name}</span>
-                  </>
+                  <span className="inline-block bg-[#23AFE5] text-white text-xs font-semibold px-3 py-1 rounded-full">
+                    {course.category.name}
+                  </span>
                 )}
-                <ChevronRight size={12} />
-                <span className="text-white/70 truncate max-w-xs">{course.title}</span>
-              </nav>
 
-              {/* Categoría */}
-              {course.category && (
-                <span className="inline-block bg-[#23AFE5] text-white text-xs font-semibold px-3 py-1 rounded-full">
-                  {course.category.name}
-                </span>
+                {/* Título y tagline */}
+                <h1 className="text-2xl sm:text-3xl font-bold leading-tight text-white">{course.title}</h1>
+                <p className="text-white/80 text-base leading-relaxed">{course.tagline}</p>
+
+                {/* Stats */}
+                <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-bold text-yellow-400">{course.avg_rating.toFixed(1)}</span>
+                    <StarRating rating={course.avg_rating} size={13} />
+                    <span className="text-white/50">({course.review_count.toLocaleString("es")} reseñas)</span>
+                  </div>
+                  <span className="flex items-center gap-1.5 text-white/60">
+                    <Users size={14} />
+                    {course.enrolled_count.toLocaleString("es")} estudiantes
+                  </span>
+                  <span className="flex items-center gap-1.5 text-white/60">
+                    <Clock size={14} />
+                    {formatDuration(course.total_duration_minutes)}
+                  </span>
+                  <span className={`px-2 py-0.5 rounded text-xs font-medium ${LEVEL_COLOR[course.level]}`}>
+                    {LEVEL_LABEL[course.level]}
+                  </span>
+                </div>
+
+                {/* Instructores */}
+                {course.instructors.length > 0 && (
+                  <p className="text-sm text-white/55">
+                    {course.instructors.length === 1 ? "Docente" : "Docentes"}:{" "}
+                    {course.instructors.map((inst, idx) => (
+                      <span key={inst.id} className="text-[#23AFE5] font-medium">
+                        {inst.full_name}{idx < course.instructors.length - 1 ? ", " : ""}
+                      </span>
+                    ))}
+                  </p>
+                )}
+              </div>
+
+              {/* Barra sticky mobile — precio + compra. Va justo aquí (no al final) para que su
+                  posición natural en el documento quede al principio del contenido: así el
+                  sticky "atrapa" apenas se sale el hero y se mantiene pegada durante TODO el
+                  scroll de "Lo que aprenderás"...Instructores, no solo justo antes del footer. */}
+              <div className="-mx-4 sm:-mx-6 lg:hidden sticky top-0 z-20 bg-white border-b border-gray-200 px-4 py-3 shadow-sm space-y-2">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-lg font-bold text-gray-900">S/ {displayPricePen.toFixed(2)}</span>
+                  {hasDiscountPen && (
+                    <span className="text-gray-400 line-through text-xs">S/ {course.price_pen.toFixed(2)}</span>
+                  )}
+                  <span className="text-xs text-gray-400">· $ {displayPriceUsd.toFixed(2)}</span>
+                </div>
+                <div className="flex gap-2">
+                  <BuyNowButton course={course} />
+                  <AddToCartButton course={course} variant="solid" />
+                </div>
+              </div>
+
+              {/* Lo que aprenderás */}
+              {course.outcomes.length > 0 && (
+                <section className="bg-white rounded-xl border border-gray-200 p-6">
+                  <h2 className="text-lg font-semibold text-brand-primary mb-4">Lo que aprenderás</h2>
+                  <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {course.outcomes.map((o, i) => (
+                      <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
+                        <CheckCircle2 size={16} className="text-[#084D95] shrink-0 mt-0.5" />
+                        {o}
+                      </li>
+                    ))}
+                  </ul>
+                </section>
               )}
 
-              {/* Título y tagline */}
-              <h1 className="text-2xl sm:text-3xl font-bold leading-tight text-white">{course.title}</h1>
-              <p className="text-white/80 text-base leading-relaxed">{course.tagline}</p>
+              {/* Requisitos */}
+              {course.prerequisites.length > 0 && (
+                <section>
+                  <h2 className="text-lg font-semibold text-brand-primary mb-3">Requisitos previos</h2>
+                  <ul className="space-y-2">
+                    {course.prerequisites.map((p, i) => (
+                      <li key={i} className="flex items-start gap-2 text-sm text-gray-600">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#084D95] shrink-0 mt-1.5" />
+                        {p}
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
 
-              {/* Stats */}
-              <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
-                <div className="flex items-center gap-1.5">
-                  <span className="font-bold text-yellow-400">{course.avg_rating.toFixed(1)}</span>
-                  <StarRating rating={course.avg_rating} size={13} />
-                  <span className="text-white/50">({course.review_count.toLocaleString("es")} reseñas)</span>
-                </div>
-                <span className="flex items-center gap-1.5 text-white/60">
-                  <Users size={14} />
-                  {course.enrolled_count.toLocaleString("es")} estudiantes
-                </span>
-                <span className="flex items-center gap-1.5 text-white/60">
-                  <Clock size={14} />
-                  {formatDuration(course.total_duration_minutes)}
-                </span>
-                <span className={`px-2 py-0.5 rounded text-xs font-medium ${LEVEL_COLOR[course.level]}`}>
-                  {LEVEL_LABEL[course.level]}
-                </span>
-              </div>
+              {/* Descripción */}
+              {course.description && (
+                <section>
+                  <h2 className="text-lg font-semibold text-brand-primary mb-3">Acerca del curso</h2>
+                  <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">
+                    {course.description}
+                  </p>
+                  <div className="mt-4 flex flex-wrap gap-4 text-sm text-gray-600">
+                    <span className="flex items-center gap-1.5">
+                      <Clock size={15} className="text-[#084D95]" />
+                      {formatDuration(course.total_duration_minutes)} de contenido
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <BookOpen size={15} className="text-[#084D95]" />
+                      {modules.length} módulos · {totalSessions} clases
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <CalendarDays size={15} className="text-[#084D95]" />
+                      {formatAccessMonths(course.access_duration_months)}
+                    </span>
+                  </div>
+                </section>
+              )}
+
+              {/* Curriculum */}
+              <section>
+                <h2 className="text-lg font-semibold text-brand-primary mb-1">Contenido del curso</h2>
+                {!modulesLoading && modules.length > 0 && (
+                  <p className="text-sm text-gray-500 mb-4">
+                    {modules.length} módulos · {totalSessions} clases · {formatDuration(course.total_duration_minutes)} en total
+                  </p>
+                )}
+                {modulesLoading ? (
+                  <div className="space-y-2">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                      <Skeleton key={i} className="h-14 rounded-lg" />
+                    ))}
+                  </div>
+                ) : modules.length === 0 ? (
+                  <p className="text-sm text-gray-400 py-4">
+                    El contenido estará disponible próximamente.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {modules.map((m) => (
+                      <ModuleItem key={m.id} module={m} />
+                    ))}
+                  </div>
+                )}
+              </section>
 
               {/* Instructores */}
               {course.instructors.length > 0 && (
-                <p className="text-sm text-white/55">
-                  {course.instructors.length === 1 ? "Docente" : "Docentes"}:{" "}
-                  {course.instructors.map((inst, idx) => (
-                    <span key={inst.id} className="text-[#23AFE5] font-medium">
-                      {inst.full_name}{idx < course.instructors.length - 1 ? ", " : ""}
-                    </span>
-                  ))}
-                </p>
+                <section>
+                  <h2 className="text-lg font-semibold text-brand-primary mb-4">
+                    {course.instructors.length === 1 ? "Docente" : "Docentes"}
+                  </h2>
+                  <div className="space-y-4">
+                    {course.instructors.map((inst) => (
+                      <InstructorCard key={inst.id} instructor={inst} />
+                    ))}
+                  </div>
+                </section>
               )}
 
-              {/* Precio + botones mobile */}
-              <div className="lg:hidden space-y-1">
-                <div className="flex items-baseline gap-3">
-                  <span className="text-3xl font-bold">S/ {displayPricePen.toFixed(2)}</span>
-                  {hasDiscountPen && (
-                    <>
-                      <span className="text-lg text-white/50 line-through">S/ {course.price_pen.toFixed(2)}</span>
-                      <span className="text-sm font-semibold text-[#23AFE5]">-{discountPct}%</span>
-                    </>
-                  )}
-                </div>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-sm text-white/60">$ {displayPriceUsd.toFixed(2)}</span>
-                  {hasDiscountUsd && (
-                    <span className="text-xs text-white/40 line-through">$ {course.price_usd.toFixed(2)}</span>
-                  )}
-                </div>
-              </div>
-              <div className="flex flex-col sm:flex-row gap-3 lg:hidden">
-                <BuyNowButton course={course} />
-                <AddToCartButton course={course} />
+            </div>
+
+            {/* Columna derecha — tarjeta de imagen + precio + compra, solo desktop.
+                Termina justo con la columna izquierda (hero...Instructores) — "Cursos
+                relacionados" queda AFUERA de este grid a propósito, para que el
+                contenedor del sticky no se extienda hasta ahí y la tarjeta deje de
+                aparecer apenas se llega a esa sección. */}
+            <div className="hidden lg:block">
+              <div className="sticky top-6">
+                {SidebarCard}
               </div>
             </div>
 
@@ -552,129 +708,23 @@ export default function CourseDetailPage({
         </div>
       </div>
 
-      {/* ── Barra sticky mobile ────────────────────────────────────────────── */}
-      <div className="lg:hidden sticky top-0 z-20 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm">
-        <div className="flex items-baseline gap-2">
-          <span className="text-xl font-bold text-gray-900">S/ {displayPricePen.toFixed(2)}</span>
-          {hasDiscountPen && (
-            <span className="text-gray-400 line-through text-sm">S/ {course.price_pen.toFixed(2)}</span>
-          )}
-          <span className="text-xs text-gray-400">· $ {displayPriceUsd.toFixed(2)}</span>
+      {/* Cursos relacionados — fuera del grid de arriba a propósito, para que la
+          tarjeta de compra no siga apareciendo una vez que se llega hasta acá.
+          Carrusel (mismo que "Cursos más populares" del home) — 4 visibles, deslizable
+          si hay más. arrowsTheme="light" porque acá el fondo es blanco, no oscuro. */}
+      {(loadingRelated || relatedCourses.length > 0) && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-10">
+          <section>
+            <h2 className="text-lg font-semibold text-brand-primary mb-4">Cursos relacionados</h2>
+            <CourseCarousel
+              courses={relatedCourses}
+              loading={loadingRelated}
+              skeletonCount={4}
+              arrowsTheme="light"
+            />
+          </section>
         </div>
-        <AddToCartButton course={course} variant="solid" />
-      </div>
-
-      {/* ── Contenido principal + sidebar sticky ──────────────────────────── */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-          {/* Columna izquierda */}
-          <div className="lg:col-span-2 space-y-10">
-
-            {/* Lo que aprenderás */}
-            {course.outcomes.length > 0 && (
-              <section className="bg-white rounded-xl border border-gray-200 p-6">
-                <h2 className="text-lg font-semibold text-brand-primary mb-4">Lo que aprenderás</h2>
-                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {course.outcomes.map((o, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
-                      <CheckCircle2 size={16} className="text-[#084D95] shrink-0 mt-0.5" />
-                      {o}
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
-
-            {/* Requisitos */}
-            {course.prerequisites.length > 0 && (
-              <section>
-                <h2 className="text-lg font-semibold text-brand-primary mb-3">Requisitos previos</h2>
-                <ul className="space-y-2">
-                  {course.prerequisites.map((p, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-gray-600">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#084D95] shrink-0 mt-1.5" />
-                      {p}
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
-
-            {/* Descripción */}
-            {course.description && (
-              <section>
-                <h2 className="text-lg font-semibold text-brand-primary mb-3">Acerca del curso</h2>
-                <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">
-                  {course.description}
-                </p>
-                <div className="mt-4 flex flex-wrap gap-4 text-sm text-gray-600">
-                  <span className="flex items-center gap-1.5">
-                    <Clock size={15} className="text-[#084D95]" />
-                    {formatDuration(course.total_duration_minutes)} de contenido
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <BookOpen size={15} className="text-[#084D95]" />
-                    {modules.length} módulos · {totalSessions} clases
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <CalendarDays size={15} className="text-[#084D95]" />
-                    {formatAccessMonths(course.access_duration_months)}
-                  </span>
-                </div>
-              </section>
-            )}
-
-            {/* Curriculum */}
-            <section>
-              <h2 className="text-lg font-semibold text-brand-primary mb-1">Contenido del curso</h2>
-              {!modulesLoading && modules.length > 0 && (
-                <p className="text-sm text-gray-500 mb-4">
-                  {modules.length} módulos · {totalSessions} clases · {formatDuration(course.total_duration_minutes)} en total
-                </p>
-              )}
-              {modulesLoading ? (
-                <div className="space-y-2">
-                  {Array.from({ length: 4 }).map((_, i) => (
-                    <Skeleton key={i} className="h-14 rounded-lg" />
-                  ))}
-                </div>
-              ) : modules.length === 0 ? (
-                <p className="text-sm text-gray-400 py-4">
-                  El contenido estará disponible próximamente.
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  {modules.map((m) => (
-                    <ModuleItem key={m.id} module={m} />
-                  ))}
-                </div>
-              )}
-            </section>
-
-            {/* Instructores */}
-            {course.instructors.length > 0 && (
-              <section>
-                <h2 className="text-lg font-semibold text-brand-primary mb-4">
-                  {course.instructors.length === 1 ? "Docente" : "Docentes"}
-                </h2>
-                <div className="space-y-4">
-                  {course.instructors.map((inst) => (
-                    <InstructorCard key={inst.id} instructor={inst} />
-                  ))}
-                </div>
-              </section>
-            )}
-          </div>
-
-          {/* Sidebar sticky */}
-          <div className="hidden lg:block">
-            <div className="sticky top-6">
-              {SidebarCard}
-            </div>
-          </div>
-        </div>
-      </div>
+      )}
     </PublicLayout>
   );
 }
