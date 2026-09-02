@@ -3,6 +3,7 @@ import { Logo, Separator } from "@/components/atoms";
 import { Globe, Video, Camera, Briefcase } from "lucide-react";
 
 const LINKS = {
+  
   cursos: [
     { label: "Catálogo completo", href: "/cursos" },
     { label: "Estadística y Software", href: "/cursos?category=estadistica" },
@@ -15,10 +16,13 @@ const LINKS = {
     { label: "Recuperar contraseña", href: "/auth/forgot-password" },
   ],
   // 🚀 RUTAS INSTITUCIONALES Y LEGALES CENTRALIZADAS
+  // Dentro del objeto LINKS en Footer.tsx:
   institucional: [
+    { label: "Sobre Nosotros", href: "/institucional/nosotros" },
+    { label: "Contáctanos", href: "/institucional/contacto" }, // 🚀 Nuevo enlace
     { label: "Política de devoluciones", href: "/institucional/politica-de-devoluciones" },
-  { label: "Términos y condiciones", href: "/institucional/terminos-y-condiciones" },
-  { label: "Políticas de privacidad", href: "/institucional/politicas-de-privacidad" },
+    { label: "Términos y condiciones", href: "/institucional/terminos-y-condiciones" },
+    { label: "Políticas de privacidad", href: "/institucional/politicas-de-privacidad" },
   ],
 };
 
@@ -40,6 +44,9 @@ export function Footer() {
             <p className="text-sm leading-relaxed text-white">
               Plataforma especializada en formación profesional de alta calidad. Crece, globaliza y
               profesionalízate.
+              <br></br>
+              <br></br>
+              Cal. Juan Espinoza Medrano Nro Q-13 Dpto 303, Urb. Rosaspata (Edificio Ais Automation, Int 302 N 258) Wanchaq - Cusco - Perú
             </p>
             <div className="flex gap-3 pt-1">
               {SOCIAL.map(({ label, icon: Icon, href }) => (
