@@ -70,7 +70,7 @@ There are no `(soporte)`, `(marketing)`, or `(admin)` route groups — all three
 | `src/store/authStore.ts` | Zustand — user session, `hasRole()` helper |
 | `src/store/cartStore.ts` | Zustand — cart items, persisted to localStorage |
 | `src/types/index.ts` | All TypeScript types derived from the data model |
-| `.env.local` | `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` |
+| `.env.local` | `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY` |
 
 ## Architecture
 

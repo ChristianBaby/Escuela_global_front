@@ -20,7 +20,7 @@ import {
 import { useCartStore } from "@/store/cartStore";
 import { useAuthStore } from "@/store/authStore";
 import { PublicLayout } from "@/components/templates";
-import { FormField, PasswordField } from "@/components/molecules";
+import { FormField, PasswordField, TurnstileWidget } from "@/components/molecules";
 import { Button, Label } from "@/components/atoms";
 import { MercadoPagoBrick } from "@/components/organisms/MercadoPagoBrick";
 import { PayPalButtonComponent } from "@/components/organisms/PayPalButtonComponent";
@@ -74,6 +74,8 @@ export default function CheckoutPage() {
   const [order, setOrder] = useState<{ id: string; total: number; currency: string } | null>(null);
   const [creatingOrder, setCreatingOrder] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<"paypal" | "mercado_pago" | "culqi">("mercado_pago");
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileKey, setTurnstileKey] = useState(0);
 
   const {
     register,
@@ -105,12 +107,12 @@ export default function CheckoutPage() {
       ? cartItemsRaw.map((i: any) => ({
           id: i.courseId ?? i.course?.id ?? i.course_id,
           title: i.title ?? i.course?.title ?? "Curso",
-          price: Number(i.finalPrice ?? i.discountPrice ?? i.price ?? i.course?.discount_price ?? i.course?.price ?? 0),
+          price: Number(i.finalPrice ?? i.discountPrice ?? i.price ?? i.course?.discount_price_pen ?? i.course?.price_pen ?? 0),
         }))
       : localItems.map((e) => ({
           id: e.course.id,
           title: e.course.title,
-          price: Number(e.course.discount_price ?? e.course.price),
+          price: Number(e.course.discount_price_pen ?? e.course.price_pen),
         }));
 
   const localSubtotal = displayItems.reduce((sum: number, i: any) => sum + i.price, 0) || localTotal();
@@ -169,6 +171,7 @@ export default function CheckoutPage() {
         password: data.password,
         country: data.country,
         profession: data.profession,
+        turnstileToken: turnstileToken ?? "",
       });
 
       setUser(res.user);
@@ -177,6 +180,8 @@ export default function CheckoutPage() {
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
       toast.error(msg ?? "No se pudo crear la cuenta. Intenta nuevamente.");
+      setTurnstileToken(null);
+      setTurnstileKey((k) => k + 1);
     }
   };
 
@@ -338,9 +343,15 @@ export default function CheckoutPage() {
                         required
                         {...register("password_confirmation")}
                       />
+                      <TurnstileWidget
+                        key={turnstileKey}
+                        onVerify={setTurnstileToken}
+                        onExpire={() => setTurnstileToken(null)}
+                        className="flex justify-center"
+                      />
                       <Button
                         type="submit"
-                        disabled={isSubmitting}
+                        disabled={isSubmitting || !turnstileToken}
                         className="w-full bg-brand-primary hover:bg-brand-primary/90 text-white h-11 font-semibold"
                       >
                         {isSubmitting ? "Creando cuenta…" : "Crear cuenta y continuar"}

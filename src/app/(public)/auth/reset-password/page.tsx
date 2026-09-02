@@ -8,6 +8,7 @@ import { z } from "zod";
 import { AlertCircle, Eye, EyeOff, KeyRound } from "lucide-react";
 import { Suspense, useState, type InputHTMLAttributes } from "react";
 import { AuthLayout } from "@/components/templates";
+import { TurnstileWidget } from "@/components/molecules";
 import { Button } from "@/components/atoms";
 import { cn } from "@/lib/utils";
 import { authService } from "@/lib/services/auth";
@@ -30,6 +31,8 @@ function ResetPasswordContent() {
   const token = searchParams.get("token");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileKey, setTurnstileKey] = useState(0);
 
   const {
     register,
@@ -47,7 +50,7 @@ function ResetPasswordContent() {
     }
 
     try {
-      await authService.resetPassword({ token, password: data.password });
+      await authService.resetPassword({ token, password: data.password, turnstileToken: turnstileToken ?? "" });
       router.push("/auth/login");
     } catch (err: unknown) {
       const message =
@@ -55,6 +58,8 @@ function ResetPasswordContent() {
         "No pudimos actualizar tu contraseña.";
 
       setError("root", { message });
+      setTurnstileToken(null);
+      setTurnstileKey((k) => k + 1);
     }
   };
 
@@ -93,9 +98,16 @@ function ResetPasswordContent() {
           {...register("password_confirmation")}
         />
 
+        <TurnstileWidget
+          key={turnstileKey}
+          onVerify={setTurnstileToken}
+          onExpire={() => setTurnstileToken(null)}
+          className="flex justify-center"
+        />
+
         <Button
           type="submit"
-          disabled={isSubmitting || !token}
+          disabled={isSubmitting || !token || !turnstileToken}
           className="w-full bg-brand-primary text-white hover:bg-brand-primary/90"
         >
           <KeyRound className="size-4" />

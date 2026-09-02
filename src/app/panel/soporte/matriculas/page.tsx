@@ -106,6 +106,7 @@ export default function MatriculasPage() {
   const [metodo, setMetodo] = useState<CreateMatriculasDto["offline_payment_method"]>("transferencia");
   const [monto,  setMonto]  = useState("");
   const [notas,  setNotas]  = useState("");
+  const [accessMonths, setAccessMonths] = useState("");
 
   /* pantalla de éxito tras matricular */
   const [justFinished, setJustFinished] = useState(false);
@@ -260,6 +261,7 @@ export default function MatriculasPage() {
           offline_payment_method: metodo,
           offline_amount:         monto ? parseFloat(monto) : undefined,
           internal_notes:         notas || undefined,
+          access_months:          accessMonths ? parseInt(accessMonths, 10) : undefined,
         })
       )
     );
@@ -292,6 +294,7 @@ export default function MatriculasPage() {
     setMetodo("transferencia");
     setMonto("");
     setNotas("");
+    setAccessMonths("");
     setJustFinished(false);
   };
 
@@ -413,7 +416,7 @@ export default function MatriculasPage() {
                           {c.title}
                         </p>
                         <p className="text-xs text-gray-400 mt-0.5">
-                          {c.currency} {c.price} · {c.enrolled_count} matriculados
+                          S/ {c.price_pen} · {c.enrolled_count} matriculados
                         </p>
                       </div>
                       {isSel && <CheckCircle2 className="size-4 text-[#084D95] shrink-0 mt-0.5" />}
@@ -739,7 +742,7 @@ export default function MatriculasPage() {
             {seleccionados.length > 0 && (
               <div className="border-t border-gray-200 bg-gradient-to-r from-blue-50 to-white px-5 py-4">
                 <div className="flex flex-col sm:flex-row sm:items-end gap-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 flex-1">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 flex-1">
                     <div>
                       <label className="text-xs font-medium text-gray-600 mb-1 block">Método de pago</label>
                       <select
@@ -759,6 +762,18 @@ export default function MatriculasPage() {
                         value={monto}
                         onChange={(e) => setMonto(e.target.value)}
                         placeholder="0.00"
+                        className="w-full border border-gray-300 rounded-lg px-3 h-9 text-sm outline-none focus:ring-2 focus:ring-[#084D95]/30"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-600 mb-1 block">
+                        Meses de acceso (opcional)
+                      </label>
+                      <input
+                        type="number" step="1" min="1"
+                        value={accessMonths}
+                        onChange={(e) => setAccessMonths(e.target.value)}
+                        placeholder="Default del curso"
                         className="w-full border border-gray-300 rounded-lg px-3 h-9 text-sm outline-none focus:ring-2 focus:ring-[#084D95]/30"
                       />
                     </div>

@@ -173,6 +173,7 @@ function EnrollmentRow({ enrollment }: { enrollment: Enrollment }) {
   const isCompleted = !!enrollment.completed_at;
   const needsReview = isCompleted && !enrollment.has_review;
   const level = course.level ?? "";
+  const isExpired = !!enrollment.access_expires_at && new Date(enrollment.access_expires_at) < new Date();
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-5 flex gap-5 hover:shadow-sm transition-shadow">
@@ -205,6 +206,11 @@ function EnrollmentRow({ enrollment }: { enrollment: Enrollment }) {
               Certificado disponible
             </span>
           )}
+          {isExpired && (
+            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-700">
+              Acceso vencido
+            </span>
+          )}
         </div>
 
         {/* Progreso */}
@@ -229,6 +235,12 @@ function EnrollmentRow({ enrollment }: { enrollment: Enrollment }) {
           )}
           {isCompleted && enrollment.completed_at && (
             <span className="text-emerald-600 font-medium">Completado: {formatDate(enrollment.completed_at)}</span>
+          )}
+          {enrollment.access_expires_at && (
+            <span className={isExpired ? "text-red-600 font-medium" : ""}>
+              {isExpired ? "Acceso venció: " : "Acceso vence: "}
+              {formatDate(enrollment.access_expires_at)}
+            </span>
           )}
         </div>
       </div>

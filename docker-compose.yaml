@@ -28,9 +28,6 @@ services:
       NODE_ENV: production
       PORT: 3000
       HOST: 0.0.0.0
-      # Para serverApi.ts (server-side rendering de Next.js)
-      API_URL: ${NEXT_PUBLIC_API_URL:-http://lms-backend:4000/api}
-      BACKEND_API_URL: ${NEXT_PUBLIC_API_URL:-http://lms-backend:4000/api}
       # URL interna del backend (usada en rewrites de Next.js para proxy /api y /uploads)
       BACKEND_INTERNAL_URL: ${BACKEND_INTERNAL_URL:-http://lms-backend:4000}
     networks:

@@ -1,10 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Autoplay, Navigation } from "swiper/modules";
+import "swiper/css";
+import "swiper/css/navigation";
 import {
   ShoppingCart,
   Trash2,
@@ -12,6 +16,8 @@ import {
   BookOpen,
   ShoppingBag,
   ArrowRight,
+  ChevronLeft,
+  ChevronRight,
   Clock,
   Star,
   Plus,
@@ -46,6 +52,8 @@ export default function CarritoPage() {
   const queryClient = useQueryClient();
   const { isAuthenticated } = useAuthStore();
   const [guestSessionToken] = useState(() => getGuestSessionToken());
+  const catalogPrevRef = useRef<HTMLButtonElement>(null);
+  const catalogNextRef = useRef<HTMLButtonElement>(null);
 
   // Espejo local (localStorage) para feedback instantáneo en la UI
   const {
@@ -62,10 +70,12 @@ export default function CarritoPage() {
     queryFn: () => cartService.get(isAuthenticated ? undefined : guestSessionToken),
   });
 
-  // Available catalog courses
+  // Pool de candidatos para las sugerencias — se pide un lote más grande que lo
+  // que se muestra, para que haya de dónde elegir por relevancia (categoría,
+  // software compartido, descuento) y no solo los primeros de la lista.
   const { data: catalogData, isLoading: loadingCatalog } = useQuery({
     queryKey: COURSES_KEY,
-    queryFn: () => cursosService.list({ limit: 12 }),
+    queryFn: () => cursosService.list({ limit: 60 }),
     staleTime: 60_000,
   });
 
@@ -127,12 +137,14 @@ export default function CarritoPage() {
     title: i.title ?? i.course?.title ?? "Curso de Especialización",
     slug: i.slug ?? i.course?.slug ?? "",
     thumbnail_url: i.thumbnail ?? i.course?.thumbnail_url ?? "",
-    price: Number(i.price ?? i.course?.price ?? 0),
+    price: Number(i.price ?? i.course?.price_pen ?? 0),
     discount_price:
-      i.discountPrice ?? i.course?.discount_price
-        ? Number(i.discountPrice ?? i.course?.discount_price)
+      i.discountPrice ?? i.course?.discount_price_pen
+        ? Number(i.discountPrice ?? i.course?.discount_price_pen)
         : undefined,
-    currency: i.currency ?? i.course?.currency ?? "PEN",
+    currency: i.currency ?? "PEN",
+    category_id: i.category_id ?? i.course?.category_id,
+    software_tools: i.software_tools ?? i.course?.software_tools ?? [],
   }));
 
   // 3. Mapeo de ítems provenientes del Almacenamiento Local (Zustand)
@@ -143,9 +155,11 @@ export default function CarritoPage() {
     title: e.course.title,
     slug: e.course.slug,
     thumbnail_url: e.course.thumbnail_url,
-    price: e.course.price,
-    discount_price: e.course.discount_price,
-    currency: e.course.currency,
+    price: e.course.price_pen,
+    discount_price: e.course.discount_price_pen,
+    currency: "PEN",
+    category_id: e.course.category_id,
+    software_tools: e.course.software_tools ?? [],
   }));
 
   // El carrito real (backend) manda siempre que tenga datos; si aún no cargó
@@ -163,8 +177,24 @@ export default function CarritoPage() {
   const currency = displayItems[0]?.currency ?? "PEN";
   const symbol = currency === "PEN" ? "S/" : "$";
 
-  // Courses NOT already in cart
-  const suggestedCourses = allCourses.filter((c) => !cartCourseIds.has(c.id));
+  // Sugerencias: cursos que no están ya en el carrito, ordenados por qué tanto
+  // se relacionan con lo que el usuario ya eligió — misma categoría, software
+  // en común, o que estén en descuento — en vez de mostrar cualquier curso.
+  const cartCategoryIds = new Set(displayItems.map((i) => i.category_id).filter(Boolean));
+  const cartSoftwareTools = new Set(displayItems.flatMap((i) => i.software_tools ?? []));
+
+  function relevanceScore(course: Course): number {
+    let score = 0;
+    if (cartCategoryIds.has(course.category_id)) score += 3;
+    const sharedSoftware = course.software_tools?.filter((s) => cartSoftwareTools.has(s)).length ?? 0;
+    score += sharedSoftware;
+    if (course.discount_price_pen !== undefined && course.discount_price_pen < course.price_pen) score += 1;
+    return score;
+  }
+
+  const suggestedCourses = allCourses
+    .filter((c) => !cartCourseIds.has(c.id))
+    .sort((a, b) => relevanceScore(b) - relevanceScore(a));
 
   function handleRemove(item: DisplayItem) {
     if (item.serverId) {
@@ -324,18 +354,58 @@ export default function CarritoPage() {
               <p className="text-gray-600 font-medium">Ya tienes todos los cursos disponibles en tu carrito</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {(displayItems.length === 0 ? allCourses : suggestedCourses).map((course) => (
-                <CatalogCourseCard
-                  key={course.id}
-                  course={course}
-                  inCart={cartCourseIds.has(course.id)}
-                  onAdd={() => handleAddFromCatalog(course)}
-                  adding={
-                    serverAddMutation.isPending && serverAddMutation.variables === course.id
+            <div className="relative">
+              <Swiper
+                modules={[Autoplay, Navigation]}
+                autoplay={{ delay: 4000, disableOnInteraction: false }}
+                navigation
+                onBeforeInit={(swiper) => {
+                  const nav = swiper.params.navigation;
+                  if (nav && typeof nav !== "boolean") {
+                    nav.prevEl = catalogPrevRef.current;
+                    nav.nextEl = catalogNextRef.current;
                   }
-                />
-              ))}
+                }}
+                loop={(displayItems.length === 0 ? allCourses : suggestedCourses).length > 4}
+                centerInsufficientSlides
+                spaceBetween={16}
+                slidesPerView={1}
+                breakpoints={{
+                  640: { slidesPerView: 2, spaceBetween: 16 },
+                  // A 1024px muchos laptops "normales" (con escalado de Windows)
+                  // ya quedan por debajo de 1280px CSS reales.
+                  1024: { slidesPerView: 4, spaceBetween: 16 },
+                }}
+                className="!pb-2"
+              >
+                {(displayItems.length === 0 ? allCourses : suggestedCourses).map((course) => (
+                  <SwiperSlide key={course.id} className="h-auto py-1">
+                    <CatalogCourseCard
+                      course={course}
+                      inCart={cartCourseIds.has(course.id)}
+                      onAdd={() => handleAddFromCatalog(course)}
+                      adding={
+                        serverAddMutation.isPending && serverAddMutation.variables === course.id
+                      }
+                    />
+                  </SwiperSlide>
+                ))}
+              </Swiper>
+
+              <button
+                ref={catalogPrevRef}
+                aria-label="Anterior"
+                className="absolute -left-4 sm:left-0 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full backdrop-blur-sm transition-all flex items-center justify-center bg-white text-[#084D95] border border-gray-200 shadow-md hover:bg-gray-50 [&.swiper-button-disabled]:opacity-0 [&.swiper-button-disabled]:pointer-events-none"
+              >
+                <ChevronLeft size={22} />
+              </button>
+              <button
+                ref={catalogNextRef}
+                aria-label="Siguiente"
+                className="absolute -right-4 sm:right-0 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full backdrop-blur-sm transition-all flex items-center justify-center bg-white text-[#084D95] border border-gray-200 shadow-md hover:bg-gray-50 [&.swiper-button-disabled]:opacity-0 [&.swiper-button-disabled]:pointer-events-none"
+              >
+                <ChevronRight size={22} />
+              </button>
             </div>
           )}
         </section>
@@ -355,6 +425,8 @@ interface DisplayItem {
   price: number;
   discount_price?: number;
   currency: string;
+  category_id?: string;
+  software_tools?: string[];
 }
 
 // ─── Cart Item Row ─────────────────────────────────────────────────────────────
@@ -425,9 +497,8 @@ function CatalogCourseCard({
   onAdd: () => void;
   adding: boolean;
 }) {
-  const displayPrice = course.discount_price ?? course.price;
-  const hasDiscount = course.discount_price !== undefined && course.discount_price < course.price;
-  const symbol = course.currency === "PEN" ? "S/" : "$";
+  const displayPricePen = course.discount_price_pen ?? course.price_pen;
+  const hasDiscount = course.discount_price_pen !== undefined && course.discount_price_pen < course.price_pen;
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md hover:border-gray-300 transition-all flex flex-col">
@@ -466,11 +537,11 @@ function CatalogCourseCard({
         <div className="mt-auto pt-2 border-t border-gray-100 flex items-center justify-between gap-1.5">
           <div>
             <span className="font-bold text-[#084D95] text-sm tabular-nums">
-              {symbol} {displayPrice.toFixed(2)}
+              S/ {displayPricePen.toFixed(2)}
             </span>
             {hasDiscount && (
               <span className="ml-1 text-[10px] text-gray-400 line-through tabular-nums">
-                {symbol} {course.price.toFixed(2)}
+                S/ {course.price_pen.toFixed(2)}
               </span>
             )}
           </div>

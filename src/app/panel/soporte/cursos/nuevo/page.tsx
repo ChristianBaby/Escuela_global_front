@@ -44,10 +44,11 @@ export default function NuevoCursoPage() {
   const [softwareTools, setSoftwareTools] = useState<string[]>([]);
 
   // ── Tab 2: Pricing ─────────────────────────────────────────────────────────
-  const [price, setPrice] = useState("");
-  const [discountPrice, setDiscountPrice] = useState("");
-  const [currency, setCurrency] = useState<"USD" | "PEN">("USD");
-  const [accessDuration, setAccessDuration] = useState<"1_year" | "lifetime">("lifetime");
+  const [pricePen, setPricePen] = useState("");
+  const [discountPricePen, setDiscountPricePen] = useState("");
+  const [priceUsd, setPriceUsd] = useState("");
+  const [discountPriceUsd, setDiscountPriceUsd] = useState("");
+  const [accessDurationMonths, setAccessDurationMonths] = useState("");
 
   // ── Tab 3: Docentes ────────────────────────────────────────────────────────
   const [instructors, setInstructors] = useState<InstructorInput[]>([{ ...EMPTY_INSTRUCTOR }]);
@@ -77,10 +78,11 @@ export default function NuevoCursoPage() {
         category_id: categoryId,
         level,
         software_tools: softwareTools,
-        price: parseFloat(price),
-        discount_price: discountPrice ? parseFloat(discountPrice) : undefined,
-        currency,
-        access_duration: accessDuration,
+        price_pen: parseFloat(pricePen),
+        discount_price_pen: discountPricePen ? parseFloat(discountPricePen) : undefined,
+        price_usd: parseFloat(priceUsd),
+        discount_price_usd: discountPriceUsd ? parseFloat(discountPriceUsd) : undefined,
+        access_duration_months: parseInt(accessDurationMonths, 10),
         instructors,
         prerequisites,
         outcomes,
@@ -166,7 +168,9 @@ export default function NuevoCursoPage() {
   const validateForPublish = () => {
     if (!title.trim()) { toast.error("El título es obligatorio"); return false; }
     if (!categoryId) { toast.error("Selecciona una categoría"); return false; }
-    if (!price || parseFloat(price) <= 0) { toast.error("El precio debe ser mayor a 0"); return false; }
+    if (!pricePen || parseFloat(pricePen) <= 0) { toast.error("El precio en soles debe ser mayor a 0"); return false; }
+    if (!priceUsd || parseFloat(priceUsd) <= 0) { toast.error("El precio en dólares debe ser mayor a 0"); return false; }
+    if (!accessDurationMonths || parseInt(accessDurationMonths, 10) <= 0) { toast.error("La duración del acceso debe ser mayor a 0 meses"); return false; }
     if (!instructors[0]?.full_name.trim()) { toast.error("Agrega al menos un docente con nombre"); return false; }
     if (!instructors[0]?.title.trim()) { toast.error("El docente debe tener un título / profesión"); return false; }
     return true;
@@ -182,9 +186,14 @@ export default function NuevoCursoPage() {
     createMutation.mutate(false);
   };
 
-  const discountPct =
-    price && discountPrice && parseFloat(price) > 0 && parseFloat(discountPrice) > 0
-      ? Math.round((1 - parseFloat(discountPrice) / parseFloat(price)) * 100)
+  const discountPctPen =
+    pricePen && discountPricePen && parseFloat(pricePen) > 0 && parseFloat(discountPricePen) > 0
+      ? Math.round((1 - parseFloat(discountPricePen) / parseFloat(pricePen)) * 100)
+      : null;
+
+  const discountPctUsd =
+    priceUsd && discountPriceUsd && parseFloat(priceUsd) > 0 && parseFloat(discountPriceUsd) > 0
+      ? Math.round((1 - parseFloat(discountPriceUsd) / parseFloat(priceUsd)) * 100)
       : null;
 
   // ── UI ─────────────────────────────────────────────────────────────────────
@@ -402,87 +411,124 @@ export default function NuevoCursoPage() {
 
           {/* ──────────────────── TAB 2: Pricing ──────────────────── */}
           <TabsContent value="pricing" className="space-y-5 max-w-2xl">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <div className="space-y-1.5">
-                <Label htmlFor="precio">Precio *</Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm select-none">
-                    {currency}
-                  </span>
-                  <Input
-                    id="precio"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={price}
-                    onChange={(e) => setPrice(e.target.value)}
-                    className="pl-14"
-                    placeholder="0.00"
-                  />
+            <div>
+              <h3 className="text-sm font-semibold text-gray-700 mb-3">Precio en soles (S/)</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="space-y-1.5">
+                  <Label htmlFor="precio-pen">Precio *</Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm select-none">
+                      S/
+                    </span>
+                    <Input
+                      id="precio-pen"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={pricePen}
+                      onChange={(e) => setPricePen(e.target.value)}
+                      className="pl-8"
+                      placeholder="0.00"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="descuento-pen">
+                    Precio con descuento{" "}
+                    <span className="text-gray-400 text-xs font-normal">(opcional)</span>
+                  </Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm select-none">
+                      S/
+                    </span>
+                    <Input
+                      id="descuento-pen"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={discountPricePen}
+                      onChange={(e) => setDiscountPricePen(e.target.value)}
+                      className="pl-8"
+                      placeholder="0.00"
+                    />
+                  </div>
                 </div>
               </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="descuento">
-                  Precio con descuento{" "}
-                  <span className="text-gray-400 text-xs font-normal">(opcional)</span>
-                </Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm select-none">
-                    {currency}
-                  </span>
-                  <Input
-                    id="descuento"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={discountPrice}
-                    onChange={(e) => setDiscountPrice(e.target.value)}
-                    className="pl-14"
-                    placeholder="0.00"
-                  />
+              {discountPctPen !== null && discountPctPen > 0 && discountPctPen < 100 && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800 mt-3">
+                  Descuento del <strong>{discountPctPen}%</strong> — Precio tachado:{" "}
+                  <span className="line-through">S/ {parseFloat(pricePen).toFixed(2)}</span>{" "}
+                  → Precio final: <strong>S/ {parseFloat(discountPricePen).toFixed(2)}</strong>
                 </div>
-              </div>
+              )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <div className="space-y-1.5">
-                <Label htmlFor="moneda">Moneda</Label>
-                <select
-                  id="moneda"
-                  value={currency}
-                  onChange={(e) => setCurrency(e.target.value as "USD" | "PEN")}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#084D95]/30"
-                >
-                  <option value="USD">USD — Dólar americano</option>
-                  <option value="PEN">PEN — Sol peruano</option>
-                </select>
+            <div className="pt-2">
+              <h3 className="text-sm font-semibold text-gray-700 mb-3">Precio en dólares ($)</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="space-y-1.5">
+                  <Label htmlFor="precio-usd">Precio *</Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm select-none">
+                      $
+                    </span>
+                    <Input
+                      id="precio-usd"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={priceUsd}
+                      onChange={(e) => setPriceUsd(e.target.value)}
+                      className="pl-7"
+                      placeholder="0.00"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="descuento-usd">
+                    Precio con descuento{" "}
+                    <span className="text-gray-400 text-xs font-normal">(opcional)</span>
+                  </Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm select-none">
+                      $
+                    </span>
+                    <Input
+                      id="descuento-usd"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={discountPriceUsd}
+                      onChange={(e) => setDiscountPriceUsd(e.target.value)}
+                      className="pl-7"
+                      placeholder="0.00"
+                    />
+                  </div>
+                </div>
               </div>
+              {discountPctUsd !== null && discountPctUsd > 0 && discountPctUsd < 100 && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800 mt-3">
+                  Descuento del <strong>{discountPctUsd}%</strong> — Precio tachado:{" "}
+                  <span className="line-through">$ {parseFloat(priceUsd).toFixed(2)}</span>{" "}
+                  → Precio final: <strong>$ {parseFloat(discountPriceUsd).toFixed(2)}</strong>
+                </div>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-2">
               <div className="space-y-1.5">
-                <Label htmlFor="acceso">Duración del acceso</Label>
-                <select
+                <Label htmlFor="acceso">Duración del acceso (meses) *</Label>
+                <Input
                   id="acceso"
-                  value={accessDuration}
-                  onChange={(e) => setAccessDuration(e.target.value as "1_year" | "lifetime")}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#084D95]/30"
-                >
-                  <option value="lifetime">De por vida</option>
-                  <option value="1_year">1 año</option>
-                </select>
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={accessDurationMonths}
+                  onChange={(e) => setAccessDurationMonths(e.target.value)}
+                  placeholder="Ej: 12"
+                />
               </div>
             </div>
-
-            {discountPct !== null && discountPct > 0 && discountPct < 100 && (
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
-                Descuento del <strong>{discountPct}%</strong> — Precio tachado:{" "}
-                <span className="line-through">
-                  {currency} {parseFloat(price).toFixed(2)}
-                </span>{" "}
-                → Precio final:{" "}
-                <strong>
-                  {currency} {parseFloat(discountPrice).toFixed(2)}
-                </strong>
-              </div>
-            )}
           </TabsContent>
 
           {/* ──────────────────── TAB 3: Docentes ──────────────────── */}

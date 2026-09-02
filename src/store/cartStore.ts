@@ -35,10 +35,16 @@ export const useCartStore = create<CartState>()(
 
       total: () =>
         get().items.reduce((sum, { course }) => {
-          const price = course.discount_price ?? course.price;
+          const price = course.discount_price_pen ?? course.price_pen;
           return sum + price;
         }, 0),
     }),
-    { name: "cart-storage" }
+    {
+      name: "cart-storage",
+      // v2: los items de carrito ahora usan price_pen/price_usd (antes price/currency).
+      // Los carritos guardados con la forma vieja se descartan en vez de romper la UI.
+      version: 2,
+      migrate: (persisted, version) => (version < 2 ? { items: [] } : (persisted as CartState)),
+    }
   )
 );

@@ -1,12 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { AlertCircle, CheckCircle2, Mail } from "lucide-react";
 import { AuthLayout } from "@/components/templates";
-import { FormField } from "@/components/molecules";
+import { FormField, TurnstileWidget } from "@/components/molecules";
 import { Button, buttonVariants } from "@/components/atoms";
 import { authService } from "@/lib/services/auth";
 import { cn } from "@/lib/utils";
@@ -18,6 +19,9 @@ const forgotPasswordSchema = z.object({
 type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
 
 export default function ForgotPasswordPage() {
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileKey, setTurnstileKey] = useState(0);
+
   const {
     register,
     handleSubmit,
@@ -30,13 +34,15 @@ export default function ForgotPasswordPage() {
 
   const onSubmit = async (data: ForgotPasswordFormData) => {
     try {
-      await authService.forgotPassword(data);
+      await authService.forgotPassword({ email: data.email, turnstileToken: turnstileToken ?? "" });
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
         "No pudimos enviar el correo de recuperación.";
 
       setError("root", { message });
+      setTurnstileToken(null);
+      setTurnstileKey((k) => k + 1);
     }
   };
 
@@ -85,9 +91,16 @@ export default function ForgotPasswordPage() {
             {...register("email")}
           />
 
+          <TurnstileWidget
+            key={turnstileKey}
+            onVerify={setTurnstileToken}
+            onExpire={() => setTurnstileToken(null)}
+            className="flex justify-center"
+          />
+
           <Button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || !turnstileToken}
             className="w-full bg-brand-primary text-white hover:bg-brand-primary/90"
           >
             <Mail className="size-4" />

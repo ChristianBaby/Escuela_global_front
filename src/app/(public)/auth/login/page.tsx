@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { AuthLayout } from "@/components/templates";
-import { FormField } from "@/components/molecules";
+import { FormField, TurnstileWidget } from "@/components/molecules";
 import { Button, Checkbox, Label } from "@/components/atoms";
 import { useAuthStore } from "@/store/authStore";
 import { Eye, EyeOff } from "lucide-react";
@@ -32,6 +32,8 @@ const ROLE_REDIRECTS: Record<string, string> = {
 export default function LoginPage() {
   const [serverError, setServerError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false); // para el ojito
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileKey, setTurnstileKey] = useState(0);
   const { setUser } = useAuthStore();
   const router = useRouter();
 
@@ -55,6 +57,7 @@ export default function LoginPage() {
         email: data.email,
         password: data.password,
         remember_me: data.remember_me,
+        turnstileToken: turnstileToken ?? "",
       });
       if (result.access_token) {
         const maxAge = data.remember_me ? 60 * 60 * 24 * 30 : "";
@@ -66,6 +69,8 @@ export default function LoginPage() {
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
       setServerError(msg ?? "Credenciales incorrectas. Inténtalo de nuevo.");
+      setTurnstileToken(null);
+      setTurnstileKey((k) => k + 1);
     }
   };
 
@@ -144,9 +149,16 @@ export default function LoginPage() {
           </Link>
         </div>
 
+        <TurnstileWidget
+          key={turnstileKey}
+          onVerify={setTurnstileToken}
+          onExpire={() => setTurnstileToken(null)}
+          className="flex justify-center"
+        />
+
         <Button
           type="submit"
-          disabled={isSubmitting}
+          disabled={isSubmitting || !turnstileToken}
           className="w-full bg-brand-primary hover:bg-brand-primary/90 text-white h-11 font-semibold"
         >
           {isSubmitting ? "Ingresando..." : "Iniciar sesión"}

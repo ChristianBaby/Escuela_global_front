@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { studentService } from "@/lib/services/student";
 import {
   ChevronLeft, ChevronRight, CheckCircle2, PlayCircle, Circle,
@@ -53,22 +54,29 @@ const MATERIAL_ICON: Record<string, string> = {
   PDF: "📄", Excel: "📊", Word: "📝", Otro: "📎",
 };
 
+function isExpiredAccessError(err: unknown) {
+  const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+  return typeof msg === "string" && msg.toLowerCase().includes("vencido");
+}
+
 // ── Página principal ──────────────────────────────────────────────────────────
 export default function CourseViewerPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  const { data: content, isLoading: loadingContent } = useQuery({
+  const { data: content, isLoading: loadingContent, error: contentError } = useQuery({
     queryKey: ["course-content", id],
     queryFn: () => studentService.getCourseContent(id),
     enabled: !!id,
+    retry: false,
   });
 
-  const { data: progressData, isLoading: loadingProgress } = useQuery({
+  const { data: progressData, isLoading: loadingProgress, error: progressError } = useQuery({
     queryKey: ["course-progress", id],
     queryFn: () => studentService.getMyCourseProgress(id),
     enabled: !!id,
+    retry: false,
   });
 
   // Estado del visor
@@ -132,6 +140,11 @@ export default function CourseViewerPage() {
         queryClient.invalidateQueries({ queryKey: ["mis-inscripciones"] });
       }
     },
+    onError: (err) => {
+      if (isExpiredAccessError(err)) {
+        toast.error("Tu acceso a este curso ha vencido. Contacta a soporte para renovarlo.");
+      }
+    },
   });
 
   const handleVideoEnded = useCallback(() => {
@@ -186,9 +199,14 @@ export default function CourseViewerPage() {
   }
 
   if (!content || !progressData) {
+    const expired = isExpiredAccessError(contentError) || isExpiredAccessError(progressError);
     return (
-      <div className="-mx-4 lg:-mx-8 -my-6 lg:-my-8 flex flex-col items-center justify-center h-[calc(100vh-64px)] gap-4">
-        <p className="text-gray-500">No tienes acceso a este curso.</p>
+      <div className="-mx-4 lg:-mx-8 -my-6 lg:-my-8 flex flex-col items-center justify-center h-[calc(100vh-64px)] gap-4 px-4 text-center">
+        <p className="text-gray-500">
+          {expired
+            ? "Tu acceso a este curso ha vencido. Contacta a soporte para renovarlo."
+            : "No tienes acceso a este curso."}
+        </p>
         <Link href="/mis-cursos" className="text-[#084D95] underline text-sm">Ver mis cursos</Link>
       </div>
     );

@@ -30,10 +30,11 @@ export interface CreateCursoDto {
   description: string;
   category_id: string;
   level: "principiante" | "intermedio" | "avanzado";
-  price: number;
-  discount_price?: number;
-  currency: "USD" | "PEN";
-  access_duration: "1_year" | "lifetime";
+  price_pen: number;
+  discount_price_pen?: number;
+  price_usd: number;
+  discount_price_usd?: number;
+  access_duration_months: number;
   status: "draft" | "published" | "archived";
   thumbnail_url?: string;
   software_tools: string[];

@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { AuthLayout } from "@/components/templates";
-import { FormField, PasswordField } from "@/components/molecules";
+import { FormField, PasswordField, TurnstileWidget } from "@/components/molecules";
 import { Button, Checkbox, Label, buttonVariants } from "@/components/atoms";
 import { authService } from "@/lib/services/auth";
 import { cn } from "@/lib/utils";
@@ -35,6 +35,8 @@ export default function RegisterPage() {
   const [serverError, setServerError] = useState<string | null>(null);
   const [success,     setSuccess]     = useState(false);
   const [phonePrefix, setPhonePrefix] = useState("+51");
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileKey, setTurnstileKey] = useState(0);
 
   const {
     register,
@@ -71,6 +73,7 @@ export default function RegisterPage() {
         password,
         country,
         profession,
+        turnstileToken: turnstileToken ?? "",
       });
 
       setSuccess(true);
@@ -89,6 +92,8 @@ export default function RegisterPage() {
       setServerError(
         msg ?? firstError ?? "Error al registrarte. Revisa que el backend este activo."
       );
+      setTurnstileToken(null);
+      setTurnstileKey((k) => k + 1);
     }
   };
 
@@ -298,10 +303,17 @@ export default function RegisterPage() {
           )}
         </div>
 
+        <TurnstileWidget
+          key={turnstileKey}
+          onVerify={setTurnstileToken}
+          onExpire={() => setTurnstileToken(null)}
+          className="flex justify-center"
+        />
+
         {/* Botón submit */}
         <Button
           type="submit"
-          disabled={isSubmitting}
+          disabled={isSubmitting || !turnstileToken}
           className="w-full bg-brand-primary hover:bg-brand-primary/90 text-white h-11 font-semibold mt-2"
         >
           {isSubmitting ? "Creando cuenta..." : "Crear cuenta"}

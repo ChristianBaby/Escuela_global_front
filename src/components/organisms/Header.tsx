@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Logo, Badge, buttonVariants } from "@/components/atoms";
 import { CartModal } from "@/components/organisms/CartModal";
 import { useAuthStore } from "@/store/authStore";
@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 
 const NAV_LINKS = [
   { label: "Cursos", href: "/cursos" },
-  { label: "Nosotros", href: "/#nosotros" },
+  { label: "Nosotros", href: "/institucional/NosotrosView" }, // 🚀 Actualizado
 ];
 
 export function Header() {
@@ -22,9 +22,15 @@ export function Header() {
   const { isAuthenticated, user, clearUser } = useAuthStore();
   const localItems = useCartStore((s) => s.items);
   const router = useRouter();
+  const pathname = usePathname();
 
-  // cartCount uses local store for both guests and authenticated users
-  // (local store is always in sync since add/remove actions update it)
+  const isNavActive = (href: string) => {
+    if (href === "/cursos") return pathname.startsWith("/cursos");
+    if (href.startsWith("/institucional")) return pathname.startsWith("/institucional");
+    return pathname === href;
+  };
+  const isCartActive = pathname === "/carrito";
+
   const cartCount = localItems.length;
 
   useEffect(() => {
@@ -61,7 +67,12 @@ export function Header() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="text-sm font-medium text-gray-600 hover:text-brand-primary transition-colors"
+                className={cn(
+                  "text-sm font-medium transition-colors",
+                  isNavActive(link.href)
+                    ? "text-brand-primary font-semibold"
+                    : "text-gray-600 hover:text-brand-primary"
+                )}
               >
                 {link.label}
               </Link>
@@ -70,10 +81,12 @@ export function Header() {
 
           {/* Desktop actions */}
           <div className="hidden md:flex items-center gap-2">
-            {/* Cart icon — visible for all users, opens quick-add popup */}
             <button
               onClick={() => setCartOpen(true)}
-              className="relative p-1.5 text-gray-600 hover:text-brand-primary transition-colors"
+              className={cn(
+                "relative p-1.5 transition-colors",
+                isCartActive ? "text-brand-primary" : "text-gray-600 hover:text-brand-primary"
+              )}
               aria-label="Abrir carrito de compras"
             >
               <ShoppingCart size={18} />
@@ -140,7 +153,12 @@ export function Header() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="block py-2.5 px-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-brand-primary/5 hover:text-brand-primary transition-colors"
+                className={cn(
+                  "block py-2.5 px-3 rounded-lg text-sm font-medium transition-colors",
+                  isNavActive(link.href)
+                    ? "bg-brand-primary/10 text-brand-primary font-semibold"
+                    : "text-gray-700 hover:bg-brand-primary/5 hover:text-brand-primary"
+                )}
                 onClick={() => setMobileOpen(false)}
               >
                 {link.label}
@@ -151,7 +169,12 @@ export function Header() {
                 setMobileOpen(false);
                 setCartOpen(true);
               }}
-              className="w-full flex items-center justify-between py-2.5 px-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-brand-primary/5 hover:text-brand-primary transition-colors"
+              className={cn(
+                "w-full flex items-center justify-between py-2.5 px-3 rounded-lg text-sm font-medium transition-colors",
+                isCartActive
+                  ? "bg-brand-primary/10 text-brand-primary font-semibold"
+                  : "text-gray-700 hover:bg-brand-primary/5 hover:text-brand-primary"
+              )}
             >
               <span className="flex items-center gap-2">
                 <ShoppingCart size={16} />
