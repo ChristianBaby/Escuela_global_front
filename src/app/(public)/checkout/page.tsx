@@ -10,6 +10,7 @@ import Link from "next/link";
 import {
   CreditCard,
   Wallet,
+  Smartphone,
   ArrowLeft,
   ShieldCheck,
   ShoppingBag,
@@ -23,6 +24,7 @@ import { FormField, PasswordField } from "@/components/molecules";
 import { Button, Label } from "@/components/atoms";
 import { MercadoPagoBrick } from "@/components/organisms/MercadoPagoBrick";
 import { PayPalButtonComponent } from "@/components/organisms/PayPalButtonComponent";
+import { CulqiCheckout } from "@/components/organisms/CulqiCheckout";
 import { cartService } from "@/lib/services/cart";
 import { authService } from "@/lib/services/auth";
 import { ordersService } from "@/lib/services/orders";
@@ -71,7 +73,7 @@ export default function CheckoutPage() {
   const [emailStatus, setEmailStatus] = useState<EmailStatus>("idle");
   const [order, setOrder] = useState<{ id: string; total: number; currency: string } | null>(null);
   const [creatingOrder, setCreatingOrder] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<"paypal" | "mercado_pago">("mercado_pago");
+  const [paymentMethod, setPaymentMethod] = useState<"paypal" | "mercado_pago" | "culqi">("mercado_pago");
 
   const {
     register,
@@ -126,12 +128,18 @@ export default function CheckoutPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, displayItems.length]);
 
+  // Mercado Pago y Culqi solo liquidan en soles (PEN) con las cuentas configuradas hoy.
   const mercadoPagoAvailable = !order || order.currency === MERCADOPAGO_SUPPORTED_CURRENCY;
+  const culqiAvailable = !order || order.currency === MERCADOPAGO_SUPPORTED_CURRENCY;
 
-  // Si la orden resulta en una moneda que Mercado Pago no puede procesar (p. ej. USD),
+  // Si la orden resulta en una moneda que Mercado Pago/Culqi no pueden procesar (p. ej. USD),
   // forzamos el cambio a PayPal para no ofrecer una opción que va a fallar al pagar.
   useEffect(() => {
-    if (order && order.currency !== MERCADOPAGO_SUPPORTED_CURRENCY && paymentMethod === "mercado_pago") {
+    if (
+      order &&
+      order.currency !== MERCADOPAGO_SUPPORTED_CURRENCY &&
+      (paymentMethod === "mercado_pago" || paymentMethod === "culqi")
+    ) {
       setPaymentMethod("paypal");
     }
   }, [order, paymentMethod]);
@@ -345,7 +353,7 @@ export default function CheckoutPage() {
               <>
                 <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
                   <h3 className="text-sm font-bold text-brand-primary uppercase tracking-wider mb-4">1. Selecciona tu método de pago</h3>
-                  <div className={`grid grid-cols-1 gap-3 ${mercadoPagoAvailable ? "sm:grid-cols-2" : ""}`}>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {mercadoPagoAvailable && (
                       <button
                         type="button"
@@ -359,6 +367,22 @@ export default function CheckoutPage() {
                         <CreditCard size={22} />
                         <span className="text-xs font-bold">Mercado Pago (Latam)</span>
                         <span className="text-[10px] text-gray-400">Tarjetas de débito/crédito locales</span>
+                      </button>
+                    )}
+
+                    {culqiAvailable && (
+                      <button
+                        type="button"
+                        onClick={() => setPaymentMethod("culqi")}
+                        className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all text-center gap-2 ${
+                          paymentMethod === "culqi"
+                            ? "border-[#084D95] bg-blue-50/40 text-[#084D95]"
+                            : "border-gray-200 text-gray-600 hover:border-gray-300"
+                        }`}
+                      >
+                        <Smartphone size={22} />
+                        <span className="text-xs font-bold">Culqi (Tarjeta / Yape)</span>
+                        <span className="text-[10px] text-gray-400">Tarjetas locales y Yape</span>
                       </button>
                     )}
 
@@ -378,7 +402,7 @@ export default function CheckoutPage() {
                   </div>
                   {!mercadoPagoAvailable && (
                     <p className="text-[11px] text-gray-400 mt-3">
-                      Mercado Pago solo está disponible para pagos en soles (PEN). Este curso está en{" "}
+                      Mercado Pago y Culqi solo están disponibles para pagos en soles (PEN). Este curso está en{" "}
                       {order?.currency}, así que usa PayPal.
                     </p>
                   )}
@@ -395,6 +419,10 @@ export default function CheckoutPage() {
                   ) : paymentMethod === "mercado_pago" ? (
                     <div className="animate-fadeIn">
                       <MercadoPagoBrick orderId={order.id} totalAmount={order.total} currency={order.currency} />
+                    </div>
+                  ) : paymentMethod === "culqi" ? (
+                    <div className="animate-fadeIn">
+                      <CulqiCheckout orderId={order.id} totalAmount={order.total} currency={order.currency} />
                     </div>
                   ) : (
                     <div className="animate-fadeIn">

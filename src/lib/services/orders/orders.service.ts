@@ -1,7 +1,7 @@
 import { api } from "@/lib/http/api";
 
 export interface CreateOrderDto {
-  payment_method: "stripe" | "paypal" | "mercado_pago";
+  payment_method: "stripe" | "paypal" | "mercado_pago" | "culqi";
   dni_ruc?: string;
 }
 

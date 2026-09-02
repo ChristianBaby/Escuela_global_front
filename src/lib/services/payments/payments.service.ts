@@ -22,6 +22,17 @@ export interface ProcessMercadoPagoBrickResponse {
   order_number: string;
 }
 
+export interface CreateCulqiChargeDto {
+  orderId: string;
+  token: string;
+  email: string;
+}
+
+export interface CreateCulqiChargeResponse {
+  success: boolean;
+  order_number: string;
+}
+
 export const paymentsService = {
   mercadoPago: {
     createPreference: (data: CreateMercadoPagoPreferenceDto) =>
@@ -32,6 +43,13 @@ export const paymentsService = {
     processBrickPayment: (data: MercadoPagoBrickFormData) =>
       api
         .post<ProcessMercadoPagoBrickResponse>("/payments-v2/mercadopago/brick", data)
+        .then((r) => r.data),
+  },
+
+  culqi: {
+    createCharge: (data: CreateCulqiChargeDto) =>
+      api
+        .post<CreateCulqiChargeResponse>("/payments-v2/culqi/charge", data)
         .then((r) => r.data),
   },
 };
