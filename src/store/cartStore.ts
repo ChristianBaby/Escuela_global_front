@@ -39,6 +39,12 @@ export const useCartStore = create<CartState>()(
           return sum + price;
         }, 0),
     }),
-    { name: "cart-storage" }
+    {
+      name: "cart-storage",
+      // v2: los items de carrito ahora usan price_pen/price_usd (antes price/currency).
+      // Los carritos guardados con la forma vieja se descartan en vez de romper la UI.
+      version: 2,
+      migrate: (persisted, version) => (version < 2 ? { items: [] } : (persisted as CartState)),
+    }
   )
 );
