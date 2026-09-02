@@ -24,6 +24,12 @@ interface CartModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
+// 🚀 Formateador blindado contra undefined, null o strings
+function formatPrice(val: any): string {
+  const num = Number(val);
+  return isNaN(num) ? "0.00" : num.toFixed(2);
+}
+
 export function CartModal({ open, onOpenChange }: CartModalProps) {
   const router = useRouter();
   const { items, addItem, removeItem, hasItem, total } = useCartStore();
@@ -84,12 +90,19 @@ export function CartModal({ open, onOpenChange }: CartModalProps) {
               </p>
             ) : (
               <ul className="space-y-2 pr-1">
-                {items.map(({ course }) => {
+                {items.map((item: any) => {
+                  const course = item.course || item;
                   const symbol = "S/";
-                  const price = course.discount_price_pen ?? course.price_pen;
+                  const rawPrice =
+                    course?.discount_price_pen ??
+                    course?.discount_price ??
+                    course?.price_pen ??
+                    course?.price ??
+                    0;
+
                   return (
                     <li
-                      key={course.id}
+                      key={course.id || item.id}
                       className="flex items-center gap-2.5 bg-gray-50 rounded-lg p-2"
                     >
                       <div className="w-10 h-10 rounded-md bg-brand-primary/10 overflow-hidden shrink-0">
@@ -103,7 +116,7 @@ export function CartModal({ open, onOpenChange }: CartModalProps) {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-gray-900 truncate">{course.title}</p>
-                        <p className="text-xs text-gray-500">{symbol} {price.toFixed(2)}</p>
+                        <p className="text-xs text-gray-500">{symbol} {formatPrice(rawPrice)}</p>
                       </div>
                       <button
                         onClick={() => removeItem(course.id)}
@@ -143,9 +156,14 @@ export function CartModal({ open, onOpenChange }: CartModalProps) {
                 No se encontraron cursos{debouncedSearch ? ` para "${debouncedSearch}"` : ""}.
               </p>
             ) : (
-              courses.map((course) => {
+              courses.map((course: any) => {
                 const symbol = "S/";
-                const price = course.discount_price_pen ?? course.price_pen;
+                const rawPrice =
+                  course?.discount_price_pen ??
+                  course?.discount_price ??
+                  course?.price_pen ??
+                  course?.price ??
+                  0;
                 const inCart = hasItem(course.id);
                 return (
                   <div
@@ -163,7 +181,7 @@ export function CartModal({ open, onOpenChange }: CartModalProps) {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-900 truncate">{course.title}</p>
-                      <p className="text-xs text-gray-500">{symbol} {price.toFixed(2)}</p>
+                      <p className="text-xs text-gray-500">{symbol} {formatPrice(rawPrice)}</p>
                     </div>
                     <button
                       onClick={() => !inCart && handleAdd(course)}
@@ -192,13 +210,13 @@ export function CartModal({ open, onOpenChange }: CartModalProps) {
           </div>
         </div>
 
-        {/* Footer con total y acciones — siempre visible, fuera del área con scroll */}
+        {/* Footer del modal */}
         <div className="border-t border-gray-100 bg-gray-50 p-4 space-y-3 shrink-0">
           <div className="flex items-center justify-between text-sm">
             <span className="text-gray-600">
               {items.length} {items.length === 1 ? "curso" : "cursos"} en el carrito
             </span>
-            <span className="font-bold text-gray-900">Total: S/ {cartTotal.toFixed(2)}</span>
+            <span className="font-bold text-gray-900">Total: S/ {formatPrice(cartTotal)}</span>
           </div>
           <div className="flex gap-2">
             <button

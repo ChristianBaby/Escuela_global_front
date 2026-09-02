@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 
 const NAV_LINKS = [
   { label: "Cursos", href: "/cursos" },
-  { label: "Nosotros", href: "/#nosotros" },
+  { label: "Nosotros", href: "/institucional/NosotrosView" }, // 🚀 Actualizado
 ];
 
 export function Header() {
@@ -24,15 +24,13 @@ export function Header() {
   const router = useRouter();
   const pathname = usePathname();
 
-  // el link de "Cursos" se marca activo en /cursos y sus subrutas; el resto solo en su propia ruta
   const isNavActive = (href: string) => {
-    const base = href.split("#")[0] || "/";
-    return base === "/cursos" ? pathname.startsWith("/cursos") : pathname === base;
+    if (href === "/cursos") return pathname.startsWith("/cursos");
+    if (href.startsWith("/institucional")) return pathname.startsWith("/institucional");
+    return pathname === href;
   };
   const isCartActive = pathname === "/carrito";
 
-  // cartCount uses local store for both guests and authenticated users
-  // (local store is always in sync since add/remove actions update it)
   const cartCount = localItems.length;
 
   useEffect(() => {
@@ -83,7 +81,6 @@ export function Header() {
 
           {/* Desktop actions */}
           <div className="hidden md:flex items-center gap-2">
-            {/* Cart icon — visible for all users, opens quick-add popup */}
             <button
               onClick={() => setCartOpen(true)}
               className={cn(

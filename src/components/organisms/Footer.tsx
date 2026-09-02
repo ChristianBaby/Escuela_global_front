@@ -14,10 +14,11 @@ const LINKS = {
     { label: "Registrarse", href: "/auth/register" },
     { label: "Recuperar contraseña", href: "/auth/forgot-password" },
   ],
-  soporte: [
-    { label: "Preguntas frecuentes", href: "/#faq" },
-    { label: "Términos de uso", href: "/terminos" },
-    { label: "Política de privacidad", href: "/privacidad" },
+  // 🚀 RUTAS INSTITUCIONALES Y LEGALES CENTRALIZADAS
+  institucional: [
+    { label: "Política de devoluciones", href: "/institucional/politica-de-devoluciones" },
+  { label: "Términos y condiciones", href: "/institucional/terminos-y-condiciones" },
+  { label: "Políticas de privacidad", href: "/institucional/politicas-de-privacidad" },
   ],
 };
 
@@ -86,10 +87,11 @@ export function Footer() {
             </ul>
           </div>
 
+          {/* Columna Institucional & Legal */}
           <div>
-            <h4 className="font-semibold text-white mb-4 text-xs uppercase tracking-wider">Soporte</h4>
+            <h4 className="font-semibold text-white mb-4 text-xs uppercase tracking-wider">Institucional & Legal</h4>
             <ul className="space-y-2.5">
-              {LINKS.soporte.map(({ label, href }) => (
+              {LINKS.institucional.map(({ label, href }) => (
                 <li key={href}>
                   <Link
                     href={href}
