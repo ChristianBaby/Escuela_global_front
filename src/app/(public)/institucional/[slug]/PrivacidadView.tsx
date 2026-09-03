@@ -18,7 +18,7 @@ export function PrivacidadView() {
         <section className="space-y-2">
           <h2 className="text-base font-bold text-gray-900">1. Titularidad y Tratamiento</h2>
           <p>
-            De acuerdo con la Ley N° 29733, los datos facilitados por el usuario serán incorporados al banco de datos de <strong>ESCUELA GLOBAL S.A.C.</strong> para gestionar la matrícula, emitir comprobantes fiscales y validar certificados.
+            De acuerdo con la Ley N° 29733, los datos facilitados por el usuario serán incorporados al banco de datos de <strong>Grupo Empresarial Especializaciones Global LLC</strong> para gestionar la matrícula, emitir comprobantes fiscales y validar certificados.
           </p>
         </section>
 

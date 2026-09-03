@@ -5,7 +5,6 @@ import { NosotrosView } from "./NosotrosView";
 import { DevolucionesView } from "./DevolucionesView";
 import { TerminosView } from "./TerminosView";
 import { PrivacidadView } from "./PrivacidadView";
-import { ContactoView } from "./ContactoView"; // 🚀 Importar nueva vista
 
 export default function InstitucionalDynamicPage() {
   const params = useParams();
@@ -13,9 +12,6 @@ export default function InstitucionalDynamicPage() {
   const slug = (Array.isArray(rawSlug) ? rawSlug[0] : rawSlug).toLowerCase().trim();
 
   // Detección de Contáctanos
-  if (slug.includes("contact")) {
-    return <ContactoView />;
-  }
 
   if (slug.includes("termino") || slug.includes("term") || slug.includes("condicion")) {
     return <TerminosView />;

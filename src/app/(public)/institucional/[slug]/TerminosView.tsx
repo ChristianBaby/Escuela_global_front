@@ -18,7 +18,7 @@ export function TerminosView() {
         <section className="space-y-2">
           <h2 className="text-base font-bold text-gray-900">1. Aceptación del Servicio</h2>
           <p>
-            El uso de la plataforma académica y la compra de cursos implican la aceptación de los presentes términos suscritos con <strong>ESCUELA GLOBAL S.A.C.</strong>
+            El uso de la plataforma académica y la compra de cursos implican la aceptación de los presentes términos suscritos con <strong>Grupo Empresarial Especializaciones Global LLC</strong>
           </p>
         </section>
 
