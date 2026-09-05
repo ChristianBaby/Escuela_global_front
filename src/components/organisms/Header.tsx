@@ -54,6 +54,7 @@ function FacebookIcon({ className = "w-3.5 h-3.5" }: { className?: string }) {
 const NAV_LINKS = [
   { label: "Cursos", href: "/cursos" },
   { label: "Nosotros", href: "/institucional/nosotros" },
+  { label: "Contacto", href: "/institucional/contacto"}
 ];
 
 export function Header() {
@@ -252,16 +253,16 @@ export function Header() {
           <div className="pt-2 pb-1 border-t border-gray-100 flex items-center justify-between px-3">
             <span className="text-xs text-gray-500 font-medium">Síguenos:</span>
             <div className="flex items-center gap-4 text-gray-600">
-              <a href="https://youtube.com/@especializacionesglobal" target="_blank" rel="noopener noreferrer">
+              <a href="https://www.youtube.com/@especializacionesescuelaglobal" target="_blank" rel="noopener noreferrer">
                 <YoutubeIcon className="w-4 h-4" />
               </a>
-              <a href="https://tiktok.com/@especializacionesglobal" target="_blank" rel="noopener noreferrer">
+              <a href="https://www.tiktok.com/@escuelaglobal07?_r=1&_t=ZS-97GymbiMWXa" target="_blank" rel="noopener noreferrer">
                 <TikTokIcon className="w-4 h-4" />
               </a>
-              <a href="https://instagram.com/especializacionesglobal" target="_blank" rel="noopener noreferrer">
+              <a href="https://www.instagram.com/escuelaglobaloficial/" target="_blank" rel="noopener noreferrer">
                 <InstagramIcon className="w-4 h-4" />
               </a>
-              <a href="https://facebook.com/especializacionesglobal" target="_blank" rel="noopener noreferrer">
+              <a href="https://www.facebook.com/escuelaglobaloficial.net" target="_blank" rel="noopener noreferrer">
                 <FacebookIcon className="w-4 h-4" />
               </a>
             </div>

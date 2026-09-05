@@ -101,12 +101,12 @@ export function Footer() {
               <div className="flex items-center gap-2.5">
                 <Phone size={16} className="text-[#3FB1E5] shrink-0" />
                 <a
-                  href="https://wa.me/17869488349?text=Hola,%20deseo%20información%20sobre%20los%20programas"
+                  href="https://wa.me/+51947377046?text=Hola,%20deseo%20información%20sobre%20los%20programas"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-white hover:underline transition-colors"
                 >
-                  +1 (786) 948-8349
+                  +51947377046
                 </a>
               </div>
             </div>
