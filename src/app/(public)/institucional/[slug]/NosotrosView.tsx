@@ -1,6 +1,6 @@
 "use client";
 
-import { Target, Eye, BookOpenCheck, ShieldCheck, Globe2 } from "lucide-react";
+import { Target, Eye, BookOpenCheck, ShieldCheck, Globe2, Sparkles } from "lucide-react";
 
 export function NosotrosView() {
   return (
@@ -12,7 +12,7 @@ export function NosotrosView() {
             Sobre Escuela Global
           </span>
           <h1 className="text-3xl sm:text-5xl font-extrabold mt-4 font-heading">
-            Educación Técnica de Alto Nivel
+            Programas de Alta Especialización
           </h1>
           <p className="text-white/70 text-sm max-w-xl mx-auto mt-3">
             Especialización práctica en minería, ingeniería y analítica para toda Latinoamérica.
@@ -20,7 +20,7 @@ export function NosotrosView() {
         </div>
       </section>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-14">
         {/* Misión y Visión */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-white p-8 rounded-2xl border border-gray-200 shadow-sm space-y-3">
@@ -44,8 +44,25 @@ export function NosotrosView() {
           </div>
         </div>
 
+        {/* 🌟 BANNER DESTACADO: Eleva tus estándares académicos */}
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#0B1230] via-[#1A2E66] to-[#0B1230] p-8 sm:p-12 text-center text-white shadow-lg border border-blue-900/40">
+          <div className="absolute top-0 right-0 -mt-6 -mr-6 w-32 h-32 bg-[#3FB1E5]/20 rounded-full blur-2xl pointer-events-none" />
+          <div className="relative z-10 max-w-2xl mx-auto space-y-3">
+            <div className="inline-flex items-center gap-2 text-[#3FB1E5] text-xs font-extrabold uppercase tracking-widest bg-white/10 px-3 py-1 rounded-full border border-white/15">
+              <Sparkles size={13} />
+              Compromiso de Excelencia
+            </div>
+            <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight font-heading leading-tight bg-gradient-to-r from-white via-blue-100 to-[#3FB1E5] bg-clip-text text-transparent">
+              “Eleva tus estándares académicos”
+            </h2>
+            <p className="text-xs sm:text-sm text-blue-200/80 font-normal">
+              Contenidos diseñados por ingenieros y consultores activos para afrontar los retos reales del sector productivo.
+            </p>
+          </div>
+        </div>
+
         {/* ════════════════════════════════════════════════════════════════ */}
-        {/* DIAGRAMA: [FOTO] A LA IZQUIERDA | [NOMBRE] + [DESCRIPCIÓN] DERECHA */}
+        {/* DIRECCIÓN ACADÉMICA - JEAN PIERRE CHAYÑA SALAS                  */}
         {/* ════════════════════════════════════════════════════════════════ */}
         <section className="bg-white rounded-2xl border border-gray-200 p-6 sm:p-10 shadow-sm">
           <div className="mb-6">
@@ -58,12 +75,12 @@ export function NosotrosView() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-stretch">
-            {/* BLOQUE IZQUIERDO: FOTO */}
+            {/* BLOQUE IZQUIERDO: FOTO LOCAL */}
             <div className="md:col-span-5 flex">
               <div className="w-full min-h-[340px] rounded-xl overflow-hidden bg-slate-100 border border-gray-200 relative group">
                 <img
                   src="/PierreDirec.jpeg"
-                  alt="Dirección Académica"
+                  alt="Jean Pierre Chayña Salas - Dirección General"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
@@ -75,25 +92,23 @@ export function NosotrosView() {
 
             {/* BLOQUE DERECHO: NOMBRE (ARRIBA) + DESCRIPCIÓN (ABAJO) */}
             <div className="md:col-span-7 flex flex-col justify-between space-y-4">
-              {/* BLOQUE: NOMBRE */}
+              {/* BLOQUE: NOMBRE Y TÍTULO */}
               <div className="border border-gray-200 bg-slate-50 p-5 rounded-xl">
                 <h3 className="text-2xl font-extrabold text-gray-900 font-heading">
                   Jean Pierre Chayña Salas
                 </h3>
                 <p className="text-sm font-semibold text-[#2B55A3] mt-0.5">
-                  Director General & Coordinador Académico
+                  Director General
                 </p>
                 <p className="text-xs text-gray-400 font-mono mt-1">
                   Economista Titulado egresado de la Universidad Nacional de San Antonio Abad del Cusco (UNSAAC)
                 </p>
               </div>
 
-              {/* BLOQUE: DESCRIPCIÓN */}
+              {/* BLOQUE: TRAYECTORIA Y DESCRIPCIÓN */}
               <div className="border border-gray-200 p-6 rounded-xl bg-white flex-1 flex flex-col justify-center space-y-3">
                 <p className="text-sm text-gray-600 leading-relaxed">
-                  Swim Trader Profesional, Value Investor y Emprendedor, con más de 10 años de experiencia en la gestión financiera estratégica de negocios
-                  y data analytics con una sólida formación académica en Finanzas y Ciencia de Datos y una destacada trayectoria laboral en diversas empresas
-                  multinacionales como consultor.
+                  Swim Trader Profesional, Value Investor y Emprendedor, con más de 10 años de experiencia en la gestión financiera estratégica de negocios y data analytics con una sólida formación académica en Finanzas y Ciencia de Datos y una destacada trayectoria laboral en diversas empresas multinacionales como consultor.
                 </p>
                 <p className="text-sm text-gray-600 leading-relaxed">
                   "En Escuela Global nuestro objetivo principal es dotar al estudiante de herramientas prácticas ejecutables desde el primer día, con soporte constante y certificación oficial respaldada."
