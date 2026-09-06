@@ -198,13 +198,17 @@ function PositionEditor({
   form,
   backgroundPreview,
   backPreview,
+  isConstancia,
   onChangePosition,
 }: {
   form: FormState;
   backgroundPreview: string;
   backPreview: string;
+  isConstancia: boolean;
   onChangePosition: (key: PositionKey, pos: XYPosition) => void;
 }) {
+  // Una Constancia no tiene contraportada ni QR: no tiene sentido dejar
+  // posicionar nada ahí, así que la vista queda fija en "Cara".
   const [activeSide, setActiveSide] = useState<PageSide>("front");
   const previewRef = useRef<HTMLDivElement>(null);
   const [previewWidth, setPreviewWidth] = useState(0);
@@ -243,7 +247,9 @@ function PositionEditor({
 
   return (
     <div className="space-y-4">
-      {/* Selector cara / contraportada */}
+      {/* Selector cara / contraportada — oculto para Constancia, que es de
+          una sola cara */}
+      {!isConstancia && (
       <div className="flex gap-2">
         {(
           [
@@ -265,6 +271,7 @@ function PositionEditor({
           </button>
         ))}
       </div>
+      )}
 
       {/* Preview interactivo */}
       <div className="space-y-1">
@@ -729,6 +736,7 @@ function PlantillasPageContent() {
                 form={form}
                 imagePreview={imagePreview}
                 backImagePreview={backImagePreview}
+                isConstancia={ownerType === "course_constancia"}
                 onChange={(patch) => setForm((prev) => ({ ...prev, ...patch }))}
                 onImageChange={handleImageChange}
                 onBackImageChange={handleBackImageChange}
@@ -738,6 +746,7 @@ function PlantillasPageContent() {
                 form={form}
                 backgroundPreview={imagePreview}
                 backPreview={backImagePreview}
+                isConstancia={ownerType === "course_constancia"}
                 onChangePosition={handlePositionChange}
               />
             )}
@@ -953,6 +962,7 @@ function ConfigTab({
   form,
   imagePreview,
   backImagePreview,
+  isConstancia,
   onChange,
   onImageChange,
   onBackImageChange,
@@ -960,6 +970,7 @@ function ConfigTab({
   form: FormState;
   imagePreview: string;
   backImagePreview: string;
+  isConstancia: boolean;
   onChange: (patch: Partial<FormState>) => void;
   onImageChange: (file: File | null, localUrl: string) => void;
   onBackImageChange: (file: File | null, localUrl: string) => void;
@@ -988,13 +999,17 @@ function ConfigTab({
         hint="Página frontal del certificado con nombre del estudiante"
       />
 
-      {/* Imagen de contraportada */}
-      <ImageUploader
-        preview={backImagePreview}
-        onChange={onBackImageChange}
-        label="Imagen de contraportada"
-        hint="Página trasera del certificado donde se ubica el código QR"
-      />
+      {/* Imagen de contraportada — las Constancias son de una sola cara: no
+          llevan QR ni página pública de verificación, así que no tiene
+          sentido ofrecer una contraportada para esa plantilla. */}
+      {!isConstancia && (
+        <ImageUploader
+          preview={backImagePreview}
+          onChange={onBackImageChange}
+          label="Imagen de contraportada"
+          hint="Página trasera del certificado donde se ubica el código QR"
+        />
+      )}
 
       {/* Tipografía */}
       <div className="space-y-1">

@@ -1,17 +1,14 @@
 "use client";
 
 import { useParams } from "next/navigation";
+import { PublicLayout } from "@/components/templates";
 import { NosotrosView } from "./NosotrosView";
 import { DevolucionesView } from "./DevolucionesView";
 import { TerminosView } from "./TerminosView";
 import { PrivacidadView } from "./PrivacidadView";
 import { ContactoView } from "./ContactoView";
 
-export default function InstitucionalDynamicPage() {
-  const params = useParams();
-  const rawSlug = (params?.slug as string) || "";
-  const slug = (Array.isArray(rawSlug) ? rawSlug[0] : rawSlug).toLowerCase().trim();
-
+function resolveView(slug: string) {
   if (slug.includes("contact")) {
     return <ContactoView />;
   }
@@ -29,4 +26,12 @@ export default function InstitucionalDynamicPage() {
   }
 
   return <NosotrosView />;
+}
+
+export default function InstitucionalDynamicPage() {
+  const params = useParams();
+  const rawSlug = (params?.slug as string) || "";
+  const slug = (Array.isArray(rawSlug) ? rawSlug[0] : rawSlug).toLowerCase().trim();
+
+  return <PublicLayout>{resolveView(slug)}</PublicLayout>;
 }

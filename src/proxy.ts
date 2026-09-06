@@ -49,6 +49,34 @@ function decodeJwtPayload(token: string): Record<string, unknown> {
   return payload;
 }
 
+// El access_token dura solo 5 minutos (ver AuthGuard en el backend). Si ya
+// venció pero el refresh_token (7 días) sigue vivo, no tiene sentido cortar
+// la navegación: el propio AuthGuard renueva el access_token de forma
+// transparente en la primera llamada a la API que haga la página destino.
+// Este middleware nunca verifica la firma (no tiene el secreto), solo decodifica
+// el payload para leer el rol — la verificación real ocurre en el backend.
+function getSessionPayload(request: NextRequest): Record<string, unknown> | null {
+  const accessToken = request.cookies.get("access_token")?.value;
+  if (accessToken) {
+    try {
+      return decodeJwtPayload(accessToken);
+    } catch {
+      // Vencido o inválido: seguimos con el refresh_token.
+    }
+  }
+
+  const refreshToken = request.cookies.get("refresh_token")?.value;
+  if (refreshToken) {
+    try {
+      return decodeJwtPayload(refreshToken);
+    } catch {
+      return null;
+    }
+  }
+
+  return null;
+}
+
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -63,30 +91,24 @@ export function proxy(request: NextRequest) {
 
   if (!protectedPrefix) return NextResponse.next();
 
-  const token = request.cookies.get("access_token")?.value;
+  const payload = getSessionPayload(request);
 
-  if (!token) {
+  if (!payload) {
     const loginUrl = new URL("/auth/login", request.url);
     loginUrl.searchParams.set("redirect", pathname);
-    return NextResponse.redirect(loginUrl);
-  }
-
-  try {
-    const payload = decodeJwtPayload(token);
-    const userRole = payload.role as string;
-    const allowedRoles = ROLE_ROUTES[protectedPrefix];
-
-    if (!userRole || !allowedRoles.includes(userRole)) {
-      return NextResponse.redirect(new URL("/sin-acceso", request.url));
-    }
-
-    return NextResponse.next();
-  } catch {
-    // Token inválido o expirado
-    const response = NextResponse.redirect(new URL("/auth/login", request.url));
+    const response = NextResponse.redirect(loginUrl);
     response.cookies.delete("access_token");
     return response;
   }
+
+  const userRole = payload.role as string;
+  const allowedRoles = ROLE_ROUTES[protectedPrefix];
+
+  if (!userRole || !allowedRoles.includes(userRole)) {
+    return NextResponse.redirect(new URL("/sin-acceso", request.url));
+  }
+
+  return NextResponse.next();
 }
 
 export const config = {

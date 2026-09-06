@@ -287,11 +287,11 @@ export default function RegisterPage() {
             />
             <Label htmlFor="terms" className="text-sm text-gray-600 leading-snug cursor-pointer">
               Acepto los{" "}
-              <Link href="/terminos" className="text-brand-primary hover:underline">
+              <Link href="/institucional/terminos" className="text-brand-primary hover:underline" target="_blank">
                 términos de uso
               </Link>{" "}
               y la{" "}
-              <Link href="/privacidad" className="text-brand-primary hover:underline">
+              <Link href="/institucional/privacidad" className="text-brand-primary hover:underline" target="_blank">
                 política de privacidad
               </Link>
             </Label>
