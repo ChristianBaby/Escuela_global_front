@@ -1,14 +1,12 @@
+"use client";
+
 import Link from "next/link";
+import { useQuery } from "@tanstack/react-query";
 import { Logo, Separator } from "@/components/atoms";
 import { MapPin, Mail, Phone } from "lucide-react";
+import { categoriasService } from "@/lib/services/categories";
 
 const LINKS = {
-  cursos: [
-    { label: "Catálogo completo", href: "/cursos" },
-    { label: "Estadística y Software", href: "/cursos?category=estadistica" },
-    { label: "Administración", href: "/cursos?category=administracion" },
-    { label: "Ingeniería", href: "/cursos?category=ingenieria" },
-  ],
   // 🚀 COLUMNA: SOPORTE
   soporte: [
     { label: "Políticas de Privacidad", href: "/institucional/politicas-de-privacidad" },
@@ -18,13 +16,25 @@ const LINKS = {
 };
 
 export function Footer() {
+  // Las 3 categorías con más alumnos matriculados — reemplazan la lista fija
+  // que antes traía nombres inventados y no correspondía a categorías reales.
+  const { data: topCategorias = [] } = useQuery({
+    queryKey: ["footer-top-categorias"],
+    queryFn: () => categoriasService.getTop(3),
+    staleTime: 10 * 60_000,
+  });
+
   return (
     <footer className="bg-[#022A5D] text-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
-          
+      {/* Sin max-w: el fondo y el contenido ocupan todo el ancho. Las columnas usan
+          flex + justify-between (no grid-cols-4) para que en monitores anchos no se
+          estiren de forma rara — cada una mantiene un ancho de lectura razonable
+          (max-w-xs) y lo que crece es el espacio ENTRE columnas, no cada columna. */}
+      <div className="px-4 sm:px-6 lg:px-8 py-14">
+        <div className="flex flex-col md:flex-row md:flex-wrap md:justify-between gap-10">
+
           {/* Identidad de la Empresa */}
-          <div className="space-y-4">
+          <div className="space-y-4 max-w-xs">
             <Logo variant="full" size="md" theme="dark" />
             <p className="text-xs leading-relaxed text-white/80">
               Formación profesional y técnica de estándar internacional.
@@ -35,18 +45,26 @@ export function Footer() {
           </div>
 
           {/* Columna: Cursos */}
-          <div>
+          <div className="max-w-xs">
             <h4 className="font-semibold text-white mb-4 text-xs uppercase tracking-wider">
               Cursos
             </h4>
             <ul className="space-y-2.5">
-              {LINKS.cursos.map(({ label, href }) => (
-                <li key={href}>
+              <li>
+                <Link
+                  href="/cursos"
+                  className="text-xs text-white/80 hover:text-white transition-colors"
+                >
+                  Catálogo completo
+                </Link>
+              </li>
+              {topCategorias.map((cat) => (
+                <li key={cat.id}>
                   <Link
-                    href={href}
+                    href={`/cursos?categorias=${cat.id}`}
                     className="text-xs text-white/80 hover:text-white transition-colors"
                   >
-                    {label}
+                    {cat.name}
                   </Link>
                 </li>
               ))}
@@ -54,7 +72,7 @@ export function Footer() {
           </div>
 
           {/* Columna: SOPORTE */}
-          <div>
+          <div className="max-w-xs">
             <h4 className="font-semibold text-white mb-4 text-xs uppercase tracking-wider">
               Soporte
             </h4>
@@ -73,7 +91,7 @@ export function Footer() {
           </div>
 
           {/* Columna: CONTACTO (Texto plano en ubicación, enlaces activos para correo y WhatsApp) */}
-          <div>
+          <div className="max-w-xs">
             <h4 className="font-semibold text-white mb-4 text-xs uppercase tracking-wider">
               Contacto
             </h4>

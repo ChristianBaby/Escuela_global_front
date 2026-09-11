@@ -80,6 +80,14 @@ export function Header() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  // Bloquea el scroll del fondo mientras el menú overlay está abierto
+  useEffect(() => {
+    document.body.style.overflow = mobileOpen ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [mobileOpen]);
+
   const handleLogout = async () => {
     try {
       await authService.logout();
@@ -93,7 +101,7 @@ export function Header() {
     <header className="sticky top-0 z-50 bg-white transition-shadow">
       {/* Barra superior de Redes Sociales */}
       <div className="bg-[#0B1230] text-gray-300 text-xs py-1.5 border-b border-white/10 hidden sm:block">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+        <div className="px-4 sm:px-6 lg:px-8 flex justify-between items-center">
           <span className="text-[11px] text-gray-400">
             Grupo Empresarial Especializaciones Global LLC
           </span>
@@ -141,13 +149,19 @@ export function Header() {
         </div>
       </div>
 
-      {/* Barra principal de navegación */}
+      {/* Barra principal de navegación — sin max-w: ocupa todo el ancho. Grilla de
+          3 columnas IGUALES (no flex-1 sobre un solo lado) para que el nav del
+          medio quede centrado respecto al ancho TOTAL, no solo respecto al hueco
+          que sobra entre logo y acciones — si esos dos grupos no miden lo mismo,
+          centrar solo en el hueco no es el centro real de la pantalla. */}
       <div className={cn("transition-shadow", scrolled && "shadow-sm border-b border-gray-100")}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-14">
-            <Logo variant="full" size="sm" />
+        <div className="px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-[auto_1fr_auto] md:grid-cols-3 items-center h-14 gap-4">
+            <div className="flex items-center">
+              <Logo variant="full" size="sm" />
+            </div>
 
-            <nav className="hidden md:flex items-center gap-6">
+            <nav className="hidden md:flex items-center justify-center gap-6">
               {NAV_LINKS.map((link) => (
                 <Link
                   key={link.href}
@@ -164,147 +178,180 @@ export function Header() {
               ))}
             </nav>
 
-            <div className="hidden md:flex items-center gap-3">
-              <button
-                onClick={() => setCartOpen(true)}
-                className={cn(
-                  "relative p-2 transition-colors rounded-lg hover:bg-gray-50",
-                  isCartActive ? "text-brand-primary" : "text-gray-600 hover:text-brand-primary"
-                )}
-                aria-label="Abrir carrito de compras"
-              >
-                <ShoppingCart size={19} />
-                {cartCount > 0 && (
-                  <Badge className="absolute -top-1 -right-1 h-4 min-w-4 p-0 flex items-center justify-center text-[10px] bg-brand-secondary text-white border-0">
-                    {cartCount}
-                  </Badge>
-                )}
-              </button>
+            <div className="flex items-center justify-end gap-3">
+              <div className="hidden md:flex items-center gap-3">
+                <button
+                  onClick={() => setCartOpen(true)}
+                  className={cn(
+                    "relative p-2 transition-colors rounded-lg hover:bg-gray-50",
+                    isCartActive ? "text-brand-primary" : "text-gray-600 hover:text-brand-primary"
+                  )}
+                  aria-label="Abrir carrito de compras"
+                >
+                  <ShoppingCart size={19} />
+                  {cartCount > 0 && (
+                    <Badge className="absolute -top-1 -right-1 h-4 min-w-4 p-0 flex items-center justify-center text-[10px] bg-brand-secondary text-white border-0">
+                      {cartCount}
+                    </Badge>
+                  )}
+                </button>
 
+                {isAuthenticated ? (
+                  <>
+                    <Link
+                      href="/dashboard"
+                      className="flex items-center gap-1.5 text-sm font-medium text-gray-700 hover:text-brand-primary transition-colors"
+                    >
+                      <div className="w-7 h-7 rounded-full bg-brand-primary/10 flex items-center justify-center text-brand-primary text-xs font-bold select-none">
+                        {user?.first_name?.charAt(0).toUpperCase() ?? "U"}
+                      </div>
+                      <span className="max-w-[100px] truncate">{user?.first_name}</span>
+                    </Link>
+                    <button
+                      onClick={handleLogout}
+                      className="p-1.5 text-gray-400 hover:text-red-500 transition-colors"
+                      title="Cerrar sesión"
+                    >
+                      <LogOut size={16} />
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      href="/auth/login"
+                      className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "text-gray-700 hover:text-brand-primary text-xs px-3 h-8")}
+                    >
+                      Iniciar sesión
+                    </Link>
+                    <Link
+                      href="/auth/register"
+                      className={cn(buttonVariants({ size: "sm" }), "bg-brand-primary hover:bg-brand-primary/90 text-white text-xs px-3 h-8")}
+                    >
+                      Registrarse
+                    </Link>
+                  </>
+                )}
+              </div>
+
+              {/* Botón Mobile */}
+              <button
+                className="md:hidden p-2 text-gray-600 hover:text-brand-primary transition-colors"
+                onClick={() => setMobileOpen(!mobileOpen)}
+                aria-label={mobileOpen ? "Cerrar menú" : "Abrir menú"}
+              >
+                {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Menú Mobile — panel lateral (drawer) que se sobrepone al contenido, no lo empuja */}
+      {mobileOpen && (
+        <>
+          {/* Fondo oscuro — clic para cerrar */}
+          <div
+            className="md:hidden fixed inset-x-0 top-14 bottom-0 z-40 bg-black/40"
+            onClick={() => setMobileOpen(false)}
+          />
+          <div className="md:hidden fixed right-0 top-14 bottom-0 z-50 w-[78%] max-w-xs bg-white border-l border-gray-100 px-4 py-3 space-y-2 overflow-y-auto shadow-xl">
+            {NAV_LINKS.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={cn(
+                  "block py-2 px-3 rounded-lg text-sm font-medium transition-colors",
+                  isNavActive(link.href)
+                    ? "bg-brand-primary/10 text-brand-primary font-semibold"
+                    : "text-gray-700 hover:bg-gray-50"
+                )}
+                onClick={() => setMobileOpen(false)}
+              >
+                {link.label}
+              </Link>
+            ))}
+
+            {/* Carrito */}
+            <button
+              onClick={() => {
+                setMobileOpen(false);
+                setCartOpen(true);
+              }}
+              className={cn(
+                "w-full flex items-center justify-between py-2 px-3 rounded-lg text-sm font-medium transition-colors",
+                isCartActive
+                  ? "bg-brand-primary/10 text-brand-primary font-semibold"
+                  : "text-gray-700 hover:bg-gray-50"
+              )}
+            >
+              <span className="flex items-center gap-2">
+                <ShoppingCart size={16} />
+                Carrito
+              </span>
+              {cartCount > 0 && (
+                <Badge className="h-5 min-w-5 px-1.5 flex items-center justify-center text-[11px] bg-brand-secondary text-white border-0">
+                  {cartCount}
+                </Badge>
+              )}
+            </button>
+
+            {/* Redes en móvil */}
+            <div className="pt-2 pb-1 border-t border-gray-100 flex items-center justify-between px-3">
+              <span className="text-xs text-gray-500 font-medium">Síguenos:</span>
+              <div className="flex items-center gap-4 text-gray-600">
+                <a href="https://www.youtube.com/@especializacionesescuelaglobal" target="_blank" rel="noopener noreferrer">
+                  <YoutubeIcon className="w-4 h-4" />
+                </a>
+                <a href="https://www.tiktok.com/@escuelaglobal07?_r=1&_t=ZS-97GymbiMWXa" target="_blank" rel="noopener noreferrer">
+                  <TikTokIcon className="w-4 h-4" />
+                </a>
+                <a href="https://www.instagram.com/escuelaglobaloficial/" target="_blank" rel="noopener noreferrer">
+                  <InstagramIcon className="w-4 h-4" />
+                </a>
+                <a href="https://www.facebook.com/escuelaglobaloficial.net" target="_blank" rel="noopener noreferrer">
+                  <FacebookIcon className="w-4 h-4" />
+                </a>
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-gray-100 flex flex-col gap-2">
               {isAuthenticated ? (
                 <>
                   <Link
                     href="/dashboard"
-                    className="flex items-center gap-1.5 text-sm font-medium text-gray-700 hover:text-brand-primary transition-colors"
+                    className="block py-2 px-3 text-sm font-medium text-gray-700"
+                    onClick={() => setMobileOpen(false)}
                   >
-                    <div className="w-7 h-7 rounded-full bg-brand-primary/10 flex items-center justify-center text-brand-primary text-xs font-bold select-none">
-                      {user?.first_name?.charAt(0).toUpperCase() ?? "U"}
-                    </div>
-                    <span className="max-w-[100px] truncate">{user?.first_name}</span>
+                    Mi aula virtual
                   </Link>
                   <button
                     onClick={handleLogout}
-                    className="p-1.5 text-gray-400 hover:text-red-500 transition-colors"
-                    title="Cerrar sesión"
+                    className="text-left py-2 px-3 text-sm font-medium text-red-500"
                   >
-                    <LogOut size={16} />
+                    Cerrar sesión
                   </button>
                 </>
               ) : (
                 <>
                   <Link
                     href="/auth/login"
-                    className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "text-gray-700 hover:text-brand-primary text-xs px-3 h-8")}
+                    onClick={() => setMobileOpen(false)}
+                    className={cn(buttonVariants({ variant: "outline" }), "w-full text-xs")}
                   >
                     Iniciar sesión
                   </Link>
                   <Link
                     href="/auth/register"
-                    className={cn(buttonVariants({ size: "sm" }), "bg-brand-primary hover:bg-brand-primary/90 text-white text-xs px-3 h-8")}
+                    onClick={() => setMobileOpen(false)}
+                    className={cn(buttonVariants(), "w-full bg-brand-primary text-white text-xs")}
                   >
                     Registrarse
                   </Link>
                 </>
               )}
             </div>
-
-            {/* Botón Mobile */}
-            <button
-              className="md:hidden p-2 text-gray-600 hover:text-brand-primary transition-colors"
-              onClick={() => setMobileOpen(!mobileOpen)}
-              aria-label={mobileOpen ? "Cerrar menú" : "Abrir menú"}
-            >
-              {mobileOpen ? <X size={20} /> : <Menu size={20} />}
-            </button>
           </div>
-        </div>
-      </div>
-
-      {/* Menú Mobile */}
-      {mobileOpen && (
-        <div className="md:hidden border-t border-gray-100 bg-white px-4 py-3 space-y-2">
-          {NAV_LINKS.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={cn(
-                "block py-2 px-3 rounded-lg text-sm font-medium transition-colors",
-                isNavActive(link.href)
-                  ? "bg-brand-primary/10 text-brand-primary font-semibold"
-                  : "text-gray-700 hover:bg-gray-50"
-              )}
-              onClick={() => setMobileOpen(false)}
-            >
-              {link.label}
-            </Link>
-          ))}
-
-          {/* Redes en móvil */}
-          <div className="pt-2 pb-1 border-t border-gray-100 flex items-center justify-between px-3">
-            <span className="text-xs text-gray-500 font-medium">Síguenos:</span>
-            <div className="flex items-center gap-4 text-gray-600">
-              <a href="https://www.youtube.com/@especializacionesescuelaglobal" target="_blank" rel="noopener noreferrer">
-                <YoutubeIcon className="w-4 h-4" />
-              </a>
-              <a href="https://www.tiktok.com/@escuelaglobal07?_r=1&_t=ZS-97GymbiMWXa" target="_blank" rel="noopener noreferrer">
-                <TikTokIcon className="w-4 h-4" />
-              </a>
-              <a href="https://www.instagram.com/escuelaglobaloficial/" target="_blank" rel="noopener noreferrer">
-                <InstagramIcon className="w-4 h-4" />
-              </a>
-              <a href="https://www.facebook.com/escuelaglobaloficial.net" target="_blank" rel="noopener noreferrer">
-                <FacebookIcon className="w-4 h-4" />
-              </a>
-            </div>
-          </div>
-
-          <div className="pt-2 border-t border-gray-100 flex flex-col gap-2">
-            {isAuthenticated ? (
-              <>
-                <Link
-                  href="/dashboard"
-                  className="block py-2 px-3 text-sm font-medium text-gray-700"
-                  onClick={() => setMobileOpen(false)}
-                >
-                  Mi aula virtual
-                </Link>
-                <button
-                  onClick={handleLogout}
-                  className="text-left py-2 px-3 text-sm font-medium text-red-500"
-                >
-                  Cerrar sesión
-                </button>
-              </>
-            ) : (
-              <>
-                <Link
-                  href="/auth/login"
-                  onClick={() => setMobileOpen(false)}
-                  className={cn(buttonVariants({ variant: "outline" }), "w-full text-xs")}
-                >
-                  Iniciar sesión
-                </Link>
-                <Link
-                  href="/auth/register"
-                  onClick={() => setMobileOpen(false)}
-                  className={cn(buttonVariants(), "w-full bg-brand-primary text-white text-xs")}
-                >
-                  Registrarse
-                </Link>
-              </>
-            )}
-          </div>
-        </div>
+        </>
       )}
 
       <CartModal open={cartOpen} onOpenChange={setCartOpen} />
