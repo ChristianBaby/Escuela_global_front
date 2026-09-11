@@ -8,5 +8,6 @@ export * from "./marketing";
 export * from "./orders";
 export * from "./payments";
 export * from "./profile";
+export * from "./reviews";
 export * from "./student";
 export * from "./users";

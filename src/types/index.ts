@@ -199,6 +199,7 @@ export interface Review {
   user_id: string;
   user?: Pick<User, "id" | "first_name" | "last_name" | "profile_photo_url">;
   course_id: string;
+  course?: Pick<Course, "id" | "title" | "slug">;
   enrollment_id: string;
   rating: number;
   comment: string;

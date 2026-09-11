@@ -1,5 +1,5 @@
 import { api } from "@/lib/http/api";
-import type { Course, PaginatedResponse } from "@/types";
+import type { Course, PaginatedResponse, Review } from "@/types";
 
 export interface CursoParams {
   page?: number;
@@ -165,6 +165,9 @@ export const cursosService = {
 
   getMatriculados: (id: string, params?: { page?: number; limit?: number; search?: string }) =>
     api.get<PaginatedResponse<Record<string, unknown>>>(`/courses/${id}/matriculados`, { params }).then((r) => r.data),
+
+  getReviews: (id: string) =>
+    api.get<Review[]>(`/courses/${id}/reviews`).then((r) => r.data),
 
   // ── Módulos ────────────────────────────────────────────────────────────────
 

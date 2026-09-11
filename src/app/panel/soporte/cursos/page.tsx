@@ -20,6 +20,7 @@ import {
   ChevronRight,
   Filter,
   Award,
+  Star,
 } from "lucide-react";
 
 // ── Constantes ─────────────────────────────────────────────────────────────────
@@ -273,6 +274,19 @@ export default function SoporteCursosPage() {
                           >
                             <Award size={13} />
                             Certificaciones
+                          </Link>
+                          <Link
+                            href={`/panel/soporte/resenas?curso_id=${curso.id}`}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs text-amber-600 hover:bg-amber-50 rounded-lg transition-colors w-[132px] shrink-0"
+                            title="Reseñas del curso"
+                          >
+                            <Star size={13} className="fill-amber-500 text-amber-500 shrink-0" />
+                            Reseñas
+                            {curso.review_count > 0 && (
+                              <span className="text-gray-400 font-normal tabular-nums">
+                                {curso.avg_rating.toFixed(1)} ({curso.review_count})
+                              </span>
+                            )}
                           </Link>
                           <Link
                             href={`/panel/soporte/cursos/${curso.id}/editar`}
