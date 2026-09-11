@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
@@ -33,7 +33,7 @@ import { cartService } from "@/lib/services/cart";
 import { useCartStore } from "@/store/cartStore";
 import { useAuthStore } from "@/store/authStore";
 import { getGuestSessionToken } from "@/lib/session";
-import type { Course, Instructor } from "@/types";
+import type { Course, Instructor, Review } from "@/types";
 import type { ModuleListItem } from "@/lib/services/courses/courses.service";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -156,7 +156,11 @@ function AddToCartButton({
     return (
       <Link
         href="/carrito"
-        className="flex items-center justify-center gap-2 w-full bg-[#084D95] hover:bg-[#084D95]/90 text-white font-semibold py-3 rounded-xl transition-colors"
+        className={
+          variant === "solid"
+            ? "flex items-center justify-center gap-2 w-full bg-[#23AFE5] hover:bg-[#23AFE5]/90 text-white font-semibold py-3 rounded-xl transition-colors"
+            : "flex items-center justify-center gap-2 w-full border-2 border-[#084D95] text-[#084D95] font-semibold py-3 rounded-xl hover:bg-[#084D95]/5 transition-colors"
+        }
       >
         <CheckCircle2 size={16} />
         Ver carrito
@@ -235,31 +239,24 @@ function InstructorCard({ instructor }: { instructor: Instructor }) {
 
 // ─── ReviewCard ───────────────────────────────────────────────────────────────
 
-interface ReviewPreview {
-  user_name: string;
-  profile_photo_url?: string;
-  rating: number;
-  comment: string;
-  date: string;
-}
-
-function ReviewCard({ review }: { review: ReviewPreview }) {
+function ReviewCard({ review }: { review: Review }) {
+  const userName = review.user ? `${review.user.first_name} ${review.user.last_name}` : "Estudiante";
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-4">
       <div className="flex items-start gap-3">
         <div className="w-9 h-9 rounded-full bg-[#084D95]/10 flex items-center justify-center shrink-0 overflow-hidden">
-          {review.profile_photo_url ? (
-            <img src={review.profile_photo_url} alt="" className="w-full h-full object-cover" />
+          {review.user?.profile_photo_url ? (
+            <img src={review.user.profile_photo_url} alt="" className="w-full h-full object-cover" />
           ) : (
             <span className="text-sm font-bold text-[#084D95]">
-              {review.user_name?.[0]?.toUpperCase() ?? "?"}
+              {userName[0]?.toUpperCase() ?? "?"}
             </span>
           )}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2">
-            <p className="font-medium text-gray-900 text-sm truncate">{review.user_name}</p>
-            <p className="text-xs text-gray-400 shrink-0">{formatDate(review.date)}</p>
+            <p className="font-medium text-gray-900 text-sm truncate">{userName}</p>
+            <p className="text-xs text-gray-400 shrink-0">{formatDate(review.created_at)}</p>
           </div>
           <div className="flex items-center gap-0.5 mt-0.5">
             {Array.from({ length: 5 }).map((_, i) => (
@@ -360,6 +357,30 @@ export default function CourseDetailPage({
     queryFn: () => cursosService.list({ limit: 60 }),
     staleTime: 60_000,
   });
+
+  const { data: reviews = [], isLoading: loadingReviews } = useQuery({
+    queryKey: ["curso-reviews", course?.id],
+    queryFn: () => cursosService.getReviews(course!.id),
+    enabled: !!course?.id,
+    staleTime: 60_000,
+  });
+
+  // El rectángulo azul decorativo de desktop mide lo mismo que el bloque de
+  // texto del hero (en vez de un alto fijo adivinado) — si el texto crece
+  // (tagline larga, stats que envuelven a 2 líneas), el azul crece con él y
+  // no se corta a la mitad de una línea.
+  const heroTextRef = useRef<HTMLDivElement>(null);
+  const [heroHeight, setHeroHeight] = useState<number | null>(null);
+
+  useEffect(() => {
+    const el = heroTextRef.current;
+    if (!el) return;
+    const update = () => setHeroHeight(el.offsetHeight);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [course]);
 
   if (isLoading) return <LoadingSkeleton />;
   if (isError || !course) return <CourseNotFound />;
@@ -486,16 +507,24 @@ export default function CourseDetailPage({
   return (
     <PublicLayout>
       {/* ── Hero + contenido, en un solo grid continuo ──────────────────────
-          En desktop el azul es una capa de fondo de alto fijo (~300px) detrás del
-          bloque de texto, para que la tarjeta (más alta) sobresalga hacia el blanco.
+          En desktop el azul es una capa de fondo detrás del bloque de texto,
+          medida dinámicamente con un ResizeObserver (heroHeight) — no un alto
+          fijo adivinado, porque si el texto crece (tagline larga, stats que
+          envuelven a 2 líneas) un número fijo corta la última línea a la mitad.
+          La tarjeta, más alta que el texto, sobresale hacia el blanco a propósito.
           En mobile no hay tarjeta al lado (va aparte, hidden lg:block), así que ahí
-          el azul simplemente envuelve el bloque de texto con su alto natural — nada
-          de adivinar un número fijo, porque en mobile ese bloque incluye también la
-          imagen del curso y es más alto que en desktop.
+          el azul simplemente envuelve el bloque de texto con su alto natural.
           La columna de texto+contenido y la tarjeta comparten la MISMA fila del grid,
           así el sticky tiene toda esa altura para seguir pegado durante el scroll. */}
       <div className="relative">
-        <div className="hidden lg:block absolute inset-x-0 top-0 h-[300px] bg-[#084D95]" />
+        {/* +32 = el padding-top (lg:pt-8) del contenedor de abajo: el rectángulo y el
+            bloque de texto comparten el mismo top-0, pero el texto arranca 32px más
+            abajo por ese padding. +24 extra de respiro para que no quede justo al
+            límite del texto (se veía la línea de "Docentes" pegada al borde). */}
+        <div
+          className="hidden lg:block absolute inset-x-0 top-0 bg-[#084D95]"
+          style={{ height: heroHeight !== null ? heroHeight + 32 + 24 : 260 }}
+        />
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-0 pb-8 lg:pt-8">
           {/* Sin items-start: la celda de la tarjeta debe estirarse (stretch, el default) a
@@ -508,7 +537,10 @@ export default function CourseDetailPage({
               {/* Bloque de texto del hero — en mobile lleva su propio fondo azul (alto natural,
                   bordes a bordes vía margen negativo); en desktop es transparente porque el
                   rectángulo de arriba ya pinta el fondo detrás de todo el grid */}
-              <div className="-mx-4 sm:-mx-6 px-4 sm:px-6 pt-2 pb-6 lg:mx-0 lg:px-0 lg:pt-0 lg:pb-0 bg-[#084D95] lg:bg-transparent text-white space-y-4">
+              <div
+                ref={heroTextRef}
+                className="-mx-4 sm:-mx-6 px-4 sm:px-6 pt-2 pb-6 lg:mx-0 lg:px-0 lg:pt-0 lg:pb-0 bg-[#084D95] lg:bg-transparent text-white space-y-4"
+              >
                 {/* Imagen del curso — solo mobile (en desktop ya se ve en la tarjeta de al lado) */}
                 <div className="lg:hidden h-48 sm:h-56 rounded-xl overflow-hidden bg-white/10 flex items-center justify-center">
                   {course.thumbnail_url ? (
@@ -578,21 +610,25 @@ export default function CourseDetailPage({
                 )}
               </div>
 
-              {/* Barra sticky mobile — precio + compra. Va justo aquí (no al final) para que su
-                  posición natural en el documento quede al principio del contenido: así el
+              {/* Barra sticky mobile — nombre + precio + compra. Va justo aquí (no al final) para
+                  que su posición natural en el documento quede al principio del contenido: así el
                   sticky "atrapa" apenas se sale el hero y se mantiene pegada durante TODO el
-                  scroll de "Lo que aprenderás"...Instructores, no solo justo antes del footer. */}
-              <div className="-mx-4 sm:-mx-6 lg:hidden sticky top-0 z-20 bg-white border-b border-gray-200 px-4 py-3 shadow-sm space-y-2">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-lg font-bold text-gray-900">S/ {displayPricePen.toFixed(2)}</span>
-                  {hasDiscountPen && (
-                    <span className="text-gray-400 line-through text-xs">S/ {course.price_pen.toFixed(2)}</span>
-                  )}
-                  <span className="text-xs text-gray-400">· $ {displayPriceUsd.toFixed(2)}</span>
+                  scroll de "Lo que aprenderás"...Instructores, no solo justo antes del footer.
+                  top-14 (no top-0) porque el Header también es sticky top-0 — si ambos usan
+                  top-0 quedan superpuestos y el Header (z-50) tapa esta barra (z-20). */}
+              <div className="-mx-4 sm:-mx-6 lg:hidden sticky top-14 z-20 bg-white border-b border-gray-200 px-4 py-3 shadow-sm space-y-2">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm font-semibold text-gray-900 truncate flex-1">{course.title}</p>
+                  <div className="flex items-baseline gap-1.5 shrink-0">
+                    <span className="text-base font-bold text-gray-900">S/ {displayPricePen.toFixed(2)}</span>
+                    {hasDiscountPen && (
+                      <span className="text-gray-400 line-through text-xs">S/ {course.price_pen.toFixed(2)}</span>
+                    )}
+                  </div>
                 </div>
                 <div className="flex gap-2">
                   <BuyNowButton course={course} />
-                  <AddToCartButton course={course} variant="solid" />
+                  <AddToCartButton course={course} />
                 </div>
               </div>
 
@@ -691,15 +727,41 @@ export default function CourseDetailPage({
                 </section>
               )}
 
+              {/* Reseñas — solo las aprobadas por el admin (el backend ya filtra) */}
+              {(loadingReviews || reviews.length > 0) && (
+                <section>
+                  <h2 className="text-lg font-semibold text-brand-primary mb-4">
+                    Reseñas {course.review_count > 0 && `(${course.review_count})`}
+                  </h2>
+                  {loadingReviews ? (
+                    <div className="space-y-3">
+                      {Array.from({ length: 2 }).map((_, i) => (
+                        <Skeleton key={i} className="h-24 rounded-xl" />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {reviews.map((review) => (
+                        <ReviewCard key={review.id} review={review} />
+                      ))}
+                    </div>
+                  )}
+                </section>
+              )}
+
             </div>
 
             {/* Columna derecha — tarjeta de imagen + precio + compra, solo desktop.
                 Termina justo con la columna izquierda (hero...Instructores) — "Cursos
                 relacionados" queda AFUERA de este grid a propósito, para que el
                 contenedor del sticky no se extienda hasta ahí y la tarjeta deje de
-                aparecer apenas se llega a esa sección. */}
+                aparecer apenas se llega a esa sección.
+                top-24 (no top-6): el Header en desktop trae además la barra de redes
+                sociales encima del nav — con top-6 la tarjeta quedaba pegada muy arriba
+                y el Header (que va por encima, z-50) le tapaba la parte de arriba de
+                la imagen. top-24 deja espacio para las dos filas del Header. */}
             <div className="hidden lg:block">
-              <div className="sticky top-6">
+              <div className="sticky top-24">
                 {SidebarCard}
               </div>
             </div>
