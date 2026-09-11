@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, Suspense, useEffect } from "react";
+import { useState, useCallback, useRef, useLayoutEffect, Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { SlidersHorizontal, Search, X, ChevronLeft, ChevronRight, ArrowUpDown } from "lucide-react";
@@ -87,6 +87,37 @@ function CursosContent() {
   useEffect(() => {
     setSearchInput(search);
   }, [search]);
+
+  // Offsets medidos en vivo (no adivinados) para que el buscador/filtros/orden y
+  // el sidebar de filtros queden justo debajo del Header y de la barra de arriba,
+  // sin importar cuánto mida el Header — ya cambió de tamaño varias veces (barra
+  // de redes sociales agregada después) y romper esto a mano cada vez no escala.
+  const toolbarRef = useRef<HTMLDivElement>(null);
+  const [headerHeight, setHeaderHeight] = useState(56);
+  const [toolbarHeight, setToolbarHeight] = useState(60);
+
+  // Medidos por separado (no en un solo efecto que dependía de que AMBOS refs
+  // existieran a la vez) — así uno no puede bloquear silenciosamente al otro.
+  // useLayoutEffect (no useEffect) para medir antes del primer pintado.
+  useLayoutEffect(() => {
+    const headerEl = document.querySelector("header");
+    if (!headerEl) return;
+    const update = () => setHeaderHeight(headerEl.offsetHeight);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(headerEl);
+    return () => ro.disconnect();
+  }, []);
+
+  useLayoutEffect(() => {
+    const toolbarEl = toolbarRef.current;
+    if (!toolbarEl) return;
+    const update = () => setToolbarHeight(toolbarEl.offsetHeight);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(toolbarEl);
+    return () => ro.disconnect();
+  }, []);
 
   // 🚀 CAMBIO 3: Consultamos las matrículas reales de Postgres (Solo si está logueado)
   const { data: serverEnrollments = [] } = useQuery({
@@ -262,8 +293,12 @@ function CursosContent() {
       {/* Buscador + filtros (mobile) + orden — sticky debajo del header. Sin el
           contador de cursos, para que ocupe menos alto. En mobile/tablet el
           buscador va en su propia línea y Filtros se agrupa con el orden en
-          la línea de abajo; desde lg todo entra en una sola línea. */}
-      <div className="sticky top-12 z-30 bg-white border-b border-gray-100">
+          la línea de abajo; desde lg todo entra en una sola línea.
+          top = headerHeight medido en vivo (no un valor fijo adivinado): el Header
+          va por encima (z-50, sticky top-0) y su alto varía según breakpoint y
+          según cambios que se le hagan — medirlo evita que quede tapando esta barra
+          o dejando un hueco de más. */}
+      <div ref={toolbarRef} className="sticky z-30 bg-white border-b border-gray-100" style={{ top: headerHeight }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
             <form onSubmit={handleSearchSubmit} className="flex gap-2 w-full lg:flex-1 lg:max-w-sm">
@@ -342,10 +377,13 @@ function CursosContent() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex gap-8">
-          {/* Sidebar desktop — sticky, con el mismo offset que la barra de arriba
-              (header + buscador/controles) para que no se tapen */}
+          {/* Sidebar desktop — sticky, offset = header + barra de arriba medidos en
+              vivo, para que no se tapen sin importar cuánto midan */}
           <div className="hidden lg:block w-64 shrink-0">
-            <div className="sticky top-[118px] bg-white rounded-xl border border-gray-200 p-5">
+            <div
+              className="sticky bg-white rounded-xl border border-gray-200 p-5"
+              style={{ top: headerHeight + toolbarHeight }}
+            >
               <CourseFilters
                 filters={filters}
                 onChange={handleFiltersChange}
