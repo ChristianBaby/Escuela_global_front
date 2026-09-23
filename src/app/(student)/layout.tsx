@@ -17,21 +17,23 @@ import {
   ShoppingCart,
   LogOut,
   Award,
+  GraduationCap,
   Menu,
   X,
 } from "lucide-react";
 
 const NAV = [
-  { label: "Inicio",            href: "/dashboard",          icon: LayoutDashboard },
-  { label: "Mis cursos",        href: "/mis-cursos",         icon: BookOpen },
-  { label: "Mis certificados",  href: "/mis-certificados",   icon: Award },
-  { label: "Carrito",           href: "/carrito",             icon: ShoppingCart },
-  { label: "Notificaciones",    href: "/notificaciones",      icon: Bell },
-  { label: "Mi perfil",         href: "/perfil",              icon: User },
+  { label: "Inicio",           href: "/dashboard",        icon: LayoutDashboard },
+  { label: "Mis cursos",       href: "/mis-cursos",       icon: BookOpen },
+  { label: "Mis certificados", href: "/mis-certificados", icon: Award },
+  { label: "Docentes",         href: "/docentes",         icon: GraduationCap },
+  { label: "Carrito",          href: "/carrito",          icon: ShoppingCart },
+  { label: "Notificaciones",   href: "/notificaciones",   icon: Bell },
+  { label: "Mi perfil",        href: "/perfil",           icon: User },
 ];
 
 export default function StudentLayout({ children }: { children: React.ReactNode }) {
-  const pathname  = usePathname();
+  const pathname = usePathname();
   const { user, clearUser } = useAuthStore();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
@@ -44,8 +46,8 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
     staleTime: 0,
   });
   const unreadCount = notifData?.unread_count ?? 0;
-  const badgeLabel  = unreadCount > 9 ? "9+" : unreadCount > 0 ? String(unreadCount) : null;
-  const badgeColor  = unreadCount >= 10 ? "bg-red-600" : "bg-[#084D95]";
+  const badgeLabel = unreadCount > 9 ? "9+" : unreadCount > 0 ? String(unreadCount) : null;
+  const badgeColor = unreadCount >= 10 ? "bg-red-600" : "bg-[#084D95]";
 
   const handleLogout = async () => {
     try {
@@ -113,7 +115,6 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
 
             const content = (
               <>
-                {/* Ícono con badge de no leídas en Notificaciones */}
                 <span className="relative shrink-0">
                   <Icon size={18} />
                   {isNotif && badgeLabel && (
@@ -126,8 +127,6 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
               </>
             );
 
-            // El carrito abre en un modal en vez de navegar — así el estudiante
-            // no pierde este sidebar (esa página vive fuera de (student), en (public)).
             if (isCart) {
               return (
                 <button
