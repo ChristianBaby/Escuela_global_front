@@ -12,6 +12,7 @@ import { useAuthStore } from "@/store/authStore";
 import { Eye, EyeOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { authService } from "@/lib/services/auth";
+import { resolvePostLoginPath } from "@/lib/auth/roleRoutes";
 
 const loginSchema = z.object({
   email: z.string().email("Ingresa un correo válido"),
@@ -20,14 +21,6 @@ const loginSchema = z.object({
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
-
-const ROLE_REDIRECTS: Record<string, string> = {
-  estudiante:   "/dashboard",
-  soporte:      "/panel/soporte/cursos",
-  marketing:    "/panel/marketing/publicaciones",
-  admin:        "/panel",
-  coordinador:  "/panel/estudiantes",
-};
 
 export default function LoginPage() {
   const [serverError, setServerError] = useState<string | null>(null);
@@ -59,13 +52,9 @@ export default function LoginPage() {
         remember_me: data.remember_me,
         turnstileToken: turnstileToken ?? "",
       });
-      if (result.access_token) {
-        const maxAge = data.remember_me ? 60 * 60 * 24 * 30 : "";
-        const expires = maxAge ? `; max-age=${maxAge}` : "";
-        document.cookie = `access_token=${result.access_token}; path=/; SameSite=Lax${expires}`;
-      }
       setUser(result.user);
-      router.push(ROLE_REDIRECTS[result.user.role] ?? "/dashboard");
+      const redirect = new URLSearchParams(window.location.search).get("redirect");
+      router.push(resolvePostLoginPath(redirect, result.user.role));
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
       setServerError(msg ?? "Credenciales incorrectas. Inténtalo de nuevo.");
