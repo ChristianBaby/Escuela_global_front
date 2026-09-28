@@ -9,6 +9,14 @@ import { Calendar, ChevronRight } from "lucide-react";
 import { lanzamientosService } from "@/lib/services/marketing";
 import type { UpcomingLaunch } from "@/types";
 
+// "2026-09-22" (solo fecha) lo interpreta JS como medianoche UTC — mostrarlo
+// con toLocaleDateString en una zona detrás de UTC (ej. Perú, UTC-5) retrocede
+// un día. Parseamos año/mes/día directo para que coincida con lo programado.
+function formatLocalDate(dateStr: string) {
+  const [y, m, d] = dateStr.slice(0, 10).split("-").map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString("es-PE", { day: "numeric", month: "long" });
+}
+
 function LaunchCard({ launch }: { launch: UpcomingLaunch }) {
   return (
     <div className="group rounded-2xl overflow-hidden border border-gray-200 bg-white h-full hover:shadow-lg hover:border-brand-secondary/40 hover:-translate-y-0.5 transition-all duration-300">
@@ -32,7 +40,7 @@ function LaunchCard({ launch }: { launch: UpcomingLaunch }) {
         </h3>
         <p className="flex items-center gap-1.5 text-gray-500 text-xs mb-3">
           <Calendar size={14} />
-          Fecha de Inicio: {new Date(launch.start_date).toLocaleDateString("es-PE", { day: "numeric", month: "long" })}
+          Fecha de Inicio: {formatLocalDate(launch.start_date)}
         </p>
 
         {launch.link_url ? (
@@ -90,33 +98,30 @@ export function UpcomingLaunches() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {Array.from({ length: 2 }).map((_, i) => <LaunchCardSkeleton key={i} />)}
           </div>
-        ) : launches.length > 3 ? (
-          <Swiper
-            modules={[Autoplay, Navigation]}
-            autoplay={{ delay: 5000, disableOnInteraction: false }}
-            navigation
-            loop
-            spaceBetween={24}
-            slidesPerView={1}
-            breakpoints={{
-              640: { slidesPerView: 2 },
-              1024: { slidesPerView: 2 },
-            }}
-            className="!pb-2"
-          >
-            {launches.map((launch) => (
-              <SwiperSlide key={launch.id} className="h-auto">
-                <LaunchCard launch={launch} />
-              </SwiperSlide>
-            ))}
-          </Swiper>
         ) : (
-          <div className="flex flex-wrap justify-center gap-6">
-            {launches.map((launch) => (
-              <div key={launch.id} className="w-full sm:w-[420px]">
-                <LaunchCard launch={launch} />
-              </div>
-            ))}
+          // Carrusel siempre que haya lanzamientos — antes con 3 o menos caía a una
+          // grilla estática sin flechas. slidesPerView="auto" + ancho fijo por
+          // tarjeta (no dividir el contenedor en 2 mitades gigantes) para que se
+          // vea igual de compacto que la grilla original (w-full sm:w-[420px]).
+          // loop necesita bastante más que el doble de tarjetas visibles para no
+          // romperse (con pocas, Swiper renderizaba 1 sola tarjeta a ancho completo).
+          <div className="relative">
+            <Swiper
+              modules={[Autoplay, Navigation]}
+              autoplay={{ delay: 5000, disableOnInteraction: false }}
+              navigation
+              loop={launches.length > 4}
+              centerInsufficientSlides
+              spaceBetween={24}
+              slidesPerView="auto"
+              className="!pb-2"
+            >
+              {launches.map((launch) => (
+                <SwiperSlide key={launch.id} className="h-auto !w-full sm:!w-[420px]">
+                  <LaunchCard launch={launch} />
+                </SwiperSlide>
+              ))}
+            </Swiper>
           </div>
         )}
       </div>
