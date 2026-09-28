@@ -29,8 +29,8 @@ export const cartService = {
     api.post("/cart/add", { course_id: courseId, ...(sessionToken ? { session_token: sessionToken } : {}) }).then((r) => r.data),
 
   // 🚀 CORREGIDO: Tu backend mapea "/cart/remove/:id" 
-  remove: (itemId: string): Promise<{ success: boolean; item_count: number }> =>
-    api.delete(`/cart/remove/${itemId}`).then((r) => r.data),
+  remove: (itemId: string, sessionToken?: string): Promise<{ success: boolean; item_count: number }> =>
+    api.delete(`/cart/remove/${itemId}`, { params: sessionToken ? { session_token: sessionToken } : {} }).then((r) => r.data),
 
   // 🚀 CORREGIDO: Tu backend mapea "/cart/clear"
   clear: (sessionToken?: string): Promise<{ success: boolean; message: string }> =>

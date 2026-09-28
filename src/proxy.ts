@@ -1,40 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-
-const ROLE_ROUTES: Record<string, string[]> = {
-  "/dashboard":           ["estudiante"],
-  "/mis-cursos":          ["estudiante"],
-  "/curso/":              ["estudiante"],
-  "/pedido":              ["estudiante"],
-  "/perfil":              ["estudiante", "soporte", "marketing", "admin", "coordinador"],
-  "/notificaciones":      ["estudiante", "soporte", "marketing", "admin", "coordinador"],
-  "/certificado":         ["estudiante"],
-  "/panel/soporte":       ["soporte", "admin"],
-  "/panel/marketing":     ["marketing", "admin"],
-  "/panel/coordinador":   ["coordinador", "admin"],
-  "/panel/estudiantes":   ["admin", "soporte", "coordinador"],
-  "/panel/auditoria":     ["admin"],
-  "/panel/cursos":        ["admin", "coordinador"],
-  "/panel":               ["admin", "soporte", "marketing", "coordinador"],
-};
-
-// Rutas más específicas primero
-const ROUTE_PREFIXES = [
-  "/panel/soporte",
-  "/panel/marketing",
-  "/panel/coordinador",
-  "/panel/estudiantes",
-  "/panel/auditoria",
-  "/panel/cursos",
-  "/panel",
-  "/dashboard",
-  "/mis-cursos",
-  "/curso/",
-  "/pedido",
-  "/perfil",
-  "/notificaciones",
-  "/certificado",
-];
+import { ROLE_LANDING, ROLE_ROUTES, getLandingForRole, getProtectedPrefix } from "@/lib/auth/roleRoutes";
 
 // JWT usa base64url: reemplazar - por + y _ por / antes de atob
 function decodeJwtPayload(token: string): Record<string, unknown> {
@@ -85,9 +51,7 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const protectedPrefix = ROUTE_PREFIXES.find((prefix) =>
-    pathname.startsWith(prefix)
-  );
+  const protectedPrefix = getProtectedPrefix(pathname);
 
   if (!protectedPrefix) return NextResponse.next();
 
@@ -95,16 +59,24 @@ export function proxy(request: NextRequest) {
 
   if (!payload) {
     const loginUrl = new URL("/auth/login", request.url);
-    loginUrl.searchParams.set("redirect", pathname);
+    loginUrl.searchParams.set("redirect", pathname + request.nextUrl.search);
     const response = NextResponse.redirect(loginUrl);
     response.cookies.delete("access_token");
     return response;
   }
 
   const userRole = payload.role as string;
-  const allowedRoles = ROLE_ROUTES[protectedPrefix];
+  const allowedRoles: string[] = ROLE_ROUTES[protectedPrefix];
 
   if (!userRole || !allowedRoles.includes(userRole)) {
+    // Staff con rol válido: en vez de un 403, mandarlo a su equivalente o su landing.
+    const isStaff = userRole in ROLE_LANDING && userRole !== "estudiante";
+    if (isStaff && protectedPrefix === "/perfil") {
+      return NextResponse.redirect(new URL("/panel/perfil", request.url));
+    }
+    if (isStaff && (protectedPrefix === "/panel" || protectedPrefix === "/notificaciones")) {
+      return NextResponse.redirect(new URL(getLandingForRole(userRole), request.url));
+    }
     return NextResponse.redirect(new URL("/sin-acceso", request.url));
   }
 
@@ -120,8 +92,8 @@ export const config = {
     "/dashboard/:path*",
     "/mis-cursos",
     "/mis-cursos/:path*",
+    "/mis-certificados",
     "/curso/:path*",
-    "/pedido/:path*",
     "/perfil/:path*",
     "/notificaciones/:path*",
     "/certificado/:path*",

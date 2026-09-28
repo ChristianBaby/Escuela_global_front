@@ -34,9 +34,11 @@ function formatPrice(price: number, currency: string) {
   return `${symbol} ${price.toFixed(2)}`;
 }
 
-// La cuenta de Mercado Pago configurada en este proyecto es de Perú y solo puede
-// liquidar en esa moneda (cada cuenta de MP está atada a un único país/moneda).
-const MERCADOPAGO_SUPPORTED_CURRENCY = "PEN";
+// Moneda en la que el backend crea la orden según el método: Mercado Pago y
+// Culqi liquidan en soles (cuentas de Perú); PayPal no acepta PEN y cobra en
+// USD con el precio en dólares del curso.
+type CheckoutPaymentMethod = "paypal" | "mercado_pago" | "culqi";
+const currencyFor = (method: CheckoutPaymentMethod) => (method === "paypal" ? "USD" : "PEN");
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -47,7 +49,7 @@ export default function CheckoutPage() {
 
   const [order, setOrder] = useState<{ id: string; total: number; currency: string } | null>(null);
   const [creatingOrder, setCreatingOrder] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<"paypal" | "mercado_pago" | "culqi">("mercado_pago");
+  const [paymentMethod, setPaymentMethod] = useState<CheckoutPaymentMethod>("mercado_pago");
 
   // true mientras se revisa, justo después de loguearse en el modal, si algún
   // curso del carrito ya estaba comprado por esta cuenta — evita que el
@@ -108,34 +110,24 @@ export default function CheckoutPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, displayItems.length > 0]);
 
-  // Al llegar autenticado (login previo o justo iniciado sesión) creamos la orden real
+  // Al llegar autenticado (login previo o justo iniciado sesión) creamos la
+  // orden real. Si el alumno cambia a un método que cobra en otra moneda
+  // (PayPal ↔ MP/Culqi), se crea una orden nueva en esa moneda; la anterior
+  // queda pendiente sin pagar.
   useEffect(() => {
-    if (isAuthenticated && !order && !creatingOrder && !syncingAfterAuth && displayItems.length > 0) {
+    const needsOrder = !order || order.currency !== currencyFor(paymentMethod);
+    if (isAuthenticated && needsOrder && !creatingOrder && !syncingAfterAuth && displayItems.length > 0) {
       setCreatingOrder(true);
       ordersService
         .create({ payment_method: paymentMethod })
         .then((res) => setOrder(res))
-        .catch(() => toast.error("No se pudo generar la orden de compra"))
+        .catch((error) =>
+          toast.error(error?.response?.data?.message ?? "No se pudo generar la orden de compra")
+        )
         .finally(() => setCreatingOrder(false));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, displayItems.length, syncingAfterAuth]);
-
-  // Mercado Pago y Culqi solo liquidan en soles (PEN) con las cuentas configuradas hoy.
-  const mercadoPagoAvailable = !order || order.currency === MERCADOPAGO_SUPPORTED_CURRENCY;
-  const culqiAvailable = !order || order.currency === MERCADOPAGO_SUPPORTED_CURRENCY;
-
-  // Si la orden resulta en una moneda que Mercado Pago/Culqi no pueden procesar (p. ej. USD),
-  // forzamos el cambio a PayPal para no ofrecer una opción que va a fallar al pagar.
-  useEffect(() => {
-    if (
-      order &&
-      order.currency !== MERCADOPAGO_SUPPORTED_CURRENCY &&
-      (paymentMethod === "mercado_pago" || paymentMethod === "culqi")
-    ) {
-      setPaymentMethod("paypal");
-    }
-  }, [order, paymentMethod]);
+  }, [isAuthenticated, displayItems.length, paymentMethod, order, syncingAfterAuth]);
 
   // Se ejecuta al iniciar sesión o registrarse desde el modal — el carrito de
   // invitado (local/session_token) se funde con el carrito real de la cuenta
@@ -238,37 +230,33 @@ export default function CheckoutPage() {
                 <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
                   <h3 className="text-sm font-bold text-brand-primary uppercase tracking-wider mb-4">1. Selecciona tu método de pago</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    {mercadoPagoAvailable && (
-                      <button
-                        type="button"
-                        onClick={() => setPaymentMethod("mercado_pago")}
-                        className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all text-center gap-2 ${
-                          paymentMethod === "mercado_pago"
-                            ? "border-[#084D95] bg-blue-50/40 text-[#084D95]"
-                            : "border-gray-200 text-gray-600 hover:border-gray-300"
-                        }`}
-                      >
-                        <CreditCard size={22} />
-                        <span className="text-xs font-bold">Mercado Pago (Latam)</span>
-                        <span className="text-[10px] text-gray-400">Tarjetas de débito/crédito locales</span>
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod("mercado_pago")}
+                      className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all text-center gap-2 ${
+                        paymentMethod === "mercado_pago"
+                          ? "border-[#084D95] bg-blue-50/40 text-[#084D95]"
+                          : "border-gray-200 text-gray-600 hover:border-gray-300"
+                      }`}
+                    >
+                      <CreditCard size={22} />
+                      <span className="text-xs font-bold">Mercado Pago (Latam)</span>
+                      <span className="text-[10px] text-gray-400">Tarjetas de débito/crédito locales</span>
+                    </button>
 
-                    {culqiAvailable && (
-                      <button
-                        type="button"
-                        onClick={() => setPaymentMethod("culqi")}
-                        className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all text-center gap-2 ${
-                          paymentMethod === "culqi"
-                            ? "border-[#084D95] bg-blue-50/40 text-[#084D95]"
-                            : "border-gray-200 text-gray-600 hover:border-gray-300"
-                        }`}
-                      >
-                        <Smartphone size={22} />
-                        <span className="text-xs font-bold">Culqi (Tarjeta / Yape)</span>
-                        <span className="text-[10px] text-gray-400">Tarjetas locales y Yape</span>
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod("culqi")}
+                      className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all text-center gap-2 ${
+                        paymentMethod === "culqi"
+                          ? "border-[#084D95] bg-blue-50/40 text-[#084D95]"
+                          : "border-gray-200 text-gray-600 hover:border-gray-300"
+                      }`}
+                    >
+                      <Smartphone size={22} />
+                      <span className="text-xs font-bold">Culqi (Tarjeta / Yape)</span>
+                      <span className="text-[10px] text-gray-400">Tarjetas locales y Yape</span>
+                    </button>
 
                     <button
                       type="button"
@@ -284,18 +272,12 @@ export default function CheckoutPage() {
                       <span className="text-[10px] text-gray-400">Internacional (USD)</span>
                     </button>
                   </div>
-                  {!mercadoPagoAvailable && (
-                    <p className="text-[11px] text-gray-400 mt-3">
-                      Mercado Pago y Culqi solo están disponibles para pagos en soles (PEN). Este curso está en{" "}
-                      {order?.currency}, así que usa PayPal.
-                    </p>
-                  )}
                 </div>
 
                 <div className="space-y-4">
                   <h3 className="text-sm font-bold text-brand-primary uppercase tracking-wider px-1">2. Procesar transacción</h3>
 
-                  {creatingOrder || !order ? (
+                  {creatingOrder || !order || order.currency !== currencyFor(paymentMethod) ? (
                     <div className="flex flex-col items-center justify-center py-12 space-y-2 bg-white rounded-xl border border-gray-200">
                       <Loader2 size={28} className="animate-spin text-[#084D95]" />
                       <p className="text-xs text-gray-400">Preparando tu orden de compra…</p>
@@ -310,7 +292,7 @@ export default function CheckoutPage() {
                     </div>
                   ) : (
                     <div className="animate-fadeIn">
-                      <PayPalButtonComponent orderId={order.id} totalAmount={order.total} />
+                      <PayPalButtonComponent orderId={order.id} totalAmount={order.total} currency={order.currency} />
                     </div>
                   )}
                 </div>

@@ -210,6 +210,7 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
     // El carrito local vive en localStorage, sin relación con la sesión.
     useCartStore.getState().clearCart();
     document.cookie = "access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    document.cookie = "refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     window.location.href = "/auth/login";
   };
 

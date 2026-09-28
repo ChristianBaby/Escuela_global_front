@@ -51,14 +51,16 @@ src/app/
   panel/           # role-gated by proxy.ts, NOT by separate route groups
     soporte/       #   role: soporte | admin — cursos, categorias, certificados, matriculas
     marketing/     #   role: marketing | admin — publicaciones, sliders, event-types, notificaciones
-    estudiantes/   #   role: admin | soporte
-    cursos/        #   role: admin only
+    coordinador/   #   role: coordinador | admin — cursos, matriculas
+    estudiantes/   #   role: admin | soporte | coordinador
+    cursos/        #   role: admin | coordinador (matriculados)
     auditoria/     #   role: admin only
-    perfil/        #   role: admin | soporte | marketing
+    perfil/        #   role: admin | soporte | marketing | coordinador
+    (page.tsx)     #   /panel exact = admin only; other staff are redirected to their landing
   sin-acceso/      # Access-denied page
 ```
 
-There are no `(soporte)`, `(marketing)`, or `(admin)` route groups — all three roles share the single `panel/` tree, and `proxy.ts` enforces per-subpath role checks (see `ROLE_ROUTES` in that file) rather than folder-level segregation.
+There are no `(soporte)`, `(marketing)`, or `(admin)` route groups — all staff roles share the single `panel/` tree, and `proxy.ts` enforces per-subpath role checks rather than folder-level segregation. `ROLE_ROUTES`, `ROLE_LANDING` and the post-login `?redirect=` validation live in `src/lib/auth/roleRoutes.ts` (shared by the proxy, login page, Header and `/sin-acceso`). Staff hitting `/perfil` go to `/panel/perfil`; staff hitting `/notificaciones` or `/panel` (non-admin) go to their landing.
 
 ## Key Infrastructure Files
 
@@ -66,7 +68,8 @@ There are no `(soporte)`, `(marketing)`, or `(admin)` route groups — all three
 |------|---------|
 | `src/lib/http/api.ts` | Axios instance (`withCredentials: true` so the httpOnly cookie rides along automatically — it does not attach a token manually), redirects to `/auth/login` on 401 |
 | `src/lib/providers.tsx` | React Query + Sonner toaster (wraps the entire app) |
-| `src/proxy.ts` | Next.js 16 route protection — checks `access_token` cookie |
+| `src/proxy.ts` | Next.js 16 route protection — checks `access_token` (falls back to `refresh_token`) cookie |
+| `src/lib/auth/roleRoutes.ts` | Role → allowed route prefixes, role → landing, safe post-login redirect |
 | `src/store/authStore.ts` | Zustand — user session, `hasRole()` helper |
 | `src/store/cartStore.ts` | Zustand — cart items, persisted to localStorage |
 | `src/types/index.ts` | All TypeScript types derived from the data model |
@@ -82,7 +85,7 @@ Frontend (Next.js) ──REST API (JWT in httpOnly cookies)──► Backend (Ne
 
 ### Role-Based Routing
 
-Five roles each have their own entry point after login:
+Five roles each have their own entry point after login (a valid `?redirect=` the role can access takes precedence):
 
 | Role | Landing route | Access |
 |------|--------------|--------|
@@ -90,6 +93,7 @@ Five roles each have their own entry point after login:
 | Estudiante | `/dashboard` | Enrolled courses, progress, certs |
 | Soporte | `/panel/soporte/cursos` | Course content management (note: the backend's `courses`/`categories` write endpoints are currently `@Roles('admin')` only — see `Api_endpoints.md` finding #5) |
 | Marketing | `/panel/marketing/publicaciones` | Promotions & sliders |
+| Coordinador | `/panel/estudiantes` | Students, `/panel/coordinador/*`, course enrollee reports (`/panel/cursos/[id]/matriculados`) |
 | Administrador | `/panel` | Everything + KPIs |
 
 Admin inherits all Soporte + Marketing permissions. There is no `/admin/dashboard` route — the admin dashboard lives at `/panel`.
@@ -104,9 +108,13 @@ Admin inherits all Soporte + Marketing permissions. There is no `/admin/dashboar
 
 **Panel — Marketing:** `/panel/marketing`, `/panel/marketing/publicaciones`, `/panel/marketing/sliders`, `/panel/marketing/event-types`, `/panel/marketing/notificaciones`
 
-**Panel — Admin/Soporte:** `/panel/estudiantes`, `/panel/estudiantes/[user_id]`, `/panel/estudiantes/[user_id]/cursos/[course_id]`
+**Panel — Coordinador:** `/panel/coordinador/cursos`, `/panel/coordinador/matriculas`
 
-**Panel — Admin only:** `/panel`, `/panel/auditoria`, `/panel/cursos/[id]/matriculados`
+**Panel — Admin/Soporte/Coordinador:** `/panel/estudiantes`, `/panel/estudiantes/[user_id]`, `/panel/estudiantes/[user_id]/cursos/[course_id]`
+
+**Panel — Admin/Coordinador:** `/panel/cursos/[id]/matriculados`
+
+**Panel — Admin only:** `/panel`, `/panel/auditoria`
 
 **Panel — shared:** `/panel/perfil`
 

@@ -99,7 +99,8 @@ export default function CarritoPage() {
 
   // ── Mutations del carrito real (invitado o logueado) ──
   const serverRemoveMutation = useMutation({
-    mutationFn: (itemId: string) => cartService.remove(itemId),
+    mutationFn: (itemId: string) =>
+      cartService.remove(itemId, isAuthenticated ? undefined : guestSessionToken),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: CART_KEY });
       toast.success("Curso eliminado del carrito");

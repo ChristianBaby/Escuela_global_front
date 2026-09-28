@@ -163,9 +163,6 @@ export const cursosService = {
   removeInstructor: (cursoId: string, instructorId: string) =>
     api.delete(`/courses/${cursoId}/instructors/${instructorId}`).then((r) => r.data),
 
-  getMatriculados: (id: string, params?: { page?: number; limit?: number; search?: string }) =>
-    api.get<PaginatedResponse<Record<string, unknown>>>(`/courses/${id}/matriculados`, { params }).then((r) => r.data),
-
   getReviews: (id: string) =>
     api.get<Review[]>(`/courses/${id}/reviews`).then((r) => r.data),
 

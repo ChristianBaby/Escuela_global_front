@@ -2,21 +2,15 @@
 import { useRouter } from "next/navigation";
 import { AuthLayout } from "@/components/templates";
 import { LoginForm } from "@/components/organisms";
+import { resolvePostLoginPath } from "@/lib/auth/roleRoutes";
 import type { User } from "@/types";
-
-const ROLE_REDIRECTS: Record<string, string> = {
-  estudiante:   "/dashboard",
-  soporte:      "/panel/soporte/cursos",
-  marketing:    "/panel/marketing/publicaciones",
-  admin:        "/panel",
-  coordinador:  "/panel/estudiantes",
-};
 
 export default function LoginPage() {
   const router = useRouter();
 
   function handleSuccess(user: User) {
-    router.push(ROLE_REDIRECTS[user.role] ?? "/dashboard");
+    const redirect = new URLSearchParams(window.location.search).get("redirect");
+    router.push(resolvePostLoginPath(redirect, user.role));
   }
 
   return (

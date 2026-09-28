@@ -7,6 +7,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Logo, Badge, buttonVariants } from "@/components/atoms";
 import { CartModal } from "@/components/organisms/CartModal";
 import { useAuthStore } from "@/store/authStore";
+import { getLandingForRole } from "@/lib/auth/roleRoutes";
 import { useCartStore } from "@/store/cartStore";
 import { authService } from "@/lib/services/auth";
 import { cartService } from "@/lib/services/cart";
@@ -122,6 +123,7 @@ export function Header() {
     } catch {}
     clearUser();
     document.cookie = "access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    document.cookie = "refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     // Sin esto, datos de la cuenta anterior (matrículas, carrito autenticado,
     // etc.) quedan cacheados y se le siguen mostrando a la siguiente sesión
     // (invitado u otra cuenta) hasta que algo los vuelva a pedir.
@@ -236,7 +238,7 @@ export function Header() {
                 {isAuthenticated ? (
                   <>
                     <Link
-                      href="/dashboard"
+                      href={getLandingForRole(user?.role)}
                       className="flex items-center gap-1.5 text-sm font-medium text-gray-700 hover:text-brand-primary transition-colors"
                     >
                       <div className="w-7 h-7 rounded-full bg-brand-primary/10 flex items-center justify-center text-brand-primary text-xs font-bold select-none">
@@ -355,7 +357,7 @@ export function Header() {
               {isAuthenticated ? (
                 <>
                   <Link
-                    href="/dashboard"
+                    href={getLandingForRole(user?.role)}
                     className="block py-2 px-3 text-sm font-medium text-gray-700"
                     onClick={() => setMobileOpen(false)}
                   >

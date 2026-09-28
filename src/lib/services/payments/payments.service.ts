@@ -33,6 +33,22 @@ export interface CreateCulqiChargeResponse {
   order_number: string;
 }
 
+export interface CreatePaypalOrderResponse {
+  paypalOrderId: string;
+}
+
+export interface CapturePaypalOrderDto {
+  orderId: string;
+  paypalOrderId: string;
+}
+
+export interface CapturePaypalOrderResponse {
+  success: boolean;
+  order_number: string;
+  // La captura quedó retenida por PayPal; la confirma el webhook del backend.
+  pending?: boolean;
+}
+
 export const paymentsService = {
   mercadoPago: {
     createPreference: (data: CreateMercadoPagoPreferenceDto) =>
@@ -50,6 +66,18 @@ export const paymentsService = {
     createCharge: (data: CreateCulqiChargeDto) =>
       api
         .post<CreateCulqiChargeResponse>("/payments-v2/culqi/charge", data)
+        .then((r) => r.data),
+  },
+
+  paypal: {
+    createOrder: (data: { orderId: string }) =>
+      api
+        .post<CreatePaypalOrderResponse>("/payments-v2/paypal/orders", data)
+        .then((r) => r.data),
+
+    capture: (data: CapturePaypalOrderDto) =>
+      api
+        .post<CapturePaypalOrderResponse>("/payments-v2/paypal/capture", data)
         .then((r) => r.data),
   },
 };
