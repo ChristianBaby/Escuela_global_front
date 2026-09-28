@@ -3,7 +3,7 @@
 import { use, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   BookOpen,
@@ -30,9 +30,11 @@ import { StarRating } from "@/components/atoms";
 import { CourseCarousel } from "@/components/organisms";
 import { cursosService } from "@/lib/services/courses";
 import { cartService } from "@/lib/services/cart";
+import { studentService } from "@/lib/services/student";
 import { useCartStore } from "@/store/cartStore";
 import { useAuthStore } from "@/store/authStore";
 import { getGuestSessionToken } from "@/lib/session";
+import { isEnrollmentActive } from "@/lib/enrollment";
 import type { Course, Instructor, Review } from "@/types";
 import type { ModuleListItem } from "@/lib/services/courses/courses.service";
 
@@ -124,6 +126,36 @@ function ModuleItem({ module }: { module: ModuleListItem }) {
   );
 }
 
+// ─── EnrolledCourseCTA ────────────────────────────────────────────────────────
+// Reemplaza el precio + botones de compra cuando el alumno logueado ya está
+// matriculado en este curso (llegó desde el catálogo sin sesión, hizo clic
+// por curiosidad, y al iniciar sesión no tiene sentido ofrecerle comprarlo).
+
+function EnrolledCourseCTA({ courseId, progressPercent }: { courseId: string; progressPercent: number }) {
+  return (
+    <div className="space-y-2.5">
+      <div className="flex items-center gap-1.5 text-emerald-600 text-sm font-semibold">
+        <CheckCircle2 size={16} />
+        Ya estás matriculado
+      </div>
+      <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+        <div
+          className="h-full bg-emerald-500 rounded-full transition-all"
+          style={{ width: `${Math.min(100, Math.max(0, progressPercent))}%` }}
+        />
+      </div>
+      <p className="text-xs text-gray-500">{Math.round(progressPercent)}% completado</p>
+      <Link
+        href={`/curso/${courseId}`}
+        className="flex items-center justify-center gap-2 w-full bg-[#084D95] hover:bg-[#084D95]/90 text-white font-semibold py-3 rounded-xl transition-colors"
+      >
+        <PlayCircle size={16} />
+        {progressPercent > 0 ? "Continuar curso" : "Ir al curso"}
+      </Link>
+    </div>
+  );
+}
+
 // ─── AddToCartButton ──────────────────────────────────────────────────────────
 
 function AddToCartButton({
@@ -134,22 +166,32 @@ function AddToCartButton({
   variant?: "outline" | "solid";
 }) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { addItem, hasItem } = useCartStore();
   const { isAuthenticated } = useAuthStore();
   const inCart = hasItem(course.id);
 
-  function handleClick() {
+  async function handleClick() {
     if (inCart) {
       router.push("/carrito");
       return;
     }
+    // El espejo local es solo para feedback instantáneo — este botón se
+    // convierte en "Ver carrito" en cuanto el curso ya está agregado, así
+    // que no se puede duplicar desde acá, y un error de verdad sí vale la
+    // pena mostrarlo en vez de quedarse callado.
     addItem(course);
-    cartService
-      .add(course.id, isAuthenticated ? undefined : getGuestSessionToken())
-      .catch(() => toast.error("No se pudo sincronizar el carrito con el servidor"));
-    toast.success("Curso agregado al carrito", {
-      action: { label: "Ver carrito", onClick: () => router.push("/carrito") },
-    });
+    const sessionToken = isAuthenticated ? undefined : getGuestSessionToken();
+    try {
+      await cartService.add(course.id, sessionToken);
+      toast.success("Curso agregado al carrito", {
+        action: { label: "Ver carrito", onClick: () => router.push("/carrito") },
+      });
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      toast.error(msg ?? "No se pudo agregar el curso");
+    }
+    queryClient.invalidateQueries({ queryKey: ["cart"] });
   }
 
   if (inCart) {
@@ -187,16 +229,25 @@ function AddToCartButton({
 
 function BuyNowButton({ course }: { course: Course }) {
   const router = useRouter();
-  const { addItem } = useCartStore();
+  const queryClient = useQueryClient();
+  const { addItem, hasItem } = useCartStore();
   const { isAuthenticated } = useAuthStore();
 
-  async function handleClick() {
+  function handleClick() {
+    // El carrito invitado (sin sesión) vive en el store local — el backend exige
+    // cookie autenticada para /cart/add, así que esa sincronización es un intento
+    // "best effort" (igual que en AddToCartButton), no algo que deba bloquear la
+    // compra ni mostrar error: el curso ya quedó agregado localmente.
+    // Si el curso ya estaba en el carrito (p. ej. se agregó antes con "Añadir al
+    // carrito"), NO se vuelve a llamar /cart/add — el backend no deduplica por
+    // curso, así que repetir la llamada crea una fila duplicada en el carrito.
+    const alreadyInCart = hasItem(course.id);
     addItem(course);
-    try {
-      await cartService.add(course.id, isAuthenticated ? undefined : getGuestSessionToken());
-    } catch {
-      toast.error("No se pudo agregar el curso al carrito. Intenta nuevamente.");
-      return;
+    if (!alreadyInCart) {
+      cartService
+        .add(course.id, isAuthenticated ? undefined : getGuestSessionToken())
+        .then(() => queryClient.invalidateQueries({ queryKey: ["cart"] }))
+        .catch(() => {});
     }
     router.push("/checkout"); // el proxy redirige a login si no está autenticado
   }
@@ -204,7 +255,7 @@ function BuyNowButton({ course }: { course: Course }) {
   return (
     <button
       onClick={handleClick}
-      className="flex items-center justify-center gap-2 w-full bg-[#084D95] hover:bg-[#084D95]/90 text-white font-semibold py-3 rounded-xl transition-colors"
+      className="btn-shine flex items-center justify-center gap-2 w-full bg-[#084D95] hover:bg-[#084D95]/90 text-white font-semibold py-3 rounded-xl transition-colors"
     >
       <CreditCard size={16} />
       Comprar ahora
@@ -336,11 +387,22 @@ export default function CourseDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = use(params);
+  const { isAuthenticated } = useAuthStore();
 
   const { data: course, isLoading, isError } = useQuery({
     queryKey: ["curso-slug", slug],
     queryFn: () => cursosService.getBySlug(slug),
     staleTime: 2 * 60_000,
+  });
+
+  // Misma queryKey que /cursos, /dashboard y /mis-cursos — si el alumno ya
+  // está matriculado en ESTE curso (entró desde el catálogo sin login, o ya
+  // tenía sesión), no se le ofrece comprarlo de nuevo: se le manda a
+  // continuar viéndolo.
+  const { data: myEnrollments = [] } = useQuery({
+    queryKey: ["mis-inscripciones"],
+    queryFn: studentService.getMyEnrollments,
+    enabled: isAuthenticated,
   });
 
   const { data: modules = [], isLoading: modulesLoading } = useQuery({
@@ -352,9 +414,12 @@ export default function CourseDetailPage({
 
   // "Cursos relacionados" — mismo criterio de relevancia que en el carrito:
   // misma categoría, software en común, o que esté en descuento.
+  // listCatalog() (no list()) — list() pega al endpoint interno /courses,
+  // sin filtrar por publicado, y podía sugerir cursos que ni siquiera están
+  // disponibles para el público.
   const { data: catalogData, isLoading: loadingRelated } = useQuery({
     queryKey: ["catalog-for-related"],
-    queryFn: () => cursosService.list({ limit: 60 }),
+    queryFn: () => cursosService.listCatalog({ limit: 60, status: "published" }),
     staleTime: 60_000,
   });
 
@@ -385,11 +450,28 @@ export default function CourseDetailPage({
   if (isLoading) return <LoadingSkeleton />;
   if (isError || !course) return <CourseNotFound />;
 
+  // isAuthenticated de nuevo aquí (no solo en el "enabled" del useQuery):
+  // react-query no borra el resultado anterior solo porque la query se
+  // desactive, así que sin este chequeo, cerrar sesión seguía mostrando la
+  // matrícula de la cuenta anterior hasta que algo más limpiara el caché.
+  // Si el acceso ya venció (access_expires_at pasado), el curso vuelve a
+  // comportarse como cualquier otro — se puede volver a comprar — en vez de
+  // quedar "matriculado" para siempre.
+  const myEnrollment = isAuthenticated
+    ? myEnrollments.find((e) => e.course_id === course.id && isEnrollmentActive(e))
+    : undefined;
+
   const displayPricePen = course.discount_price_pen ?? course.price_pen;
   const displayPriceUsd = course.discount_price_usd ?? course.price_usd;
   const hasDiscountPen  = course.discount_price_pen !== undefined && course.discount_price_pen < course.price_pen;
   const hasDiscountUsd  = course.discount_price_usd !== undefined && course.discount_price_usd < course.price_usd;
   const totalSessions   = modules.reduce((s, m) => s + (m.sessions_count ?? 0), 0);
+  // Se suma en vivo desde los módulos cargados en vez de confiar en
+  // course.total_duration_minutes del backend, que puede quedar desactualizado
+  // si se editan sesiones sin recalcular ese campo agregado.
+  const totalDurationMinutes = modulesLoading
+    ? course.total_duration_minutes
+    : modules.reduce((s, m) => s + (m.total_duration ?? 0), 0);
   const discountPct     = hasDiscountPen
     ? Math.round(((course.price_pen - displayPricePen) / course.price_pen) * 100)
     : 0;
@@ -422,44 +504,50 @@ export default function CourseDetailPage({
       </div>
 
       <div className="p-5 space-y-4">
-        {/* Precio */}
-        <div className="space-y-1">
-          <div className="flex items-baseline gap-2 flex-wrap">
-            <span className="text-3xl font-bold text-gray-900">
-              S/ {displayPricePen.toFixed(2)}
-            </span>
-            {hasDiscountPen && (
-              <>
-                <span className="text-lg text-gray-400 line-through">
-                  S/ {course.price_pen.toFixed(2)}
+        {myEnrollment ? (
+          <EnrolledCourseCTA courseId={course.id} progressPercent={myEnrollment.progress_percent} />
+        ) : (
+          <>
+            {/* Precio */}
+            <div className="space-y-1">
+              <div className="flex items-baseline gap-2 flex-wrap">
+                <span className="text-3xl font-bold text-gray-900">
+                  S/ {displayPricePen.toFixed(2)}
                 </span>
-                <span className="text-sm font-semibold text-[#23AFE5] ml-auto">
-                  -{discountPct}%
+                {hasDiscountPen && (
+                  <>
+                    <span className="text-lg text-gray-400 line-through">
+                      S/ {course.price_pen.toFixed(2)}
+                    </span>
+                    <span className="text-sm font-semibold text-[#23AFE5] ml-auto">
+                      -{discountPct}%
+                    </span>
+                  </>
+                )}
+              </div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-sm font-medium text-gray-500">
+                  $ {displayPriceUsd.toFixed(2)}
                 </span>
-              </>
-            )}
-          </div>
-          <div className="flex items-baseline gap-2">
-            <span className="text-sm font-medium text-gray-500">
-              $ {displayPriceUsd.toFixed(2)}
-            </span>
-            {hasDiscountUsd && (
-              <span className="text-xs text-gray-400 line-through">
-                $ {course.price_usd.toFixed(2)}
-              </span>
-            )}
-          </div>
-        </div>
+                {hasDiscountUsd && (
+                  <span className="text-xs text-gray-400 line-through">
+                    $ {course.price_usd.toFixed(2)}
+                  </span>
+                )}
+              </div>
+            </div>
 
-        {/* CTAs */}
-        <BuyNowButton course={course} />
-        <AddToCartButton course={course} />
+            {/* CTAs */}
+            <BuyNowButton course={course} />
+            <AddToCartButton course={course} />
+          </>
+        )}
 
         {/* Info */}
         <div className="border-t border-gray-100 pt-4 space-y-2.5 text-sm text-gray-600">
           <div className="flex items-center gap-2">
             <Clock size={14} className="text-gray-400 shrink-0" />
-            {formatDuration(course.total_duration_minutes)} de contenido en video
+            {formatDuration(totalDurationMinutes)} de contenido en video
           </div>
           <div className="flex items-center gap-2">
             <BookOpen size={14} className="text-gray-400 shrink-0" />
@@ -590,7 +678,7 @@ export default function CourseDetailPage({
                   </span>
                   <span className="flex items-center gap-1.5 text-white/60">
                     <Clock size={14} />
-                    {formatDuration(course.total_duration_minutes)}
+                    {formatDuration(totalDurationMinutes)}
                   </span>
                   <span className={`px-2 py-0.5 rounded text-xs font-medium ${LEVEL_COLOR[course.level]}`}>
                     {LEVEL_LABEL[course.level]}
@@ -617,19 +705,39 @@ export default function CourseDetailPage({
                   top-14 (no top-0) porque el Header también es sticky top-0 — si ambos usan
                   top-0 quedan superpuestos y el Header (z-50) tapa esta barra (z-20). */}
               <div className="-mx-4 sm:-mx-6 lg:hidden sticky top-14 z-20 bg-white border-b border-gray-200 px-4 py-3 shadow-sm space-y-2">
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-sm font-semibold text-gray-900 truncate flex-1">{course.title}</p>
-                  <div className="flex items-baseline gap-1.5 shrink-0">
-                    <span className="text-base font-bold text-gray-900">S/ {displayPricePen.toFixed(2)}</span>
-                    {hasDiscountPen && (
-                      <span className="text-gray-400 line-through text-xs">S/ {course.price_pen.toFixed(2)}</span>
-                    )}
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <BuyNowButton course={course} />
-                  <AddToCartButton course={course} />
-                </div>
+                {myEnrollment ? (
+                  <>
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm font-semibold text-gray-900 truncate flex-1">{course.title}</p>
+                      <span className="flex items-center gap-1 text-xs font-medium text-emerald-600 shrink-0">
+                        <CheckCircle2 size={13} /> Matriculado
+                      </span>
+                    </div>
+                    <Link
+                      href={`/curso/${course.id}`}
+                      className="flex items-center justify-center gap-2 w-full bg-[#084D95] hover:bg-[#084D95]/90 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors"
+                    >
+                      <PlayCircle size={15} />
+                      {myEnrollment.progress_percent > 0 ? "Continuar curso" : "Ir al curso"}
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm font-semibold text-gray-900 truncate flex-1">{course.title}</p>
+                      <div className="flex items-baseline gap-1.5 shrink-0">
+                        <span className="text-base font-bold text-gray-900">S/ {displayPricePen.toFixed(2)}</span>
+                        {hasDiscountPen && (
+                          <span className="text-gray-400 line-through text-xs">S/ {course.price_pen.toFixed(2)}</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <BuyNowButton course={course} />
+                      <AddToCartButton course={course} />
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* Lo que aprenderás */}
@@ -672,7 +780,7 @@ export default function CourseDetailPage({
                   <div className="mt-4 flex flex-wrap gap-4 text-sm text-gray-600">
                     <span className="flex items-center gap-1.5">
                       <Clock size={15} className="text-[#084D95]" />
-                      {formatDuration(course.total_duration_minutes)} de contenido
+                      {formatDuration(totalDurationMinutes)} de contenido
                     </span>
                     <span className="flex items-center gap-1.5">
                       <BookOpen size={15} className="text-[#084D95]" />
@@ -691,7 +799,7 @@ export default function CourseDetailPage({
                 <h2 className="text-lg font-semibold text-brand-primary mb-1">Contenido del curso</h2>
                 {!modulesLoading && modules.length > 0 && (
                   <p className="text-sm text-gray-500 mb-4">
-                    {modules.length} módulos · {totalSessions} clases · {formatDuration(course.total_duration_minutes)} en total
+                    {modules.length} módulos · {totalSessions} clases · {formatDuration(totalDurationMinutes)} en total
                   </p>
                 )}
                 {modulesLoading ? (

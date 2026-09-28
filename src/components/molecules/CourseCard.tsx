@@ -1,11 +1,16 @@
 import Link from "next/link";
 import { Badge, Skeleton } from "@/components/atoms";
 import { StarRating } from "@/components/atoms";
-import { BookOpen, Clock, Users } from "lucide-react";
+import { BookOpen, Clock, Users, CheckCircle2, PlayCircle } from "lucide-react";
 import type { Course } from "@/types";
 
 interface CourseCardProps {
   course: Course;
+  // Si está definido, el alumno ya está matriculado en este curso — la
+  // tarjeta muestra su progreso y "Ver curso"/"Continuar curso" en vez del
+  // precio, y enlaza a su vista de estudiante en vez de la ficha pública
+  // (igual que EdTeam/Udemy con los cursos que ya tienes).
+  progressPercent?: number;
 }
 
 const levelLabel: Record<string, string> = {
@@ -14,7 +19,8 @@ const levelLabel: Record<string, string> = {
   avanzado: "Avanzado",
 };
 
-export function CourseCard({ course }: CourseCardProps) {
+export function CourseCard({ course, progressPercent }: CourseCardProps) {
+  const isEnrolled = progressPercent !== undefined;
   const displayPricePen = course.discount_price_pen ?? course.price_pen;
   const displayPriceUsd = course.discount_price_usd ?? course.price_usd;
   const hasDiscountPen = course.discount_price_pen !== undefined && course.discount_price_pen < course.price_pen;
@@ -24,7 +30,7 @@ export function CourseCard({ course }: CourseCardProps) {
     : 0;
 
   return (
-    <Link href={`/cursos/${course.slug}`} className="group block h-full">
+    <Link href={isEnrolled ? `/curso/${course.id}` : `/cursos/${course.slug}`} className="group block h-full">
       <article className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg hover:border-brand-secondary/50 hover:-translate-y-0.5 transition-all duration-300 h-full flex flex-col">
         <div className="relative w-full h-48 bg-gradient-to-br from-brand-primary to-brand-secondary flex-shrink-0 overflow-hidden">
           {course.thumbnail_url ? (
@@ -38,14 +44,23 @@ export function CourseCard({ course }: CourseCardProps) {
               <BookOpen className="w-12 h-12 text-white/40" />
             </div>
           )}
-          {course.category && (
+          {isEnrolled ? (
             <div className="absolute top-3 left-3">
-              <Badge className="bg-brand-secondary text-white border-0 text-xs font-medium">
-                {course.category.name}
+              <Badge className="bg-emerald-600 text-white border-0 text-xs font-medium flex items-center gap-1">
+                <CheckCircle2 size={12} />
+                Ya matriculado
               </Badge>
             </div>
+          ) : (
+            course.category && (
+              <div className="absolute top-3 left-3">
+                <Badge className="bg-brand-secondary text-white border-0 text-xs font-medium">
+                  {course.category.name}
+                </Badge>
+              </div>
+            )
           )}
-          {discountPct > 0 && (
+          {!isEnrolled && discountPct > 0 && (
             <div className="absolute top-3 right-3">
               <Badge className="bg-red-500 text-white border-0 text-xs font-bold">
                 -{discountPct}%
@@ -81,33 +96,53 @@ export function CourseCard({ course }: CourseCardProps) {
             </span>
           </div>
 
-          <div className="pt-2 border-t border-gray-100 flex items-end justify-between gap-2">
-            <div className="flex flex-col gap-1">
-              <div className="flex items-baseline gap-1.5">
-                <span className="font-bold text-brand-primary text-base">
-                  S/ {displayPricePen.toFixed(2)}
+          {isEnrolled ? (
+            <div className="pt-2 border-t border-gray-100 flex items-center justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-emerald-500 rounded-full transition-all"
+                    style={{ width: `${Math.min(100, Math.max(0, progressPercent!))}%` }}
+                  />
+                </div>
+                <span className="text-[10px] text-gray-500 mt-1 block">
+                  {Math.round(progressPercent!)}% completado
                 </span>
-                {hasDiscountPen && (
-                  <span className="text-xs text-gray-400 line-through">
-                    S/ {course.price_pen.toFixed(2)}
-                  </span>
-                )}
               </div>
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-xs font-medium text-gray-500">
-                  $ {displayPriceUsd.toFixed(2)}
-                </span>
-                {hasDiscountUsd && (
-                  <span className="text-[10px] text-gray-400 line-through">
-                    $ {course.price_usd.toFixed(2)}
-                  </span>
-                )}
-              </div>
+              <span className="shrink-0 inline-flex items-center gap-1 text-xs font-semibold text-white bg-brand-primary px-3 py-1.5 rounded-lg group-hover:bg-brand-primary/90 transition-colors">
+                <PlayCircle size={13} />
+                {progressPercent! > 0 ? "Continuar curso" : "Ver curso"}
+              </span>
             </div>
-            <Badge variant="outline" className="text-xs border-gray-200 text-gray-500 shrink-0">
-              {levelLabel[course.level] ?? course.level}
-            </Badge>
-          </div>
+          ) : (
+            <div className="pt-2 border-t border-gray-100 flex items-end justify-between gap-2">
+              <div className="flex flex-col gap-1">
+                <div className="flex items-baseline gap-1.5">
+                  <span className="font-bold text-brand-primary text-base">
+                    S/ {displayPricePen.toFixed(2)}
+                  </span>
+                  {hasDiscountPen && (
+                    <span className="text-xs text-gray-400 line-through">
+                      S/ {course.price_pen.toFixed(2)}
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-xs font-medium text-gray-500">
+                    $ {displayPriceUsd.toFixed(2)}
+                  </span>
+                  {hasDiscountUsd && (
+                    <span className="text-[10px] text-gray-400 line-through">
+                      $ {course.price_usd.toFixed(2)}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <Badge variant="outline" className="text-xs border-gray-200 text-gray-500 shrink-0">
+                {levelLabel[course.level] ?? course.level}
+              </Badge>
+            </div>
+          )}
         </div>
       </article>
     </Link>
