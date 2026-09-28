@@ -13,4 +13,8 @@ export { CourseCarousel } from "./CourseCarousel";
 export { CourseFilters } from "./CourseFilters";
 export { Footer } from "./Footer";
 export { CartModal } from "./CartModal";
+export { LoginForm } from "./LoginForm";
+export { RegisterForm } from "./RegisterForm";
+export { AuthGateModal } from "./AuthGateModal";
+export type { AuthGateMode } from "./AuthGateModal";
 export type { FiltersState } from "./CourseFilters";

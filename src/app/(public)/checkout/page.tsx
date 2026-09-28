@@ -1,12 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   CreditCard,
   Wallet,
@@ -16,81 +14,50 @@ import {
   ShoppingBag,
   Loader2,
   CheckCircle2,
+  LogIn,
 } from "lucide-react";
 import { useCartStore } from "@/store/cartStore";
 import { useAuthStore } from "@/store/authStore";
 import { PublicLayout } from "@/components/templates";
-import { FormField, PasswordField, TurnstileWidget } from "@/components/molecules";
-import { Button, Label } from "@/components/atoms";
+import { AuthGateModal, type AuthGateMode } from "@/components/organisms";
 import { MercadoPagoBrick } from "@/components/organisms/MercadoPagoBrick";
 import { PayPalButtonComponent } from "@/components/organisms/PayPalButtonComponent";
 import { CulqiCheckout } from "@/components/organisms/CulqiCheckout";
 import { cartService } from "@/lib/services/cart";
-import { authService } from "@/lib/services/auth";
 import { ordersService } from "@/lib/services/orders";
 import { getGuestSessionToken } from "@/lib/session";
-import { COUNTRIES, PROFESSIONS } from "@/lib/constants/checkout-options";
-import { cn } from "@/lib/utils";
+import { extractCartItems, syncCartAfterAuth } from "@/lib/cart-sync";
+import type { User } from "@/types";
 
 function formatPrice(price: number, currency: string) {
   const symbol = currency === "PEN" ? "S/" : "$";
   return `${symbol} ${price.toFixed(2)}`;
 }
 
-const guestSchema = z
-  .object({
-    nombres: z.string().min(2, "Ingresa tu(s) nombre(s)"),
-    apellidos: z.string().min(2, "Ingresa tus apellidos"),
-    country: z.string().min(1, "Selecciona tu país"),
-    phone: z.string().min(6, "Teléfono inválido").max(15, "Teléfono inválido"),
-    email: z.string().email("Ingresa un correo válido"),
-    profession: z.string().min(1, "Selecciona tu carrera profesional"),
-    password: z.string().optional(),
-    password_confirmation: z.string().optional(),
-  })
-  .refine((d) => !d.password || d.password.length >= 8, {
-    message: "La contraseña debe tener mínimo 8 caracteres",
-    path: ["password"],
-  })
-  .refine((d) => !d.password || d.password === d.password_confirmation, {
-    message: "Las contraseñas no coinciden",
-    path: ["password_confirmation"],
-  });
-
-type GuestFormData = z.infer<typeof guestSchema>;
-
-type EmailStatus = "idle" | "checking" | "available" | "exists";
-
 // La cuenta de Mercado Pago configurada en este proyecto es de Perú y solo puede
 // liquidar en esa moneda (cada cuenta de MP está atada a un único país/moneda).
 const MERCADOPAGO_SUPPORTED_CURRENCY = "PEN";
 
 export default function CheckoutPage() {
+  const router = useRouter();
   const { user, isAuthenticated, setUser } = useAuthStore();
   const { items: localItems, total: localTotal } = useCartStore();
   const [guestSessionToken] = useState(() => getGuestSessionToken());
+  const queryClient = useQueryClient();
 
-  const [emailStatus, setEmailStatus] = useState<EmailStatus>("idle");
   const [order, setOrder] = useState<{ id: string; total: number; currency: string } | null>(null);
   const [creatingOrder, setCreatingOrder] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<"paypal" | "mercado_pago" | "culqi">("mercado_pago");
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
-  const [turnstileKey, setTurnstileKey] = useState(0);
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-    watch,
-    setValue,
-  } = useForm<GuestFormData>({
-    resolver: zodResolver(guestSchema),
-    defaultValues: { country: "PE" },
-  });
+  // true mientras se revisa, justo después de loguearse en el modal, si algún
+  // curso del carrito ya estaba comprado por esta cuenta — evita que el
+  // efecto de abajo cree una orden real (le cobre) antes de esa limpieza.
+  const [syncingAfterAuth, setSyncingAfterAuth] = useState(false);
 
-  const watchCountry = watch("country");
-  const watchPassword = watch("password") ?? "";
-  const selectedCountry = COUNTRIES.find((c) => c.code === watchCountry);
+  // Igual que en el resto del sitio (login/registro): un modal que se
+  // superpone sobre la página en vez de un formulario propio del checkout.
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authMode, setAuthMode] = useState<AuthGateMode>("login");
 
   // Carrito real (invitado o logueado)
   const { data: serverCart } = useQuery({
@@ -98,28 +65,52 @@ export default function CheckoutPage() {
     queryFn: () => cartService.get(isAuthenticated ? undefined : guestSessionToken),
   });
 
-  const serverCartAny = serverCart as any;
-  const cartItemsRaw =
-    serverCartAny?.items ?? serverCartAny?.data?.items ?? (Array.isArray(serverCartAny) ? serverCartAny : []);
+  const cartItemsRaw = extractCartItems(serverCart);
 
-  const displayItems =
-    cartItemsRaw.length > 0
-      ? cartItemsRaw.map((i: any) => ({
-          id: i.courseId ?? i.course?.id ?? i.course_id,
-          title: i.title ?? i.course?.title ?? "Curso",
-          price: Number(i.finalPrice ?? i.discountPrice ?? i.price ?? i.course?.discount_price_pen ?? i.course?.price_pen ?? 0),
-        }))
-      : localItems.map((e) => ({
-          id: e.course.id,
-          title: e.course.title,
-          price: Number(e.course.discount_price_pen ?? e.course.price_pen),
-        }));
+  // El backend no deduplica /cart/add por curso, así que un mismo curso puede
+  // haber quedado con más de una fila en el carrito (p. ej. si se agregó desde
+  // "Añadir al carrito" y luego desde "Comprar ahora"). Nos quedamos solo con
+  // la primera fila por curso para no cobrar ni mostrar el mismo curso 2 veces.
+  const serverDisplayItems = Array.from(
+    new Map(
+      cartItemsRaw.map((i) => [
+        i.courseId,
+        {
+          id: i.courseId,
+          title: i.title ?? "Curso",
+          price: Number(i.finalPrice ?? i.discountPrice ?? i.price ?? 0),
+        },
+      ])
+    ).values()
+  );
+  const localDisplayItems = localItems.map((e) => ({
+    id: e.course.id,
+    title: e.course.title,
+    price: Number(e.course.discount_price_pen ?? e.course.price_pen),
+  }));
+  // Logueado: el carrito del servidor es SIEMPRE la fuente de verdad, aunque
+  // venga en 0 — nunca se cae al espejo local. Invitado: el carrito real
+  // vive bloqueado en el backend, así que ahí sí el espejo local es la única
+  // fuente posible.
+  const displayItems = isAuthenticated
+    ? serverDisplayItems
+    : (serverDisplayItems.length > 0 ? serverDisplayItems : localDisplayItems);
 
-  const localSubtotal = displayItems.reduce((sum: number, i: any) => sum + i.price, 0) || localTotal();
+  const localSubtotal = displayItems.reduce((sum: number, i) => sum + i.price, 0) || localTotal();
 
-  // Al llegar autenticado (login previo o justo registrado) creamos la orden real
+  // Al llegar sin sesión con cursos en el carrito, se ofrece de una vez el
+  // modal de inicio de sesión / registro (igual que la página se vería con
+  // el modal ya abierto), en vez de mostrar el checkout vacío/bloqueado.
   useEffect(() => {
-    if (isAuthenticated && !order && !creatingOrder && displayItems.length > 0) {
+    if (!isAuthenticated && displayItems.length > 0) {
+      setAuthModalOpen(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, displayItems.length > 0]);
+
+  // Al llegar autenticado (login previo o justo iniciado sesión) creamos la orden real
+  useEffect(() => {
+    if (isAuthenticated && !order && !creatingOrder && !syncingAfterAuth && displayItems.length > 0) {
       setCreatingOrder(true);
       ordersService
         .create({ payment_method: paymentMethod })
@@ -128,7 +119,7 @@ export default function CheckoutPage() {
         .finally(() => setCreatingOrder(false));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, displayItems.length]);
+  }, [isAuthenticated, displayItems.length, syncingAfterAuth]);
 
   // Mercado Pago y Culqi solo liquidan en soles (PEN) con las cuentas configuradas hoy.
   const mercadoPagoAvailable = !order || order.currency === MERCADOPAGO_SUPPORTED_CURRENCY;
@@ -146,44 +137,45 @@ export default function CheckoutPage() {
     }
   }, [order, paymentMethod]);
 
-  async function handleEmailBlur(email: string) {
-    if (!email || !z.string().email().safeParse(email).success) return;
-    setEmailStatus("checking");
+  // Se ejecuta al iniciar sesión o registrarse desde el modal — el carrito de
+  // invitado (local/session_token) se funde con el carrito real de la cuenta
+  // recién autenticada para que la compra continúe con lo que ya eligió.
+  async function handleAuthenticated(authUser: User) {
+    setSyncingAfterAuth(true);
+    setUser(authUser);
     try {
-      const res = await authService.checkEmail(email);
-      setEmailStatus(res.available ? "available" : "exists");
-    } catch {
-      setEmailStatus("idle");
+      // Funde el carrito de invitado con el de la cuenta y saca del carrito
+      // cualquier curso que la cuenta ya tenga comprado — no tiene sentido
+      // cobrárselo de nuevo.
+      const { removedAlreadyOwned, totalItemsBeforeCleanup } = await syncCartAfterAuth(guestSessionToken);
+
+      queryClient.invalidateQueries({ queryKey: ["cart"] });
+      setAuthModalOpen(false);
+
+      if (removedAlreadyOwned.length > 0) {
+        const first = removedAlreadyOwned[0];
+        toast.info(
+          removedAlreadyOwned.length === 1
+            ? `Ya estás matriculado en "${first.title}" — no hace falta comprarlo de nuevo.`
+            : `Ya estás matriculado en ${removedAlreadyOwned.length} de estos cursos — se quitaron del carrito.`,
+          {
+            duration: 8000,
+            action: { label: "Continuar viendo", onClick: () => router.push(`/curso/${first.courseId}`) },
+          }
+        );
+      }
+
+      if (totalItemsBeforeCleanup > 0 && removedAlreadyOwned.length === totalItemsBeforeCleanup) {
+        // Todo el carrito eran cursos que ya tenía — no queda nada por pagar.
+        router.push(`/curso/${removedAlreadyOwned[0].courseId}`);
+        return;
+      }
+
+      toast.success("¡Bienvenido! Ya puedes continuar con el pago.");
+    } finally {
+      setSyncingAfterAuth(false);
     }
   }
-
-  const onSubmitGuestForm = async (data: GuestFormData) => {
-    if (emailStatus !== "available") return;
-    if (!data.password) return;
-
-    try {
-      const phone = `${selectedCountry?.dial ?? ""}${data.phone.replace(/\D/g, "")}`;
-      const res = await authService.register({
-        first_name: data.nombres.trim(),
-        last_name: data.apellidos.trim(),
-        email: data.email,
-        phone,
-        password: data.password,
-        country: data.country,
-        profession: data.profession,
-        turnstileToken: turnstileToken ?? "",
-      });
-
-      setUser(res.user);
-      await cartService.merge(guestSessionToken).catch(() => null);
-      toast.success("¡Cuenta creada! Ya puedes continuar con el pago.");
-    } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      toast.error(msg ?? "No se pudo crear la cuenta. Intenta nuevamente.");
-      setTurnstileToken(null);
-      setTurnstileKey((k) => k + 1);
-    }
-  };
 
   if (displayItems.length === 0) {
     return (
@@ -211,154 +203,35 @@ export default function CheckoutPage() {
             Finalizar compra
           </h1>
           <p className="text-sm text-gray-500 mt-1">
-            {isAuthenticated ? "Elige tu método de pago para completar la matrícula." : "Completa tus datos para continuar."}
+            {isAuthenticated ? "Elige tu método de pago para completar la matrícula." : "Inicia sesión o crea una cuenta para continuar."}
           </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
           <div className="lg:col-span-2 space-y-6">
             {!isAuthenticated ? (
-              <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
-                <h3 className="text-sm font-bold text-brand-primary uppercase tracking-wider mb-4">Tus datos</h3>
-                <form onSubmit={handleSubmit(onSubmitGuestForm)} className="space-y-4" noValidate>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <FormField
-                      label="Nombre(s)"
-                      placeholder="Juan Carlos"
-                      error={errors.nombres?.message}
-                      required
-                      {...register("nombres")}
-                    />
-                    <FormField
-                      label="Apellidos"
-                      placeholder="Pérez García"
-                      error={errors.apellidos?.message}
-                      required
-                      {...register("apellidos")}
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <Label className="text-sm font-medium text-gray-700">
-                      País <span className="text-red-500" aria-hidden>*</span>
-                    </Label>
-                    <select
-                      {...register("country")}
-                      className={cn(
-                        "w-full border rounded-lg px-3 h-10 text-sm bg-white text-gray-900 outline-none transition focus:ring-2 focus:ring-brand-primary/30 focus:border-brand-primary",
-                        errors.country ? "border-red-400" : "border-gray-300"
-                      )}
-                    >
-                      <option value="">Selecciona tu país</option>
-                      {COUNTRIES.map((c) => (
-                        <option key={c.code} value={c.code}>
-                          {c.flag} {c.name}
-                        </option>
-                      ))}
-                    </select>
-                    {errors.country && <p className="text-xs text-red-500">{errors.country.message}</p>}
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <Label className="text-sm font-medium text-gray-700">
-                      Celular <span className="text-red-500" aria-hidden>*</span>
-                    </Label>
-                    <div className="flex">
-                      <div className="flex items-center gap-1.5 px-3 bg-gray-50 border border-r-0 border-gray-300 rounded-l-lg text-sm text-gray-600 shrink-0 select-none">
-                        <span>{selectedCountry?.flag ?? "🌍"}</span>
-                        <span className="font-medium tabular-nums">{selectedCountry?.dial ?? ""}</span>
-                      </div>
-                      <input
-                        type="tel"
-                        placeholder="999 999 999"
-                        className={cn(
-                          "flex-1 border rounded-r-lg px-3 h-10 text-sm outline-none transition focus:ring-2 focus:ring-brand-primary/30 focus:border-brand-primary",
-                          errors.phone ? "border-red-400" : "border-gray-300"
-                        )}
-                        {...register("phone")}
-                      />
-                    </div>
-                    {errors.phone && <p className="text-xs text-red-500">{errors.phone.message}</p>}
-                  </div>
-
-                  <FormField
-                    label="Correo electrónico"
-                    type="email"
-                    placeholder="tu@correo.com"
-                    error={errors.email?.message}
-                    required
-                    {...register("email", { onBlur: (e) => handleEmailBlur(e.target.value) })}
-                  />
-
-                  {emailStatus === "checking" && (
-                    <p className="text-xs text-gray-400">Verificando correo…</p>
-                  )}
-
-                  {emailStatus === "exists" && (
-                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
-                      ¿Ya eres cliente?{" "}
-                      <Link
-                        href={`/auth/login?redirect=/checkout`}
-                        className="font-semibold underline hover:text-amber-900"
-                      >
-                        Haz clic aquí para iniciar sesión
-                      </Link>
-                    </div>
-                  )}
-
-                  <div className="space-y-1.5">
-                    <Label className="text-sm font-medium text-gray-700">
-                      Carrera profesional <span className="text-red-500" aria-hidden>*</span>
-                    </Label>
-                    <select
-                      {...register("profession")}
-                      className={cn(
-                        "w-full border rounded-lg px-3 h-10 text-sm bg-white text-gray-900 outline-none transition focus:ring-2 focus:ring-brand-primary/30 focus:border-brand-primary",
-                        errors.profession ? "border-red-400" : "border-gray-300"
-                      )}
-                    >
-                      <option value="">Selecciona tu carrera profesional</option>
-                      {PROFESSIONS.map((p) => (
-                        <option key={p} value={p}>{p}</option>
-                      ))}
-                    </select>
-                    {errors.profession && <p className="text-xs text-red-500">{errors.profession.message}</p>}
-                  </div>
-
-                  {emailStatus === "available" && (
-                    <>
-                      <PasswordField
-                        label="Contraseña"
-                        placeholder="Mínimo 8 caracteres"
-                        error={errors.password?.message}
-                        required
-                        showStrength
-                        value={watchPassword}
-                        {...register("password")}
-                      />
-                      <PasswordField
-                        label="Confirmar contraseña"
-                        placeholder="Repite tu contraseña"
-                        error={errors.password_confirmation?.message}
-                        required
-                        {...register("password_confirmation")}
-                      />
-                      <TurnstileWidget
-                        key={turnstileKey}
-                        onVerify={setTurnstileToken}
-                        onExpire={() => setTurnstileToken(null)}
-                        className="flex justify-center"
-                      />
-                      <Button
-                        type="submit"
-                        disabled={isSubmitting || !turnstileToken}
-                        className="w-full bg-brand-primary hover:bg-brand-primary/90 text-white h-11 font-semibold"
-                      >
-                        {isSubmitting ? "Creando cuenta…" : "Crear cuenta y continuar"}
-                      </Button>
-                    </>
-                  )}
-                </form>
+              <div className="bg-white p-8 rounded-xl border border-gray-200 shadow-sm text-center space-y-4">
+                <div className="w-14 h-14 bg-blue-50 rounded-full flex items-center justify-center mx-auto">
+                  <LogIn size={26} className="text-[#084D95]" />
+                </div>
+                <h3 className="text-lg font-bold text-brand-primary">Inicia sesión para continuar</h3>
+                <p className="text-sm text-gray-500 max-w-sm mx-auto">
+                  Para finalizar tu compra, primero debes iniciar sesión o crear una cuenta en la plataforma.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
+                  <button
+                    onClick={() => { setAuthMode("login"); setAuthModalOpen(true); }}
+                    className="px-5 py-2.5 rounded-xl bg-brand-primary hover:bg-brand-primary/90 text-white text-sm font-semibold transition-colors"
+                  >
+                    Iniciar sesión
+                  </button>
+                  <button
+                    onClick={() => { setAuthMode("register"); setAuthModalOpen(true); }}
+                    className="px-5 py-2.5 rounded-xl border-2 border-brand-primary text-brand-primary hover:bg-brand-primary/5 text-sm font-semibold transition-colors"
+                  >
+                    Crear cuenta
+                  </button>
+                </div>
               </div>
             ) : (
               <>
@@ -451,7 +324,7 @@ export default function CheckoutPage() {
               <h3 className="text-xs font-bold text-brand-primary uppercase tracking-wider border-b border-gray-100 pb-2">Resumen de Matrícula</h3>
 
               <div className="space-y-3">
-                {displayItems.map((item: any) => (
+                {displayItems.map((item) => (
                   <div key={item.id} className="text-xs flex gap-2 justify-between items-center">
                     <div className="min-w-0 flex-1">
                       <p className="font-semibold text-gray-800 truncate">{item.title}</p>
@@ -489,6 +362,14 @@ export default function CheckoutPage() {
           </div>
         </div>
       </div>
+
+      <AuthGateModal
+        open={authModalOpen}
+        onOpenChange={setAuthModalOpen}
+        mode={authMode}
+        onModeChange={setAuthMode}
+        onAuthenticated={handleAuthenticated}
+      />
     </PublicLayout>
   );
 }
