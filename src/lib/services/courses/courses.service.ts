@@ -109,13 +109,26 @@ export interface MaterialItem {
   id: string;
   name: string;
   drive_url: string;
-  type: "PDF" | "Excel" | "Word" | "Otro";
+  type: "PDF" | "Excel" | "Word" | "Otro" | "Video";
 }
 
 export interface CreateMaterialDto {
   name: string;
   drive_url: string;
-  type: "PDF" | "Excel" | "Word" | "Otro";
+  type: "PDF" | "Excel" | "Word" | "Otro" | "Video";
+}
+
+// ── Import/Export masivo ──────────────────────────────────────────────────
+
+export interface ImportCoursesResult {
+  imported: {
+    title: string;
+    id: string;
+    modules_count: number;
+    sessions_count: number;
+    materials_count: number;
+  }[];
+  failed: { title: string; errors: string[] }[];
 }
 
 export const cursosService = {
@@ -204,4 +217,29 @@ export const cursosService = {
 
   deleteMaterial: (materialId: string) =>
     api.delete<{ success: boolean }>(`/materials/${materialId}`).then((r) => r.data),
+
+  // ── Import/Export masivo ──────────────────────────────────────────────────
+
+  exportCoursesExcel: () =>
+    api
+      .get("/courses/bulk/export/excel", { responseType: "blob" })
+      .then((r) => r.data as Blob),
+
+  exportCoursesJson: () =>
+    api.get("/courses/bulk/export/json").then((r) => r.data),
+
+  importCoursesExcel: (file: File) => {
+    const fd = new FormData();
+    fd.append("file", file);
+    return api
+      .post<ImportCoursesResult>("/courses/bulk/import/excel", fd, {
+        headers: { "Content-Type": "multipart/form-data" },
+      })
+      .then((r) => r.data);
+  },
+
+  importCoursesJson: (data: unknown) =>
+    api
+      .post<ImportCoursesResult>("/courses/bulk/import/json", data)
+      .then((r) => r.data),
 };
