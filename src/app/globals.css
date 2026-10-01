@@ -168,6 +168,32 @@
   display: none;
 }
 
+/* Botón con brillo al pasar el mouse — para CTAs de compra ("Comprar ahora",
+   "Explorar cursos") que deben invitar a hacer clic. Barra diagonal que
+   recorre el botón + un glow suave, solo en hover (no parpadea solo). */
+.btn-shine {
+  position: relative;
+  overflow: hidden;
+  transition: box-shadow 300ms ease;
+}
+.btn-shine::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  left: -75%;
+  width: 50%;
+  background: linear-gradient(120deg, transparent 0%, rgba(255, 255, 255, 0.45) 50%, transparent 100%);
+  transform: skewX(-20deg);
+  transition: left 650ms ease;
+  pointer-events: none;
+}
+.btn-shine:hover::after {
+  left: 125%;
+}
+.btn-shine:hover {
+  box-shadow: 0 0 0 3px rgba(35, 175, 229, 0.25), 0 8px 22px -6px rgba(8, 77, 149, 0.5);
+}
+
 /* Flechas de navegación de los carruseles (swiper) — simples y tenues, sin fondo */
 .eg-carousel-nav {
   --swiper-navigation-color: #3FB1E5;

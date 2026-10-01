@@ -7,9 +7,10 @@ import { toast } from "sonner";
 import { studentService } from "@/lib/services/student";
 import {
   ChevronLeft, ChevronRight, CheckCircle2, PlayCircle, Circle,
-  FileText, ExternalLink, ChevronDown, Star, X, Award, Loader2,
+  FileText, ExternalLink, ChevronDown, Star, X, Award, Loader2, Eye, EyeOff,
 } from "lucide-react";
 import Link from "next/link";
+import { DrivePreview } from "@/components/organisms";
 import type { CourseContent } from "@/types";
 
 // ── Tipos YouTube IFrame API ──────────────────────────────────────────────────
@@ -54,18 +55,21 @@ const MATERIAL_ICON: Record<string, string> = {
   PDF: "📄", Excel: "📊", Word: "📝", Otro: "📎",
 };
 
-type AccessBlockReason = "vencido" | "suspendido" | null;
+type AccessBlockReason = "sin_matricula" | "vencido" | "suspendido" | null;
 
 function getAccessBlockReason(err: unknown): AccessBlockReason {
-  const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-  if (typeof msg !== "string") return null;
+  const response = (err as { response?: { status?: number; data?: { message?: string } } })?.response;
+  if (response?.status !== 403) return null;
+  const msg = response.data?.message;
+  if (typeof msg !== "string") return "sin_matricula";
   const lower = msg.toLowerCase();
   if (lower.includes("suspendido")) return "suspendido";
   if (lower.includes("vencido")) return "vencido";
-  return null;
+  return "sin_matricula";
 }
 
 const ACCESS_BLOCK_MESSAGES: Record<Exclude<AccessBlockReason, null>, string> = {
+  sin_matricula: "No tienes una matrícula vigente para este curso. Revisa tu compra o vuelve a la tienda.",
   vencido: "Tu acceso a este curso ha vencido. Contacta a soporte para renovarlo.",
   suspendido: "Tu acceso a este curso ha sido suspendido. Contacta a soporte para más información.",
 };
@@ -81,6 +85,7 @@ export default function CourseViewerPage() {
     queryFn: () => studentService.getCourseContent(id),
     enabled: !!id,
     retry: false,
+    refetchOnWindowFocus: false,
   });
 
   const { data: progressData, isLoading: loadingProgress, error: progressError } = useQuery({
@@ -88,6 +93,7 @@ export default function CourseViewerPage() {
     queryFn: () => studentService.getMyCourseProgress(id),
     enabled: !!id,
     retry: false,
+    refetchOnWindowFocus: false,
   });
 
   // Estado del visor
@@ -100,6 +106,16 @@ export default function CourseViewerPage() {
   const [showAutoAdvance, setShowAutoAdvance] = useState(false);
   const [autoAdvanceCount, setAutoAdvanceCount] = useState(5);
   const [openModules, setOpenModules] = useState<Set<string>>(new Set());
+  const [previewOpenIds, setPreviewOpenIds] = useState<Set<string>>(new Set());
+
+  function toggleMaterialPreview(materialId: string) {
+    setPreviewOpenIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(materialId)) next.delete(materialId);
+      else next.add(materialId);
+      return next;
+    });
+  }
 
   // Inicializar estado cuando llegan los datos
   useEffect(() => {
@@ -213,9 +229,16 @@ export default function CourseViewerPage() {
     return (
       <div className="-mx-4 lg:-mx-8 -my-6 lg:-my-8 flex flex-col items-center justify-center h-[calc(100vh-64px)] gap-4 px-4 text-center">
         <p className="text-gray-500">
-          {reason ? ACCESS_BLOCK_MESSAGES[reason] : "No tienes acceso a este curso."}
+          {reason ? ACCESS_BLOCK_MESSAGES[reason] : "No pudimos cargar el curso en este momento. Inténtalo de nuevo más tarde."}
         </p>
-        <Link href="/mis-cursos" className="text-[#084D95] underline text-sm">Ver mis cursos</Link>
+        {reason ? (
+          <div className="flex flex-wrap justify-center gap-5 text-sm">
+            <Link href="/mis-cursos" className="text-[#084D95] underline">Revisar mis cursos</Link>
+            <Link href="/cursos" className="text-[#084D95] underline">Volver a la tienda</Link>
+          </div>
+        ) : (
+          <Link href="/mis-cursos" className="text-[#084D95] underline text-sm">Ver mis cursos</Link>
+        )}
       </div>
     );
   }
@@ -290,20 +313,43 @@ export default function CourseViewerPage() {
                 {(currentSession.materials?.length ?? 0) > 0 && (
                   <div className="mt-6">
                     <h3 className="text-sm font-semibold text-gray-700 mb-3">Material de la sesión</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {currentSession.materials!.map((mat) => (
-                        <a
-                          key={mat.id}
-                          href={mat.drive_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg text-sm hover:border-[#084D95] hover:text-[#084D95] transition-colors"
-                        >
-                          <span>{MATERIAL_ICON[mat.type] ?? "📎"}</span>
-                          <span>{mat.name}</span>
-                          <ExternalLink size={12} className="text-gray-400" />
-                        </a>
-                      ))}
+                    <div className="flex flex-col gap-3">
+                      {currentSession.materials!.map((mat) => {
+                        const isOpen = previewOpenIds.has(mat.id);
+                        return (
+                          <div key={mat.id}>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <a
+                                href={mat.drive_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg text-sm hover:border-[#084D95] hover:text-[#084D95] transition-colors"
+                              >
+                                <span>{MATERIAL_ICON[mat.type] ?? "📎"}</span>
+                                <span>{mat.name}</span>
+                                <ExternalLink size={12} className="text-gray-400" />
+                              </a>
+                              <button
+                                type="button"
+                                onClick={() => toggleMaterialPreview(mat.id)}
+                                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm border border-gray-200 text-gray-600 hover:border-[#084D95] hover:text-[#084D95] transition-colors"
+                              >
+                                {isOpen ? <EyeOff size={14} /> : <Eye size={14} />}
+                                {isOpen ? "Ocultar vista previa" : "Vista previa"}
+                              </button>
+                            </div>
+                            {isOpen && (
+                              <div className="mt-2 max-w-2xl">
+                                <DrivePreview
+                                  driveUrl={mat.drive_url}
+                                  title={mat.name}
+                                  aspect={mat.type === "Video" ? "video" : "document"}
+                                />
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 )}

@@ -7,6 +7,15 @@ import { toast } from "sonner";
 import { ImageIcon } from "lucide-react";
 import type { UpcomingLaunch } from "@/types";
 
+// "2026-09-22" (solo fecha, sin hora) lo interpreta JS como medianoche UTC —
+// al mostrarlo con toLocaleDateString en una zona horaria detrás de UTC (ej.
+// Perú, UTC-5) retrocede un día. Parseamos año/mes/día directo para que la
+// fecha mostrada sea siempre la misma que se guardó, sin conversión de huso.
+function formatLocalDate(dateStr: string) {
+  const [y, m, d] = dateStr.slice(0, 10).split("-").map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString("es-PE");
+}
+
 const empty: CreateUpcomingLaunchDto = {
   category_label: "",
   title: "",
@@ -149,7 +158,7 @@ export default function LanzamientosPage() {
                     </td>
                     <td className="px-4 py-3 text-gray-500 text-xs">{l.category_label}</td>
                     <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">
-                      {l.start_date ? new Date(l.start_date).toLocaleDateString("es-PE") : "—"}
+                      {l.start_date ? formatLocalDate(l.start_date) : "—"}
                     </td>
                     <td className="px-4 py-3">
                       <button

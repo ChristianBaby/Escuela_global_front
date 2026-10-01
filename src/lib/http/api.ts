@@ -31,7 +31,8 @@ api.interceptors.response.use(
     const isAuthEndpoint = (error.config?.url ?? "").includes("/auth/");
     if (error.response?.status === 401 && !isAuthEndpoint) {
       if (typeof window !== "undefined") {
-        window.location.href = "/auth/login";
+        const { pathname, search } = window.location;
+        window.location.href = `/auth/login?redirect=${encodeURIComponent(pathname + search)}`;
       }
     }
 

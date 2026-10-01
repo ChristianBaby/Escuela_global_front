@@ -69,6 +69,12 @@ export default function EstudiantesPage() {
     )
   );
 
+  // El backend responde 400 con mensaje (p. ej. suspenderse a uno mismo o al último admin)
+  const apiErrorMessage = (err: unknown, fallback: string) => {
+    const msg = (err as { response?: { data?: { message?: string | string[] } } })?.response?.data?.message;
+    return (Array.isArray(msg) ? msg[0] : msg) ?? fallback;
+  };
+
   const createMutation = useMutation({
     mutationFn: usuariosService.create,
     onSuccess: () => {
@@ -77,10 +83,7 @@ export default function EstudiantesPage() {
       setShowModal(false);
       setForm(empty);
     },
-    onError: (err: unknown) => {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      toast.error(msg ?? "Error al crear usuario");
-    },
+    onError: (err: unknown) => toast.error(apiErrorMessage(err, "Error al crear usuario")),
   });
 
   const suspendMutation = useMutation({
@@ -89,6 +92,7 @@ export default function EstudiantesPage() {
       toast.success("Usuario suspendido");
       queryClient.invalidateQueries({ queryKey: ["usuarios"] });
     },
+    onError: (err: unknown) => toast.error(apiErrorMessage(err, "No se pudo suspender al usuario")),
   });
 
   const activateMutation = useMutation({
@@ -97,6 +101,7 @@ export default function EstudiantesPage() {
       toast.success("Usuario activado");
       queryClient.invalidateQueries({ queryKey: ["usuarios"] });
     },
+    onError: (err: unknown) => toast.error(apiErrorMessage(err, "No se pudo activar al usuario")),
   });
 
   const handleSubmit = (e: React.FormEvent) => {

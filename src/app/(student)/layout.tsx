@@ -57,6 +57,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
     }
     clearUser();
     document.cookie = "access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    document.cookie = "refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     window.location.href = "/auth/login";
   };
 
@@ -192,7 +193,10 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
               Bienvenido de vuelta, <span className="font-medium text-gray-900">{user?.first_name ?? "Estudiante"}</span>
             </div>
           </div>
-          <Link href="/cursos" className="text-sm font-medium text-[#084D95] hover:text-[#23AFE5] transition-colors shrink-0">
+          <Link
+            href="/cursos"
+            className="btn-shine flex items-center gap-1.5 text-sm font-medium text-white bg-[#084D95] hover:bg-[#084D95]/90 transition-colors shrink-0 px-4 py-2 rounded-lg"
+          >
             Explorar cursos →
           </Link>
         </header>

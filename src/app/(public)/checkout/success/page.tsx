@@ -7,6 +7,7 @@ import Link from "next/link";
 import { CheckCircle2, BookOpen, ArrowRight, ShieldCheck, FileText, Loader2 } from "lucide-react";
 import { PublicLayout } from "@/components/templates";
 import { ordersService } from "@/lib/services/orders";
+import { isAxiosError } from "axios";
 
 function formatPrice(price: number, currency: string) {
   const symbol = currency === "PEN" ? "S/" : "$";
@@ -33,13 +34,23 @@ function CheckoutSuccessContent() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get("orderId");
 
-  const { data: order, isLoading } = useQuery({
-    queryKey: ["order", orderId],
-    queryFn: () => ordersService.get(orderId as string),
+  const { data: verification, isLoading: verifying, error: verificationError } = useQuery({
+    queryKey: ["order-verification", orderId],
+    queryFn: () => ordersService.verify(orderId as string),
     enabled: !!orderId,
+    retry: false,
+    refetchInterval: (query) => query.state.data?.payment_status === "pending" ? 3000 : false,
   });
 
-  const fechaActual = new Date(order?.created_at ?? Date.now()).toLocaleDateString("es-PE", {
+  const isPaid = verification?.payment_status === "paid";
+  const { data: order, isLoading: loadingOrder, error: orderError } = useQuery({
+    queryKey: ["order", orderId],
+    queryFn: () => ordersService.get(orderId as string),
+    enabled: !!orderId && isPaid,
+    retry: false,
+  });
+
+  const fechaActual = order && new Date(order.created_at).toLocaleDateString("es-PE", {
     day: "numeric",
     month: "long",
     year: "numeric",
@@ -58,12 +69,68 @@ function CheckoutSuccessContent() {
     );
   }
 
-  if (isLoading || !order) {
+  if (verifying) {
     return (
       <PublicLayout>
         <div className="max-w-md mx-auto text-center py-20">
           <Loader2 size={28} className="animate-spin text-[#084D95] mx-auto" />
-          <p className="text-gray-400 text-sm mt-3">Cargando comprobante…</p>
+          <p className="text-gray-400 text-sm mt-3">Verificando el estado de tu pago…</p>
+        </div>
+      </PublicLayout>
+    );
+  }
+
+  if (verificationError || !verification) {
+    const status = isAxiosError(verificationError) ? verificationError.response?.status : undefined;
+    const message = status === 403
+      ? "No tienes acceso a esta orden. Revisa que hayas iniciado sesión con la cuenta usada en la compra."
+      : status === 404
+        ? "No encontramos esta orden. Revisa el enlace de tu compra."
+        : "No pudimos verificar el pago en este momento. Inténtalo de nuevo más tarde.";
+    return (
+      <PublicLayout>
+        <div className="max-w-md mx-auto text-center py-20 space-y-4">
+          <h1 className="text-xl font-semibold text-gray-900">No se pudo verificar la compra</h1>
+          <p className="text-gray-600 text-sm">{message}</p>
+          <Link href="/mis-cursos" className="inline-block text-[#084D95] underline text-sm">Ver mis cursos</Link>
+        </div>
+      </PublicLayout>
+    );
+  }
+
+  if (!isPaid) {
+    const paymentState = verification.payment_status;
+    const title = paymentState === "pending" ? "Tu pago está pendiente de confirmación"
+      : paymentState === "failed" ? "No se pudo completar el pago"
+        : "El pago de esta orden fue reembolsado";
+    const message = paymentState === "pending"
+      ? "Estamos comprobando el pago. Esta página se actualizará automáticamente cuando se confirme."
+      : paymentState === "failed"
+        ? "No se ha confirmado la compra. Puedes revisar tus cursos o volver a la tienda."
+        : "Esta orden ya no da acceso a los cursos. Puedes revisar tus cursos o volver a la tienda.";
+    return (
+      <PublicLayout>
+        <div className="max-w-md mx-auto text-center py-20 space-y-4">
+          {paymentState === "pending" && <Loader2 size={28} className="animate-spin text-[#084D95] mx-auto" />}
+          <h1 className="text-xl font-semibold text-gray-900">{title}</h1>
+          <p className="text-gray-600 text-sm">{message}</p>
+          <div className="flex justify-center gap-5 text-sm">
+            <Link href="/mis-cursos" className="text-[#084D95] underline">Ver mis cursos</Link>
+            <Link href="/cursos" className="text-[#084D95] underline">Volver a la tienda</Link>
+          </div>
+        </div>
+      </PublicLayout>
+    );
+  }
+
+  if (loadingOrder || !order) {
+    return (
+      <PublicLayout>
+        <div className="max-w-md mx-auto text-center py-20 space-y-3">
+          {loadingOrder ? <Loader2 size={28} className="animate-spin text-[#084D95] mx-auto" /> : null}
+          <p className="text-gray-600 text-sm">
+            {orderError ? "El pago está confirmado, pero no pudimos cargar el comprobante." : "Cargando comprobante…"}
+          </p>
         </div>
       </PublicLayout>
     );
@@ -80,10 +147,10 @@ function CheckoutSuccessContent() {
 
           <div className="space-y-2">
             <h1 className="text-3xl font-bold text-brand-primary tracking-tight">
-              ¡Matrícula Completada con Éxito!
+              ¡Pago confirmado!
             </h1>
             <p className="text-sm text-gray-500 max-w-md mx-auto">
-              El pago ha sido procesado de forma segura. Ya tienes acceso inmediato a tu ruta de aprendizaje en Escuela Global.
+              Tu compra se ha confirmado. Puedes revisar tus cursos en el Aula Virtual.
             </p>
           </div>
 
@@ -112,7 +179,7 @@ function CheckoutSuccessContent() {
 
             <div className="flex justify-between pt-2 border-t border-gray-200/60 font-bold text-gray-900 text-sm">
               <span>Estado del Pago:</span>
-              <span className="text-emerald-600">{order.payment_status === "paid" ? "PAGADO" : order.payment_status.toUpperCase()}</span>
+              <span className="text-emerald-600">PAGADO</span>
             </div>
           </div>
 
