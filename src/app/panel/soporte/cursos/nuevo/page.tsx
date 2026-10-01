@@ -5,9 +5,10 @@ import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import Link from "next/link";
-import { ArrowLeft, Plus, X, Upload, ImageIcon } from "lucide-react";
+import { ArrowLeft, Plus, X, Upload, ImageIcon, UserCheck, Sparkles } from "lucide-react";
 import { cursosService } from "@/lib/services/courses";
 import { categoriasService } from "@/lib/services/categories";
+import { docentesService } from "@/lib/services/marketing"; // 🚀 Importar servicio de marketing
 import type { InstructorInput } from "@/lib/services/courses/courses.service";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -30,7 +31,7 @@ export default function NuevoCursoPage() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // ── Tab 1: Información básica ──────────────────────────────────────────────
+  // Tab 1: Información básica
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
   const [slugManual, setSlugManual] = useState(false);
@@ -43,29 +44,37 @@ export default function NuevoCursoPage() {
   const [softwareInput, setSoftwareInput] = useState("");
   const [softwareTools, setSoftwareTools] = useState<string[]>([]);
 
-  // ── Tab 2: Pricing ─────────────────────────────────────────────────────────
+  // Tab 2: Pricing
   const [pricePen, setPricePen] = useState("");
   const [discountPricePen, setDiscountPricePen] = useState("");
   const [priceUsd, setPriceUsd] = useState("");
   const [discountPriceUsd, setDiscountPriceUsd] = useState("");
   const [accessDurationMonths, setAccessDurationMonths] = useState("");
 
-  // ── Tab 3: Docentes ────────────────────────────────────────────────────────
+  // Tab 3: Docentes
   const [instructors, setInstructors] = useState<InstructorInput[]>([{ ...EMPTY_INSTRUCTOR }]);
+  const [selectedStaffId, setSelectedStaffId] = useState<string>("");
 
-  // ── Tab 4: Contenido ───────────────────────────────────────────────────────
+  // Tab 4: Contenido
   const [prerequisiteInput, setPrerequisiteInput] = useState("");
   const [prerequisites, setPrerequisites] = useState<string[]>([]);
   const [outcomeInput, setOutcomeInput] = useState("");
   const [outcomes, setOutcomes] = useState<string[]>([]);
   const [academicHours, setAcademicHours] = useState("");
 
-  // ── Tab 5: Configuración ───────────────────────────────────────────────────
+  // Tab 5: Configuración
   const [status, setStatus] = useState<"draft" | "published" | "archived">("draft");
 
+  // Query Categorías
   const { data: categorias } = useQuery({
     queryKey: ["categorias"],
     queryFn: categoriasService.list,
+  });
+
+  // 🚀 Query Docentes de Marketing (StaffMembers)
+  const { data: staffDocentes } = useQuery({
+    queryKey: ["docentes-marketing"],
+    queryFn: () => docentesService.list(),
   });
 
   const createMutation = useMutation({
@@ -157,22 +166,70 @@ export default function NuevoCursoPage() {
   const updateInstructor = (i: number, field: keyof InstructorInput, val: string) =>
     setInstructors((prev) => prev.map((ins, idx) => (idx === i ? { ...ins, [field]: val } : ins)));
 
-  const validateForDraft = () => {
+  const handleAssignFromStaff = () => {
+      if (!selectedStaffId) return;
+      const staff = staffDocentes?.find((s: any) => s.id === selectedStaffId) as any;
+      if (!staff) return;
+
+      const newInstructorData: InstructorInput = {
+        full_name: staff.full_name || "",
+        title: staff.title || "",
+        description: staff.description || "",
+        photo_url: staff.image_url || undefined,
+      };
+
+      const isFirstEmpty =
+        instructors.length === 1 &&
+        !instructors[0].full_name.trim() &&
+        !instructors[0].title.trim();
+
+      if (isFirstEmpty) {
+        setInstructors([newInstructorData]);
+      } else {
+        setInstructors((prev) => [...prev, newInstructorData]);
+      }
+
+      toast.success(`Datos de "${staff.full_name || 'docente'}" cargados automáticamente`);
+      setSelectedStaffId("");
+    };
+
+    const validateForDraft = () => {
+      if (!title.trim()) {
+        toast.error("El título es obligatorio");
+        return false;
+      }
+      return true;
+    };
+
+  const validateForPublish = () => {
     if (!title.trim()) {
       toast.error("El título es obligatorio");
       return false;
     }
-    return true;
-  };
-
-  const validateForPublish = () => {
-    if (!title.trim()) { toast.error("El título es obligatorio"); return false; }
-    if (!categoryId) { toast.error("Selecciona una categoría"); return false; }
-    if (!pricePen || parseFloat(pricePen) <= 0) { toast.error("El precio en soles debe ser mayor a 0"); return false; }
-    if (!priceUsd || parseFloat(priceUsd) <= 0) { toast.error("El precio en dólares debe ser mayor a 0"); return false; }
-    if (!accessDurationMonths || parseInt(accessDurationMonths, 10) <= 0) { toast.error("La duración del acceso debe ser mayor a 0 meses"); return false; }
-    if (!instructors[0]?.full_name.trim()) { toast.error("Agrega al menos un docente con nombre"); return false; }
-    if (!instructors[0]?.title.trim()) { toast.error("El docente debe tener un título / profesión"); return false; }
+    if (!categoryId) {
+      toast.error("Selecciona una categoría");
+      return false;
+    }
+    if (!pricePen || parseFloat(pricePen) <= 0) {
+      toast.error("El precio en soles debe ser mayor a 0");
+      return false;
+    }
+    if (!priceUsd || parseFloat(priceUsd) <= 0) {
+      toast.error("El precio en dólares debe ser mayor a 0");
+      return false;
+    }
+    if (!accessDurationMonths || parseInt(accessDurationMonths, 10) <= 0) {
+      toast.error("La duración del acceso debe ser mayor a 0 meses");
+      return false;
+    }
+    if (!instructors[0]?.full_name.trim()) {
+      toast.error("Agrega al menos un docente con nombre");
+      return false;
+    }
+    if (!instructors[0]?.title.trim()) {
+      toast.error("El docente debe tener un título / profesión");
+      return false;
+    }
     return true;
   };
 
@@ -195,8 +252,6 @@ export default function NuevoCursoPage() {
     priceUsd && discountPriceUsd && parseFloat(priceUsd) > 0 && parseFloat(discountPriceUsd) > 0
       ? Math.round((1 - parseFloat(discountPriceUsd) / parseFloat(priceUsd)) * 100)
       : null;
-
-  // ── UI ─────────────────────────────────────────────────────────────────────
 
   return (
     <div>
@@ -221,7 +276,7 @@ export default function NuevoCursoPage() {
             <TabsTrigger value="config">Configuración</TabsTrigger>
           </TabsList>
 
-          {/* ──────────────────── TAB 1: Información básica ──────────────────── */}
+          {/* TAB 1: Información básica */}
           <TabsContent value="basico" className="space-y-5">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div className="space-y-1.5">
@@ -378,7 +433,10 @@ export default function NuevoCursoPage() {
                   value={softwareInput}
                   onChange={(e) => setSoftwareInput(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter") { e.preventDefault(); addSoftware(); }
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addSoftware();
+                    }
                   }}
                   placeholder="Ej: Excel, AutoCAD, SPSS..."
                   className="max-w-xs"
@@ -399,7 +457,10 @@ export default function NuevoCursoPage() {
                       className="flex items-center gap-1 bg-blue-50 text-blue-700 text-xs px-2.5 py-1 rounded-full"
                     >
                       {tool}
-                      <button type="button" onClick={() => setSoftwareTools((p) => p.filter((t) => t !== tool))}>
+                      <button
+                        type="button"
+                        onClick={() => setSoftwareTools((p) => p.filter((t) => t !== tool))}
+                      >
                         <X size={12} />
                       </button>
                     </span>
@@ -409,7 +470,7 @@ export default function NuevoCursoPage() {
             </div>
           </TabsContent>
 
-          {/* ──────────────────── TAB 2: Pricing ──────────────────── */}
+          {/* TAB 2: Pricing */}
           <TabsContent value="pricing" className="space-y-5 max-w-2xl">
             <div>
               <h3 className="text-sm font-semibold text-gray-700 mb-3">Precio en soles (S/)</h3>
@@ -457,8 +518,8 @@ export default function NuevoCursoPage() {
               {discountPctPen !== null && discountPctPen > 0 && discountPctPen < 100 && (
                 <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800 mt-3">
                   Descuento del <strong>{discountPctPen}%</strong> — Precio tachado:{" "}
-                  <span className="line-through">S/ {parseFloat(pricePen).toFixed(2)}</span>{" "}
-                  → Precio final: <strong>S/ {parseFloat(discountPricePen).toFixed(2)}</strong>
+                  <span className="line-through">S/ {parseFloat(pricePen).toFixed(2)}</span> →
+                  Precio final: <strong>S/ {parseFloat(discountPricePen).toFixed(2)}</strong>
                 </div>
               )}
             </div>
@@ -509,8 +570,8 @@ export default function NuevoCursoPage() {
               {discountPctUsd !== null && discountPctUsd > 0 && discountPctUsd < 100 && (
                 <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800 mt-3">
                   Descuento del <strong>{discountPctUsd}%</strong> — Precio tachado:{" "}
-                  <span className="line-through">$ {parseFloat(priceUsd).toFixed(2)}</span>{" "}
-                  → Precio final: <strong>$ {parseFloat(discountPriceUsd).toFixed(2)}</strong>
+                  <span className="line-through">$ {parseFloat(priceUsd).toFixed(2)}</span> →
+                  Precio final: <strong>$ {parseFloat(discountPriceUsd).toFixed(2)}</strong>
                 </div>
               )}
             </div>
@@ -531,26 +592,64 @@ export default function NuevoCursoPage() {
             </div>
           </TabsContent>
 
-          {/* ──────────────────── TAB 3: Docentes ──────────────────── */}
-          <TabsContent value="docentes" className="space-y-5">
-            <div className="flex items-center justify-between">
+          {/* ──────────────────── TAB 3: Docentes (Con Selector de Marketing) ──────────────────── */}
+          <TabsContent value="docentes" className="space-y-6">
+            {/* 🚀 SECCIÓN: Asignar desde la Plana Docente */}
+            <div className="p-4 bg-slate-50 border border-blue-200 rounded-xl space-y-3">
+              <div className="flex items-center gap-2">
+                <Sparkles size={16} className="text-[#084D95]" />
+                <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider">
+                  Asignar Docente
+                </h3>
+              </div>
+              <p className="text-xs text-gray-500">
+                Selecciona uno de los docentes ya creados en el catálogo de Marketing para vincularlo directamente a este curso.
+              </p>
+
+              <div className="flex flex-col sm:flex-row items-center gap-3">
+                <select
+                  value={selectedStaffId}
+                  onChange={(e) => setSelectedStaffId(e.target.value)}
+                  className="w-full sm:flex-1 border border-gray-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-[#084D95]/30 bg-white"
+                >
+                  <option value="">-- Seleccionar Docente --</option>
+                  {staffDocentes?.map((d: any) => (
+                    <option key={d.id} value={d.id}>
+                      {d.full_name ? `${d.full_name} (${d.title || "Docente"})` : `Docente ID: ${d.id.slice(0, 8)}`}
+                    </option>
+                  ))}
+                </select>
+
+                <button
+                  type="button"
+                  onClick={handleAssignFromStaff}
+                  disabled={!selectedStaffId}
+                  className="w-full sm:w-auto px-4 py-2 bg-[#084D95] hover:bg-[#084D95]/90 text-white rounded-lg text-xs font-medium transition-colors disabled:opacity-40 flex items-center justify-center gap-1.5 shrink-0"
+                >
+                  <UserCheck size={14} /> Asignar al Curso
+                </button>
+              </div>
+            </div>
+
+            {/* Lista editable de docentes vinculados al curso */}
+            <div className="flex items-center justify-between pt-2">
               <p className="text-sm text-gray-500">
-                Agrega los docentes que impartirán este curso. Se requiere al menos uno para publicar.
+                Docentes asignados a este curso ({instructors.length}):
               </p>
               <button
                 type="button"
                 onClick={() => setInstructors((p) => [...p, { ...EMPTY_INSTRUCTOR }])}
-                className="flex items-center gap-1.5 text-sm text-[#084D95] hover:underline"
+                className="flex items-center gap-1.5 text-sm text-[#084D95] hover:underline font-medium"
               >
                 <Plus size={15} />
-                Agregar docente
+                Agregar docente manual
               </button>
             </div>
 
             {instructors.map((ins, i) => (
-              <div key={i} className="border border-gray-200 rounded-xl p-4 space-y-4">
+              <div key={i} className="border border-gray-200 rounded-xl p-4 space-y-4 bg-white shadow-2xs">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-medium text-brand-primary">Docente {i + 1}</h3>
+                  <h3 className="text-sm font-semibold text-brand-primary">Docente {i + 1}</h3>
                   {instructors.length > 1 && (
                     <button
                       type="button"
@@ -562,21 +661,39 @@ export default function NuevoCursoPage() {
                     </button>
                   )}
                 </div>
+
+                {/* Si viene con imagen de Marketing vinculada */}
+                {ins.photo_url && (
+                  <div className="flex items-center gap-3 p-2 bg-blue-50/50 border border-blue-100 rounded-lg">
+                    <img
+                      src={ins.photo_url}
+                      alt="Docente"
+                      className="w-12 h-12 object-cover rounded-lg border border-gray-200"
+                    />
+                    <div className="text-xs">
+                      <span className="font-semibold text-blue-900 block">Foto de perfil vinculada</span>
+                      <span className="text-gray-500 text-[11px] truncate block max-w-xs">
+                        {ins.photo_url}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <Label>Nombre completo *</Label>
                     <Input
                       value={ins.full_name}
                       onChange={(e) => updateInstructor(i, "full_name", e.target.value)}
-                      placeholder="Dr. Juan Pérez"
+                      placeholder="Ej: Ing. Jean Pierre Chayña"
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label>Profesión / Título *</Label>
+                    <Label>Profesión / Grado Académico *</Label>
                     <Input
                       value={ins.title}
                       onChange={(e) => updateInstructor(i, "title", e.target.value)}
-                      placeholder="Economista · MBA Stanford"
+                      placeholder="Ej: Economista Titulado · UNSAAC"
                     />
                   </div>
                 </div>
@@ -588,7 +705,7 @@ export default function NuevoCursoPage() {
                   <Textarea
                     value={ins.description ?? ""}
                     onChange={(e) => updateInstructor(i, "description", e.target.value)}
-                    placeholder="Breve bio del docente: experiencia, especialidades, logros..."
+                    placeholder="Breve bio del docente: experiencia, especialidades, proyectos destacados..."
                     rows={3}
                   />
                 </div>
@@ -596,9 +713,8 @@ export default function NuevoCursoPage() {
             ))}
           </TabsContent>
 
-          {/* ──────────────────── TAB 4: Contenido ──────────────────── */}
+          {/* TAB 4: Contenido */}
           <TabsContent value="contenido" className="space-y-8 max-w-2xl">
-            {/* Requisitos previos */}
             <div className="space-y-3">
               <div>
                 <h3 className="font-medium text-brand-primary">Requisitos previos</h3>
@@ -609,7 +725,10 @@ export default function NuevoCursoPage() {
                   value={prerequisiteInput}
                   onChange={(e) => setPrerequisiteInput(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter") { e.preventDefault(); addPrerequisite(); }
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addPrerequisite();
+                    }
                   }}
                   placeholder="Ej: Conocimiento básico de Excel"
                   className="flex-1"
@@ -643,7 +762,6 @@ export default function NuevoCursoPage() {
               )}
             </div>
 
-            {/* Lo que aprenderás */}
             <div className="space-y-3">
               <div>
                 <h3 className="font-medium text-brand-primary">Lo que aprenderás</h3>
@@ -656,7 +774,10 @@ export default function NuevoCursoPage() {
                   value={outcomeInput}
                   onChange={(e) => setOutcomeInput(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter") { e.preventDefault(); addOutcome(); }
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addOutcome();
+                    }
                   }}
                   placeholder="Ej: Analizar estados financieros de forma profesional"
                   className="flex-1"
@@ -691,7 +812,7 @@ export default function NuevoCursoPage() {
             </div>
           </TabsContent>
 
-          {/* ──────────────────── TAB 5: Configuración ──────────────────── */}
+          {/* TAB 5: Configuración */}
           <TabsContent value="config" className="space-y-6">
             <div className="space-y-3 max-w-lg">
               <Label>Estado del curso</Label>

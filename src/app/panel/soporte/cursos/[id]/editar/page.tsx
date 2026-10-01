@@ -1,11 +1,13 @@
 "use client";
 
+// 1. Agregar a los imports existentes:
+import { docentesService } from "@/lib/services/marketing";
 import { useState, useRef, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import Link from "next/link";
-import { ArrowLeft, Plus, X, Upload, ImageIcon, Loader2 } from "lucide-react";
+import { ArrowLeft, Plus, X, Upload, ImageIcon, Loader2, UserCheck, Sparkles } from "lucide-react";
 import { cursosService } from "@/lib/services/courses";
 import { categoriasService } from "@/lib/services/categories";
 import { certificateTemplatesService } from "@/lib/services/certificates";
@@ -57,6 +59,13 @@ export default function EditarCursoPage() {
 
   // ── Tab 3: Docentes ────────────────────────────────────────────────────────
   const [instructors, setInstructors] = useState<InstructorInput[]>([{ ...EMPTY_INSTRUCTOR }]);
+  const [selectedStaffId, setSelectedStaffId] = useState<string>(""); // 👈 Agregar
+
+  // Query para obtener los docentes de Marketing
+  const { data: staffDocentes } = useQuery({
+    queryKey: ["docentes-marketing"],
+    queryFn: () => docentesService.list(),
+  });
 
   // ── Tab 4: Contenido ───────────────────────────────────────────────────────
   const [prerequisiteInput, setPrerequisiteInput] = useState("");
@@ -216,6 +225,35 @@ export default function EditarCursoPage() {
 
   const updateInstructor = (i: number, field: keyof InstructorInput, val: string) =>
     setInstructors((prev) => prev.map((ins, idx) => (idx === i ? { ...ins, [field]: val } : ins)));
+
+  // Asignar y autocompletar docente desde Marketing
+  const handleAssignFromStaff = () => {
+    if (!selectedStaffId) return;
+    const staff = staffDocentes?.find((s: any) => s.id === selectedStaffId) as any;
+    if (!staff) return;
+
+    const newInstructorData: InstructorInput = {
+      full_name: staff.full_name || "",
+      title: staff.title || "",
+      description: staff.description || "",
+      photo_url: staff.image_url || undefined,
+    };
+
+    // Si el primer docente en la lista está vacío, lo reemplaza; si no, añade uno nuevo
+    const isFirstEmpty =
+      instructors.length === 1 &&
+      !instructors[0].full_name.trim() &&
+      !instructors[0].title.trim();
+
+    if (isFirstEmpty) {
+      setInstructors([newInstructorData]);
+    } else {
+      setInstructors((prev) => [...prev, newInstructorData]);
+    }
+
+    toast.success(`Datos de "${staff.full_name || "docente"}" cargados automáticamente`);
+    setSelectedStaffId("");
+  };
 
   const validateForSave = () => {
     if (!title.trim()) { toast.error("El título es obligatorio"); return false; }
@@ -600,53 +638,113 @@ export default function EditarCursoPage() {
           </TabsContent>
 
           {/* ──────────────────── TAB 3: Docentes ──────────────────── */}
-          <TabsContent value="docentes" className="space-y-5">
-            <div className="flex items-center justify-between">
+          <TabsContent value="docentes" className="space-y-6">
+            {/* 🚀 Selector de Docentes de Marketing */}
+            <div className="p-4 bg-slate-50 border border-blue-200 rounded-xl space-y-3">
+              <div className="flex items-center gap-2">
+                <Sparkles size={16} className="text-[#084D95]" />
+                <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider">
+                  Asignar Docente Registrado
+                </h3>
+              </div>
+              <p className="text-xs text-gray-500">
+                Selecciona uno de los docentes ya registrados para vincularlo y autocompletar su información.
+              </p>
+
+              <div className="flex flex-col sm:flex-row items-center gap-3">
+                <select
+                  value={selectedStaffId}
+                  onChange={(e) => setSelectedStaffId(e.target.value)}
+                  className="w-full sm:flex-1 border border-gray-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-[#084D95]/30 bg-white"
+                >
+                  <option value="">-- Seleccionar Docente --</option>
+                  {staffDocentes?.map((d: any) => (
+                    <option key={d.id} value={d.id}>
+                      {d.full_name ? `${d.full_name} (${d.title || "Docente"})` : `Docente ID: ${d.id.slice(0, 8)}`}
+                    </option>
+                  ))}
+                </select>
+
+                <button
+                  type="button"
+                  onClick={handleAssignFromStaff}
+                  disabled={!selectedStaffId}
+                  className="w-full sm:w-auto px-4 py-2 bg-[#084D95] hover:bg-[#084D95]/90 text-white rounded-lg text-xs font-medium transition-colors disabled:opacity-40 flex items-center justify-center gap-1.5 shrink-0"
+                >
+                  <UserCheck size={14} /> Asignar al Curso
+                </button>
+              </div>
+            </div>
+
+            {/* Encabezado y botón para agregar manualmente */}
+            <div className="flex items-center justify-between pt-1">
               <p className="text-sm text-gray-500">
-                Agrega los docentes que impartirán este curso. Se requiere al menos uno para publicar.
+                Docentes asignados a este curso ({instructors.length}):
               </p>
               <button
                 type="button"
                 onClick={() => setInstructors((p) => [...p, { ...EMPTY_INSTRUCTOR }])}
-                className="flex items-center gap-1.5 text-sm text-[#084D95] hover:underline"
+                className="flex items-center gap-1.5 text-sm text-[#084D95] hover:underline font-medium"
               >
                 <Plus size={15} />
-                Agregar docente
+                Agregar docente manual
               </button>
             </div>
 
+            {/* Tarjetas de docentes */}
             {instructors.map((ins, i) => (
-              <div key={i} className="border border-gray-200 rounded-xl p-4 space-y-4">
+              <div key={i} className="border border-gray-200 rounded-xl p-4 space-y-4 bg-white shadow-2xs">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-medium text-brand-primary">Docente {i + 1}</h3>
+                  <h3 className="text-sm font-semibold text-brand-primary">Docente {i + 1}</h3>
                   {instructors.length > 1 && (
                     <button
                       type="button"
                       onClick={() => setInstructors((p) => p.filter((_, idx) => idx !== i))}
                       className="text-gray-400 hover:text-red-500 transition-colors"
+                      title="Eliminar docente"
                     >
                       <X size={16} />
                     </button>
                   )}
                 </div>
+
+                {/* Mostrar foto si está vinculada desde Marketing o la base de datos */}
+                {ins.photo_url && (
+                  <div className="flex items-center gap-3 p-2.5 bg-blue-50/50 border border-blue-100 rounded-lg">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={ins.photo_url}
+                      alt={ins.full_name || "Docente"}
+                      className="w-12 h-12 object-cover rounded-lg border border-gray-200 shrink-0"
+                    />
+                    <div className="text-xs min-w-0">
+                      <span className="font-semibold text-blue-900 block">Foto de perfil vinculada</span>
+                      <span className="text-gray-500 text-[11px] truncate block max-w-sm">
+                        {ins.photo_url}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <Label>Nombre completo *</Label>
                     <Input
                       value={ins.full_name}
                       onChange={(e) => updateInstructor(i, "full_name", e.target.value)}
-                      placeholder="Dr. Juan Pérez"
+                      placeholder="Ej: Ing. Jean Pierre Chayña"
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label>Profesión / Título *</Label>
+                    <Label>Profesión / Grado Académico *</Label>
                     <Input
                       value={ins.title}
                       onChange={(e) => updateInstructor(i, "title", e.target.value)}
-                      placeholder="Economista · MBA Stanford"
+                      placeholder="Ej: Economista Titulado · UNSAAC"
                     />
                   </div>
                 </div>
+
                 <div className="space-y-1.5">
                   <Label>
                     Descripción{" "}

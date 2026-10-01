@@ -348,9 +348,13 @@ export interface UpcomingLaunch {
 
 export interface StaffMember {
   id: string;
+  full_name?: string | null;      // 👈 Agregar
+  title?: string | null;          // 👈 Agregar
+  description?: string | null;    // 👈 Agregar
   image_url: string;
+  image_public_id?: string | null;
   display_order: number;
-  status: PromotionStatus;
+  status: "active" | "inactive";
   created_at: string;
 }
 

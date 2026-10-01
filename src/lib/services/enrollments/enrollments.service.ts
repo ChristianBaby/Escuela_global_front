@@ -42,4 +42,15 @@ export const matriculasService = {
       "/users/buscar",
       { params: { q: query, role: "estudiante" } }
     ).then((r) => r.data),
+    // 🚀 1. Verificar Email manualmente desde el Panel
+  // 🚀 Cambiar de '/admin/users/...' a '/users/...'
+  async verifyStudentEmail(userId: string): Promise<{ message: string }> {
+    const { data } = await api.patch(`/users/${userId}/verify-email`);
+    return data;
+  },
+
+  async resetStudentPassword(userId: string, password: string): Promise<{ message: string }> {
+    const { data } = await api.patch(`/users/${userId}/reset-password`, { password });
+    return data;
+  },
 };
