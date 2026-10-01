@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
 import { studentService } from "@/lib/services/student";
 import {
-  BookOpen, Search, PlayCircle, CheckCircle2, Clock,
+  BookOpen, Search, PlayCircle,
   Star, Award, ExternalLink,
 } from "lucide-react";
 import Link from "next/link";
@@ -80,10 +80,10 @@ function MisCursosContent() {
     );
   }, [tab, search, enrollments]);
 
-  const tabList: { key: Tab; label: string; count: number; icon: React.ReactNode }[] = [
-    { key: "progreso",      label: "En progreso",  count: enProgreso.length,  icon: <PlayCircle size={14} /> },
-    { key: "completados",   label: "Completados",  count: completados.length, icon: <CheckCircle2 size={14} /> },
-    { key: "sin-iniciar",   label: "Sin iniciar",  count: sinIniciar.length,  icon: <Clock size={14} /> },
+  const tabList: { key: Tab; label: string; count: number }[] = [
+    { key: "progreso",      label: "En progreso",  count: enProgreso.length },
+    { key: "completados",   label: "Completados",  count: completados.length },
+    { key: "sin-iniciar",   label: "Sin iniciar",  count: sinIniciar.length },
   ];
 
   const TAB_COLORS: Record<Tab, { border: string; text: string; badge: string }> = {
@@ -114,9 +114,10 @@ function MisCursosContent() {
         />
       </div>
 
-      {/* Tabs */}
+      {/* Tabs — mismo estilo que en el dashboard (sin ícono, solo texto + contador),
+          así caben en una sola línea en mobile sin desbordar el ancho */}
       <div className="flex gap-1 border-b border-gray-200">
-        {tabList.map(({ key, label, count, icon }) => {
+        {tabList.map(({ key, label, count }) => {
           const colors = TAB_COLORS[key];
           const isActive = tab === key;
           const isColored = count > 0 || isActive;
@@ -124,13 +125,12 @@ function MisCursosContent() {
             <button
               key={key}
               onClick={() => { setTab(key); setSearch(""); }}
-              className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
+              className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
                 isColored ? colors.text : "text-gray-500 hover:text-gray-700"
               } ${isActive ? colors.border : "border-transparent"}`}
             >
-              {icon}
               {label}
-              <span className={`text-xs px-1.5 py-0.5 rounded-full ${isColored ? `${colors.badge} text-white` : "bg-gray-100 text-gray-500"}`}>
+              <span className={`ml-1.5 text-xs px-1.5 py-0.5 rounded-full ${isColored ? `${colors.badge} text-white` : "bg-gray-100 text-gray-500"}`}>
                 {count}
               </span>
             </button>

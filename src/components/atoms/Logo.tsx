@@ -19,10 +19,9 @@ const ICON_HEIGHTS = { sm: 24, md: 32, lg: 44 };
 // que el texto siga siendo legible, no puede compartir la escala del ícono.
 const FULL_HEIGHTS = { sm: 40, md: 52, lg: 64 };
 
-// Ambos archivos ya tienen fondo transparente real (el ícono es un PNG con
-// canal alfa; el logo completo es un SVG con el ícono embebido —también ya
-// transparente— más el texto "Escuela Global" como texto vectorial real).
-// No hace falta ningún truco de placa blanca en fondos oscuros.
+// Ambos archivos (ícono PNG y logo completo SVG) traen su propio fondo blanco
+// sólido horneado en la imagen — no son transparentes, así que no hace falta
+// ningún contenedor/placa extra para que se vean bien sobre fondos oscuros.
 export function Logo({ className, variant = "full", size = "md" }: LogoProps) {
   const isIcon = variant === "icon";
   const height = isIcon ? ICON_HEIGHTS[size] : FULL_HEIGHTS[size];

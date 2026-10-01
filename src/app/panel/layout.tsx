@@ -4,7 +4,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/authStore";
+import { useCartStore } from "@/store/cartStore";
 import { authService } from "@/lib/services/auth";
 import {
   LayoutDashboard,
@@ -52,7 +54,7 @@ const NAV_SECTIONS: NavSection[] = [
         roles: ["admin"],
       },
       {
-        label: "Estudiantes",
+        label: "Usuarios",
         href: "/panel/estudiantes",
         icon: <Users size={18} />,
         roles: ["admin", "soporte", "coordinador"],
@@ -193,6 +195,7 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname();
   const { user, clearUser } = useAuthStore();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const queryClient = useQueryClient();
 
   const handleLogout = async () => {
     try {
@@ -201,7 +204,13 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
       // proceed with local logout even if API call fails
     }
     clearUser();
+    // Sin esto, datos de la cuenta anterior quedan cacheados y se le siguen
+    // mostrando a la siguiente sesión hasta que algo los vuelva a pedir.
+    queryClient.clear();
+    // El carrito local vive en localStorage, sin relación con la sesión.
+    useCartStore.getState().clearCart();
     document.cookie = "access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    document.cookie = "refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     window.location.href = "/auth/login";
   };
 
@@ -330,9 +339,9 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
             <Image
               src="/Logo_escuela_global.png"
               alt="Escuela Global"
-              width={120}
-              height={36}
-              className="h-8 w-auto object-contain"
+              width={32}
+              height={32}
+              className="h-8 w-8 object-contain"
             />
           </Link>
         </header>

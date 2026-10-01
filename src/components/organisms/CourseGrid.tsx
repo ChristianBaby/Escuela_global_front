@@ -6,6 +6,9 @@ interface CourseGridProps {
   loading?: boolean;
   skeletonCount?: number;
   emptyMessage?: string;
+  // course_id -> progress_percent de los cursos en los que el alumno ya está
+  // matriculado — se le pasa a cada CourseCard para que se muestre distinto.
+  enrollmentProgress?: Record<string, number>;
 }
 
 export function CourseGrid({
@@ -13,6 +16,7 @@ export function CourseGrid({
   loading = false,
   skeletonCount = 8,
   emptyMessage = "No se encontraron cursos.",
+  enrollmentProgress,
 }: CourseGridProps) {
   if (loading) {
     return (
@@ -42,7 +46,7 @@ export function CourseGrid({
   return (
     <div className={`grid ${gridCols} gap-3 sm:gap-5`}>
       {courses.map((course) => (
-        <CourseCard key={course.id} course={course} />
+        <CourseCard key={course.id} course={course} progressPercent={enrollmentProgress?.[course.id]} />
       ))}
     </div>
   );

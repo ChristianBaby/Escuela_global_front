@@ -26,9 +26,12 @@ import {
 import { PublicLayout } from "@/components/templates";
 import { cartService } from "@/lib/services/cart";
 import { cursosService } from "@/lib/services/courses";
+import { studentService } from "@/lib/services/student";
 import { useCartStore } from "@/store/cartStore";
 import { useAuthStore } from "@/store/authStore";
 import { getGuestSessionToken } from "@/lib/session";
+import { extractCartItems } from "@/lib/cart-sync";
+import { isEnrollmentActive } from "@/lib/enrollment";
 import type { Course } from "@/types";
 
 // ─── Query keys ───────────────────────────────────────────────────────────────
@@ -73,15 +76,31 @@ export default function CarritoPage() {
   // Pool de candidatos para las sugerencias — se pide un lote más grande que lo
   // que se muestra, para que haya de dónde elegir por relevancia (categoría,
   // software compartido, descuento) y no solo los primeros de la lista.
+  // listCatalog() (no list()) — list() pega al endpoint interno /courses, sin
+  // filtrar por publicado, y podía sugerir cursos que ni siquiera están
+  // disponibles para el público.
   const { data: catalogData, isLoading: loadingCatalog } = useQuery({
     queryKey: COURSES_KEY,
-    queryFn: () => cursosService.list({ limit: 60 }),
+    queryFn: () => cursosService.listCatalog({ limit: 60, status: "published" }),
     staleTime: 60_000,
   });
 
+  // Misma queryKey que /cursos, /dashboard y /mis-cursos — para no sugerir
+  // (ni dejar re-agregar) un curso que el alumno ya tiene, igual que
+  // Udemy/Coursera. Si el acceso ya venció, vuelve a contar como sugerible.
+  const { data: myEnrollments = [] } = useQuery({
+    queryKey: ["mis-inscripciones"],
+    queryFn: studentService.getMyEnrollments,
+    enabled: isAuthenticated,
+  });
+  const enrolledCourseIds = new Set(
+    myEnrollments.filter(isEnrollmentActive).map((e) => e.course_id)
+  );
+
   // ── Mutations del carrito real (invitado o logueado) ──
   const serverRemoveMutation = useMutation({
-    mutationFn: (itemId: string) => cartService.remove(itemId),
+    mutationFn: (itemId: string) =>
+      cartService.remove(itemId, isAuthenticated ? undefined : guestSessionToken),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: CART_KEY });
       toast.success("Curso eliminado del carrito");
@@ -105,32 +124,32 @@ export default function CarritoPage() {
       queryClient.invalidateQueries({ queryKey: CART_KEY });
       toast.success("Curso agregado al carrito");
     },
-    onError: () => toast.error("No se pudo agregar el curso"),
+    onError: (err: unknown) => {
+      // El espejo local (agregado de forma optimista en handleAddFromCatalog)
+      // se corrige solo con este invalidate — lo que muestra el carrito real
+      // pasa a ser la verdad. El curso ya no se puede duplicar desde esta
+      // lista (se filtra de "sugerencias" en cuanto está en el carrito), así
+      // que un error acá es real y sí vale la pena mostrarlo.
+      queryClient.invalidateQueries({ queryKey: CART_KEY });
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      toast.error(msg ?? "No se pudo agregar el curso");
+    },
   });
 
   // ── Derived data ──
-  const allCourses: Course[] = catalogData?.data ?? [];
+  // Nunca se sugiere (ni se muestra como "disponible") un curso que el
+  // alumno ya tiene — prioriza otros cursos en su lugar, igual que
+  // Udemy/Coursera.
+  const allCourses: Course[] = (catalogData?.data ?? []).filter((c) => !enrolledCourseIds.has(c.id));
 
-  const serverCartAny = serverCart as any;
-  let cartItemsRaw: any[] = [];
-
-  // 1. EXTRACTOR DE MATRICES: Intenta leer el formato que devuelva tu NestJS
-  if (serverCartAny) {
-    if (Array.isArray(serverCartAny)) {
-      cartItemsRaw = serverCartAny;
-    } else if (serverCartAny.items && Array.isArray(serverCartAny.items)) {
-      cartItemsRaw = serverCartAny.items;
-    } else if (serverCartAny.data) {
-      if (Array.isArray(serverCartAny.data)) {
-        cartItemsRaw = serverCartAny.data;
-      } else if (serverCartAny.data.items && Array.isArray(serverCartAny.data.items)) {
-        cartItemsRaw = serverCartAny.data.items;
-      }
-    }
-  }
+  const cartItemsRaw = extractCartItems(serverCart);
 
   // 2. Mapeo de ítems provenientes del Servidor
-  const serverNormalizedItems: DisplayItem[] = cartItemsRaw.map((i: any) => ({
+  // El backend no deduplica /cart/add por curso, así que un mismo curso puede
+  // haber quedado con más de una fila (p. ej. se agregó desde "Añadir al
+  // carrito" y luego desde "Comprar ahora"). Nos quedamos solo con la primera
+  // fila por curso para no mostrar ni cobrar el mismo curso 2 veces.
+  const serverNormalizedItemsRaw: DisplayItem[] = cartItemsRaw.map((i: any) => ({
     key: i.cartItemId ?? i.id,
     serverId: i.cartItemId ?? i.id,
     courseId: i.courseId ?? i.course?.id ?? i.course_id,
@@ -146,6 +165,9 @@ export default function CarritoPage() {
     category_id: i.category_id ?? i.course?.category_id,
     software_tools: i.software_tools ?? i.course?.software_tools ?? [],
   }));
+  const serverNormalizedItems: DisplayItem[] = Array.from(
+    new Map(serverNormalizedItemsRaw.map((item) => [item.courseId, item])).values()
+  );
 
   // 3. Mapeo de ítems provenientes del Almacenamiento Local (Zustand)
   const localNormalizedItems: DisplayItem[] = localItems.map((e) => ({
@@ -162,17 +184,24 @@ export default function CarritoPage() {
     software_tools: e.course.software_tools ?? [],
   }));
 
-  // El carrito real (backend) manda siempre que tenga datos; si aún no cargó
-  // o quedó vacío por un desfase momentáneo, mostramos el espejo local.
-  const displayItems: DisplayItem[] =
-    serverNormalizedItems.length > 0 ? serverNormalizedItems : localNormalizedItems;
+  // Logueado: el carrito del servidor es SIEMPRE la fuente de verdad, aunque
+  // en un refetch puntual venga vacío — nunca se cae al espejo local, porque
+  // ese espejo es solo un subconjunto de lo que se agregó en este navegador
+  // (se vacía al cerrar sesión, por ejemplo) y mostrarlo en su lugar hacía
+  // "desaparecer" cursos reales del carrito. Invitado: el carrito real vive
+  // bloqueado en el backend (requiere sesión), así que ahí sí el espejo local
+  // es la única fuente posible.
+  const displayItems: DisplayItem[] = isAuthenticated
+    ? serverNormalizedItems
+    : (serverNormalizedItems.length > 0 ? serverNormalizedItems : localNormalizedItems);
 
   const cartCourseIds = new Set(displayItems.map((i) => i.courseId));
 
-  const subtotal =
-    serverNormalizedItems.length > 0
-      ? (serverCartAny?.subtotal ?? serverCartAny?.data?.subtotal ?? serverNormalizedItems.reduce((acc, item) => acc + (item.discount_price ?? item.price), 0))
-      : localTotal();
+  const subtotal = isAuthenticated
+    ? (serverCart?.subtotal ?? displayItems.reduce((acc, item) => acc + (item.discount_price ?? item.price), 0))
+    : (serverNormalizedItems.length > 0
+        ? (serverCart?.subtotal ?? serverNormalizedItems.reduce((acc, item) => acc + (item.discount_price ?? item.price), 0))
+        : localTotal());
 
   const currency = displayItems[0]?.currency ?? "PEN";
   const symbol = currency === "PEN" ? "S/" : "$";

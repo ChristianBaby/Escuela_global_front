@@ -1,4 +1,5 @@
 import { api } from "@/lib/http/api";
+import type { PaymentStatus } from "@/types";
 
 export interface CreateOrderDto {
   payment_method: "stripe" | "paypal" | "mercado_pago" | "culqi";
@@ -28,12 +29,18 @@ export interface OrderDetail {
   total: number;
   currency: string;
   payment_method: string;
-  payment_status: string;
+  payment_status: PaymentStatus;
   billing_name: string;
   billing_email: string;
   billing_country: string;
   created_at: string;
   items: OrderItem[];
+}
+
+export interface OrderVerification {
+  success: boolean;
+  orderId: string;
+  payment_status: PaymentStatus;
 }
 
 export const ordersService = {
@@ -42,4 +49,7 @@ export const ordersService = {
 
   get: (id: string) =>
     api.get<OrderDetail>(`/orders/${id}`).then((r) => r.data),
+
+  verify: (orderId: string) =>
+    api.get<OrderVerification>(`/student/orders/verify/${orderId}`).then((r) => r.data),
 };

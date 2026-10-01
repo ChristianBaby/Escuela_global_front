@@ -19,6 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { cursosService } from "@/lib/services/courses";
 import { categoriasService } from "@/lib/services/categories";
 import { studentService } from "@/lib/services/student";
+import { isEnrollmentActive } from "@/lib/enrollment";
 // 🚀 CAMBIO 1: Importamos el store de autenticación para saber si hay un alumno logueado
 import { useAuthStore } from "@/store/authStore"; 
 
@@ -191,14 +192,19 @@ function CursosContent() {
     staleTime: 5 * 60_000,
   });
 
-  const allCourses = coursesData?.data ?? [];
+  const courses = coursesData?.data ?? [];
 
-  // Filtramos los cursos que el alumno ya posee, según las matrículas reales del servidor
-  const enrolledCourseIds = new Set(serverEnrollments.map((e: any) => e.course_id));
-
-  const courses = isAuthenticated
-    ? allCourses.filter((course: any) => !enrolledCourseIds.has(course.id))
-    : allCourses;
+  // Los cursos en los que el alumno ya está matriculado NO se esconden del
+  // catálogo — se muestran igual, pero con su progreso y "Ver curso" /
+  // "Continuar curso" en vez del precio (CourseCard se encarga con esto).
+  // Si el acceso ya venció, se excluye: el curso vuelve a comportarse como
+  // cualquier otro (se puede volver a comprar) en vez de quedar "matriculado"
+  // para siempre.
+  const enrollmentProgress: Record<string, number> | undefined = isAuthenticated
+    ? Object.fromEntries(
+        serverEnrollments.filter(isEnrollmentActive).map((e) => [e.course_id, e.progress_percent])
+      )
+    : undefined;
 
   const totalPages = coursesData?.total_pages ?? 1;
 
@@ -426,10 +432,11 @@ function CursosContent() {
               courses={courses}
               loading={coursesLoading}
               skeletonCount={ITEMS_PER_PAGE}
+              enrollmentProgress={enrollmentProgress}
               emptyMessage={
                 hasActiveFilters
                   ? "No encontramos cursos con esos filtros. Prueba con otros criterios."
-                  : "No hay cursos disponibles en este momento o ya te encuentras matriculado en todos ellos."
+                  : "No hay cursos disponibles en este momento."
               }
             />
 

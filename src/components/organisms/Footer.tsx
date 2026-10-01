@@ -26,11 +26,13 @@ export function Footer() {
 
   return (
     <footer className="bg-[#022A5D] text-white">
-      {/* Sin max-w: el fondo y el contenido ocupan todo el ancho. Las columnas usan
-          flex + justify-between (no grid-cols-4) para que en monitores anchos no se
-          estiren de forma rara — cada una mantiene un ancho de lectura razonable
-          (max-w-xs) y lo que crece es el espacio ENTRE columnas, no cada columna. */}
-      <div className="px-4 sm:px-6 lg:px-8 py-14">
+      {/* El fondo ocupa todo el ancho, pero el contenido tiene un tope generoso
+          (max-w-[1600px]) para que en monitores muy anchos las columnas no queden
+          separadas por espacios enormes. Las columnas usan flex + justify-between
+          (no grid-cols-4) para que además cada una mantenga un ancho de lectura
+          razonable (max-w-xs) — lo que crece es el espacio ENTRE columnas, no
+          cada columna en sí. */}
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-14">
         <div className="flex flex-col md:flex-row md:flex-wrap md:justify-between gap-10">
 
           {/* Identidad de la Empresa */}

@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { matriculasService, type CreateMatriculasDto } from "@/lib/services/enrollments";
 import { cursosService } from "@/lib/services/courses";
 import { usuariosService } from "@/lib/services/users";
+import type { Course } from "@/types";
 import { toast } from "sonner";
 import {
   Search, X, BookOpen, CheckCircle2, UserCheck, Users,
@@ -133,9 +134,32 @@ export default function MatriculasPage() {
   }, []);
 
   /* ── datos ── */
-  const { data: cursosData } = useQuery({
-    queryKey: ["cursos-activos"],
-    queryFn:  () => cursosService.list({ status: "published", limit: 100 }),
+  const { data: cursosData, isLoading: loadingCursos, isError: errorCursos } = useQuery({
+    queryKey: ["cursos", "matriculas", "with-archived"],
+    queryFn: async () => {
+      const loadByStatus = async (status: "published" | "archived") => {
+        const courses: Course[] = [];
+        let page = 1;
+        let totalPages = 1;
+
+        while (page <= totalPages) {
+          const response = await cursosService.list({ status, page, limit: 100 });
+          courses.push(...response.data);
+          totalPages = response.total_pages;
+          page += 1;
+        }
+
+        return courses;
+      };
+
+      const [published, archived] = await Promise.all([
+        loadByStatus("published"),
+        loadByStatus("archived"),
+      ]);
+
+      return [...new Map([...published, ...archived].map((course) => [course.id, course])).values()]
+        .filter((course) => course.status === "published" || course.status === "archived");
+    },
   });
 
   /* Lista paginada de estudiantes: carga todos al entrar al paso 2;
@@ -198,7 +222,7 @@ export default function MatriculasPage() {
   }, [estudiantesConMatriculado, estadoFiltro]);
 
   /* ── filtros de cursos ── */
-  const cursosFiltrados = (cursosData?.data ?? [])
+  const cursosFiltrados = (cursosData ?? [])
     .filter((c) => normalize(c.title).includes(normalize(cursosBusqueda)))
     .sort((a, b) => a.title.localeCompare(b.title, "es", { sensitivity: "base" }));
 
@@ -358,9 +382,9 @@ export default function MatriculasPage() {
             <div className="flex items-center gap-2 mb-3">
               <BookOpen className="size-4 text-[#084D95]" />
               <h2 className="font-semibold text-gray-800 text-sm">Selecciona los cursos</h2>
-              {cursosData?.data && (
+              {cursosData && (
                 <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
-                  {cursosData.data.length} disponibles
+                  {cursosData.length} disponibles · {cursosData.filter((c) => c.status === "archived").length} archivados
                 </span>
               )}
               {cursosSeleccionados.length > 0 && (
@@ -415,6 +439,11 @@ export default function MatriculasPage() {
                         <p className={`text-sm font-medium truncate ${isSel ? "text-[#084D95]" : "text-gray-900"}`}>
                           {c.title}
                         </p>
+                        {c.status === "archived" && (
+                          <span className="inline-block mt-1 rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 ring-1 ring-amber-200">
+                            Archivado
+                          </span>
+                        )}
                         <p className="text-xs text-gray-400 mt-0.5">
                           S/ {c.price_pen} · {c.enrolled_count} matriculados
                         </p>
@@ -425,7 +454,15 @@ export default function MatriculasPage() {
                 );
               })}
 
-              {cursosFiltrados.length === 0 && (
+              {loadingCursos && (
+                <div className="col-span-3 text-center py-6 text-gray-400 text-sm">Cargando cursos...</div>
+              )}
+
+              {errorCursos && (
+                <div className="col-span-3 text-center py-6 text-red-600 text-sm">No se pudieron cargar los cursos.</div>
+              )}
+
+              {!loadingCursos && !errorCursos && cursosFiltrados.length === 0 && (
                 <div className="col-span-3 text-center py-6 text-gray-400 text-sm">
                   No se encontraron cursos con &ldquo;{cursosBusqueda}&rdquo;
                 </div>
@@ -466,7 +503,7 @@ export default function MatriculasPage() {
             </div>
             <div className="flex flex-wrap gap-2">
               {cursosSeleccionados.map((id) => {
-                const c = cursosData?.data.find((x) => x.id === id);
+                const c = cursosData?.find((x) => x.id === id);
                 if (!c) return null;
                 return (
                   <span
@@ -475,6 +512,11 @@ export default function MatriculasPage() {
                   >
                     <BookOpen className="size-3" />
                     {c.title}
+                    {c.status === "archived" && (
+                      <span className="rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 ring-1 ring-amber-200">
+                        Archivado
+                      </span>
+                    )}
                   </span>
                 );
               })}

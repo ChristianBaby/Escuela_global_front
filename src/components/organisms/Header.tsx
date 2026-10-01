@@ -3,13 +3,42 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Logo, Badge, buttonVariants } from "@/components/atoms";
 import { CartModal } from "@/components/organisms/CartModal";
 import { useAuthStore } from "@/store/authStore";
+import { getLandingForRole } from "@/lib/auth/roleRoutes";
 import { useCartStore } from "@/store/cartStore";
 import { authService } from "@/lib/services/auth";
+import { cartService } from "@/lib/services/cart";
+import { getGuestSessionToken } from "@/lib/session";
+import { extractCartItems } from "@/lib/cart-sync";
 import { ShoppingCart, Menu, X, LogOut } from "lucide-react"; // 🟢 Solo íconos del sistema
 import { cn } from "@/lib/utils";
+
+// Logueado: el carrito del servidor es SIEMPRE la fuente de verdad (aunque
+// venga en 0) — el espejo local (Zustand) es solo un subconjunto de lo que
+// se agregó en este navegador y no debe usarse para nada una vez hay sesión,
+// o el badge termina mostrando un número que no coincide con el carrito
+// real. Invitado: el carrito real vive bloqueado en el backend (requiere
+// sesión), así que ahí sí el espejo local es la única fuente posible.
+function useCartCount() {
+  const { isAuthenticated } = useAuthStore();
+  const localItems = useCartStore((s) => s.items);
+  const [guestSessionToken] = useState(() => getGuestSessionToken());
+
+  const { data: serverCart } = useQuery({
+    queryKey: ["cart", isAuthenticated ? "auth" : guestSessionToken],
+    queryFn: () => cartService.get(isAuthenticated ? undefined : guestSessionToken),
+  });
+
+  const cartItemsRaw = extractCartItems(serverCart);
+
+  if (isAuthenticated) {
+    return new Set(cartItemsRaw.map((i) => i.courseId)).size;
+  }
+  return cartItemsRaw.length > 0 ? new Set(cartItemsRaw.map((i) => i.courseId)).size : localItems.length;
+}
 
 // ══════════════════════════════════════════════════════════════════════
 // ÍCONOS DE REDES SOCIALES (SVG Nativos - Sin dependencias externas)
@@ -62,9 +91,10 @@ export function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
   const { isAuthenticated, user, clearUser } = useAuthStore();
-  const localItems = useCartStore((s) => s.items);
   const router = useRouter();
   const pathname = usePathname();
+  const queryClient = useQueryClient();
+  const cartCount = useCartCount();
 
   const isNavActive = (href: string) => {
     if (href === "/cursos") return pathname.startsWith("/cursos");
@@ -72,7 +102,6 @@ export function Header() {
     return pathname === href;
   };
   const isCartActive = pathname === "/carrito";
-  const cartCount = localItems.length;
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 10);
@@ -94,6 +123,15 @@ export function Header() {
     } catch {}
     clearUser();
     document.cookie = "access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    document.cookie = "refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    // Sin esto, datos de la cuenta anterior (matrículas, carrito autenticado,
+    // etc.) quedan cacheados y se le siguen mostrando a la siguiente sesión
+    // (invitado u otra cuenta) hasta que algo los vuelva a pedir.
+    queryClient.clear();
+    // El carrito local vive en localStorage, sin relación con la sesión — si
+    // no se limpia aquí, sus cursos le siguen apareciendo a cualquiera que
+    // entre después sin sesión en este mismo navegador.
+    useCartStore.getState().clearCart();
     router.push("/auth/login");
   };
 
@@ -101,7 +139,7 @@ export function Header() {
     <header className="sticky top-0 z-50 bg-white transition-shadow">
       {/* Barra superior de Redes Sociales */}
       <div className="bg-[#0B1230] text-gray-300 text-xs py-1.5 border-b border-white/10 hidden sm:block">
-        <div className="px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
           <span className="text-[11px] text-gray-400">
             Grupo Empresarial Especializaciones Global LLC
           </span>
@@ -149,13 +187,14 @@ export function Header() {
         </div>
       </div>
 
-      {/* Barra principal de navegación — sin max-w: ocupa todo el ancho. Grilla de
-          3 columnas IGUALES (no flex-1 sobre un solo lado) para que el nav del
-          medio quede centrado respecto al ancho TOTAL, no solo respecto al hueco
-          que sobra entre logo y acciones — si esos dos grupos no miden lo mismo,
-          centrar solo en el hueco no es el centro real de la pantalla. */}
+      {/* Barra principal de navegación — el fondo ocupa todo el ancho, pero el
+          contenido tiene un tope generoso (max-w-[1600px]) para que en monitores
+          muy anchos no quede el logo, el nav y las acciones separados por
+          espacios enormes. Grilla de 3 columnas IGUALES (no flex-1 sobre un
+          solo lado) para que el nav del medio quede centrado respecto al ancho
+          de ese contenedor, no solo respecto al hueco entre logo y acciones. */}
       <div className={cn("transition-shadow", scrolled && "shadow-sm border-b border-gray-100")}>
-        <div className="px-4 sm:px-6 lg:px-8">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-[auto_1fr_auto] md:grid-cols-3 items-center h-14 gap-4">
             <div className="flex items-center">
               <Logo variant="full" size="sm" />
@@ -199,7 +238,7 @@ export function Header() {
                 {isAuthenticated ? (
                   <>
                     <Link
-                      href="/dashboard"
+                      href={getLandingForRole(user?.role)}
                       className="flex items-center gap-1.5 text-sm font-medium text-gray-700 hover:text-brand-primary transition-colors"
                     >
                       <div className="w-7 h-7 rounded-full bg-brand-primary/10 flex items-center justify-center text-brand-primary text-xs font-bold select-none">
@@ -318,7 +357,7 @@ export function Header() {
               {isAuthenticated ? (
                 <>
                   <Link
-                    href="/dashboard"
+                    href={getLandingForRole(user?.role)}
                     className="block py-2 px-3 text-sm font-medium text-gray-700"
                     onClick={() => setMobileOpen(false)}
                   >

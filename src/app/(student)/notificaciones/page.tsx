@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { Notification } from "@/types";
+import { isSafeInternalPath } from "@/lib/auth/roleRoutes";
 
 // ── Icono según tipo ────────────────────────────────────────────────────────
 function NotifIcon({ type }: { type: Notification["type"] }) {
@@ -256,7 +257,13 @@ export default function NotificacionesPage() {
       }
     }
 
-    router.push(notif.redirect_url!);
+    // redirect_url lo escribe marketing: solo rutas internas o https externas.
+    const url = notif.redirect_url!;
+    if (isSafeInternalPath(url)) {
+      router.push(url);
+    } else if (url.startsWith("https://")) {
+      window.open(url, "_blank", "noopener,noreferrer");
+    }
   }
 
   return (

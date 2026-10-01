@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { cursosService } from "@/lib/services/courses";
+import { cursosService, type ImportCoursesResult } from "@/lib/services/courses";
 import { categoriasService } from "@/lib/services/categories";
 import { useAuthStore } from "@/store/authStore";
 import { toast } from "sonner";
@@ -21,7 +21,20 @@ import {
   Filter,
   Award,
   Star,
+  Download,
+  Upload,
+  CheckCircle2,
+  XCircle,
 } from "lucide-react";
+
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 // ── Constantes ─────────────────────────────────────────────────────────────────
 
@@ -55,6 +68,10 @@ export default function SoporteCursosPage() {
   const [statusFilter, setStatusFilter] = useState("");
   const [categoriaFilter, setCategoriaFilter] = useState("");
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
+  const [exporting, setExporting] = useState<"excel" | "json" | null>(null);
+  const [importResult, setImportResult] = useState<ImportCoursesResult | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["cursos", page, search, statusFilter, categoriaFilter],
@@ -89,6 +106,45 @@ export default function SoporteCursosPage() {
 
   const confirmDeleteCourse = data?.data.find((c) => c.id === confirmDeleteId);
 
+  const importMutation = useMutation({
+    mutationFn: cursosService.importCoursesExcel,
+    onSuccess: (result) => {
+      setImportResult(result);
+      if (result.imported.length > 0) {
+        queryClient.invalidateQueries({ queryKey: ["cursos"] });
+      }
+    },
+    onError: (err: unknown) => {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      toast.error(msg ?? "No se pudo importar el archivo");
+    },
+  });
+
+  async function handleExport(format: "excel" | "json") {
+    setExportMenuOpen(false);
+    setExporting(format);
+    try {
+      if (format === "excel") {
+        const blob = await cursosService.exportCoursesExcel();
+        downloadBlob(blob, "cursos-export.xlsx");
+      } else {
+        const data = await cursosService.exportCoursesJson();
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+        downloadBlob(blob, "cursos-export.json");
+      }
+    } catch {
+      toast.error("No se pudo exportar el catálogo");
+    } finally {
+      setExporting(null);
+    }
+  }
+
+  function handleImportFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) importMutation.mutate(file);
+    e.target.value = "";
+  }
+
   return (
     <div>
       {/* ── Encabezado ──────────────────────────────────────────────────────── */}
@@ -97,13 +153,63 @@ export default function SoporteCursosPage() {
           <h1 className="text-2xl font-bold text-brand-primary">Cursos</h1>
           <p className="text-gray-500 text-sm mt-0.5">Gestión del catálogo de cursos</p>
         </div>
-        <Link
-          href="/panel/soporte/cursos/nuevo"
-          className="inline-flex items-center gap-2 bg-[#084D95] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#084D95]/90 transition-colors"
-        >
-          <Plus size={16} />
-          Crear curso
-        </Link>
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setExportMenuOpen((v) => !v)}
+              disabled={exporting !== null}
+              className="inline-flex items-center gap-2 border border-gray-300 text-gray-700 px-3.5 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
+            >
+              {exporting ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />}
+              Exportar
+            </button>
+            {exportMenuOpen && (
+              <div
+                className="absolute right-0 mt-1 w-36 bg-white border border-gray-200 rounded-lg shadow-lg z-10 overflow-hidden"
+                onMouseLeave={() => setExportMenuOpen(false)}
+              >
+                <button
+                  onClick={() => handleExport("excel")}
+                  className="w-full text-left px-3.5 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                >
+                  Excel (.xlsx)
+                </button>
+                <button
+                  onClick={() => handleExport("json")}
+                  className="w-full text-left px-3.5 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                >
+                  JSON
+                </button>
+              </div>
+            )}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={importMutation.isPending}
+            className="inline-flex items-center gap-2 border border-gray-300 text-gray-700 px-3.5 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
+          >
+            {importMutation.isPending ? <Loader2 size={15} className="animate-spin" /> : <Upload size={15} />}
+            Importar
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".xlsx"
+            className="hidden"
+            onChange={handleImportFileChange}
+          />
+
+          <Link
+            href="/panel/soporte/cursos/nuevo"
+            className="inline-flex items-center gap-2 bg-[#084D95] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#084D95]/90 transition-colors"
+          >
+            <Plus size={16} />
+            Crear curso
+          </Link>
+        </div>
       </div>
 
       {/* ── Filtros ──────────────────────────────────────────────────────────── */}
@@ -378,6 +484,67 @@ export default function SoporteCursosPage() {
               >
                 {deleteMutation.isPending && <Loader2 size={13} className="animate-spin" />}
                 Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal resultado de import ─────────────────────────────────────────── */}
+      {importResult && (
+        <div
+          className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4"
+          onClick={() => setImportResult(null)}
+        >
+          <div
+            className="bg-white rounded-xl p-6 w-full max-w-lg shadow-xl max-h-[85vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="font-semibold text-brand-primary mb-4">Resultado de la importación</h2>
+
+            {importResult.imported.length > 0 && (
+              <div className="mb-4">
+                <p className="text-sm font-medium text-emerald-700 flex items-center gap-1.5 mb-2">
+                  <CheckCircle2 size={15} />
+                  {importResult.imported.length} curso(s) importado(s)
+                </p>
+                <ul className="space-y-1">
+                  {importResult.imported.map((c) => (
+                    <li key={c.id} className="text-xs text-gray-600 bg-emerald-50 rounded-lg px-3 py-2">
+                      <span className="font-medium text-gray-800">{c.title}</span> — {c.modules_count} módulos, {c.sessions_count} sesiones, {c.materials_count} materiales
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {importResult.failed.length > 0 && (
+              <div>
+                <p className="text-sm font-medium text-red-600 flex items-center gap-1.5 mb-2">
+                  <XCircle size={15} />
+                  {importResult.failed.length} curso(s) con errores
+                </p>
+                <ul className="space-y-2">
+                  {importResult.failed.map((f, i) => (
+                    <li key={i} className="text-xs bg-red-50 rounded-lg px-3 py-2">
+                      <p className="font-medium text-gray-800 mb-1">{f.title}</p>
+                      <ul className="list-disc list-inside text-red-600 space-y-0.5">
+                        {f.errors.map((e, j) => (
+                          <li key={j}>{e}</li>
+                        ))}
+                      </ul>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <div className="flex justify-end mt-5">
+              <button
+                onClick={() => setImportResult(null)}
+                className="px-4 py-2 text-sm bg-[#084D95] text-white rounded-lg hover:bg-[#084D95]/90 transition-colors"
+              >
+                Cerrar
               </button>
             </div>
           </div>

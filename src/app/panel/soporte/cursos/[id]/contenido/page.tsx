@@ -27,7 +27,7 @@ import { Label } from "@/components/ui/label";
 
 // ── Tipos ──────────────────────────────────────────────────────────────────────
 
-type MaterialType = "PDF" | "Excel" | "Word" | "Otro";
+type MaterialType = "PDF" | "Excel" | "Word" | "Otro" | "Video";
 
 // ── Formulario de módulo ───────────────────────────────────────────────────────
 // Definido FUERA del componente principal para que React no lo remonte en cada render.
@@ -680,6 +680,7 @@ export default function ContenidoPage() {
                                           <option value="Excel">Excel</option>
                                           <option value="Word">Word</option>
                                           <option value="Otro">Otro</option>
+                                          <option value="Video">Video (Drive)</option>
                                         </select>
                                       </div>
                                     </div>

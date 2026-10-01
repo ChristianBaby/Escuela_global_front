@@ -1,68 +1,56 @@
 "use client";
 
-// 🚀 Recuperamos los componentes oficiales que manejan el script de forma nativa
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
-import { api } from "@/lib/http/api";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { paymentsService } from "@/lib/services/payments";
 
-interface PayPalButtonProps {
-  orderId: string;     // ID de orden interno de Escuela Global (EG-ORD-xxxxxx)
-  totalAmount: number; // Monto base en soles
+// Client ID de la app sandbox de PayPal (es público, va en el navegador).
+const FALLBACK_CLIENT_ID = "AcA7lkNQIguA9sGXvvNRl8hq_tbqU2KqAbAB6fQNe5rUmSaO0yUS7co0qL8TC3j8g4nQ7npkUhSaUKWA";
+const CLIENT_ID = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || FALLBACK_CLIENT_ID;
+
+if (!process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID) {
+  console.warn("NEXT_PUBLIC_PAYPAL_CLIENT_ID no está configurada — usando client ID sandbox de fallback.");
 }
 
-export function PayPalButtonComponent({ orderId, totalAmount }: PayPalButtonProps) {
+interface PayPalButtonProps {
+  orderId: string;
+  totalAmount: number;
+  currency: string; // Las órdenes de PayPal se crean en USD (backend)
+}
+
+function errorMessage(error: unknown, fallback: string) {
+  const message = (error as { response?: { data?: { message?: unknown } } })?.response?.data?.message;
+  return typeof message === "string" ? message : fallback;
+}
+
+export function PayPalButtonComponent({ orderId, totalAmount, currency }: PayPalButtonProps) {
   const router = useRouter();
 
-  // 💡 NOTA DE TESIS: PayPal no acepta Soles (PEN). Convertimos a USD al vuelo para la Demo.
-  const exchangeRate = 3.75;
-  const amountInUSD = (totalAmount / exchangeRate).toFixed(2);
-
-  // Configuración del SDK de PayPal
-  const initialOptions = {
-    clientId: "AcA7lkNQIguA9sGXvvNRl8hq_tbqU2KqAbAB6fQNe5rUmSaO0yUS7co0qL8TC3j8g4nQ7npkUhSaUKWA", 
-    currency: "USD",
-    intent: "capture",
-  };
-
-  // 1. Llama a tu endpoint @Post('session') para obtener el paypalOrderId real de la API
+  // El monto lo fija el backend a partir de la orden; aquí solo se muestra.
   const handleCreateOrder = async () => {
     try {
-      const { data } = await api.post("/payments/session", {
-        orderId: orderId,
-        paymentMethod: "paypal",
-        currency: "USD", 
-        amount: amountInUSD
-      });
-      return data.paypalOrderId;
-    } catch (error) { 
-      console.error("Error al iniciar orden de PayPal:", error);
-      toast.error("No se pudo conectar con la pasarela de PayPal.");
-      throw error; 
+      const { paypalOrderId } = await paymentsService.paypal.createOrder({ orderId });
+      return paypalOrderId;
+    } catch (error) {
+      toast.error(errorMessage(error, "No se pudo conectar con la pasarela de PayPal."));
+      throw error;
     }
   };
 
-  // 2. Llama a tu endpoint al confirmar el pago y redirige sincronizado con el Webhook
-  const handleOnApprove = async (data: any) => {
+  const handleOnApprove = async (data: { orderID: string }) => {
     try {
-      toast.info("Procesando pago internacional...");
+      toast.info("Procesando pago...");
+      const result = await paymentsService.paypal.capture({ orderId, paypalOrderId: data.orderID });
 
-      // Pega en tu ruta de NestJS envolviéndola en un catch para evitar bloqueos del SDK
-      await api.post(`/payments/paypal/capture/${data.orderID}`).catch((backendError) => {
-        console.warn("⚠️ El backend demoró la respuesta directa. Dejando que el Webhook asíncrono resuelva en Postgres.");
-      });
-
-      toast.success("¡Transacción autorizada con éxito!");
-
-      // 🚀 CAMBIO CLAVE: Redirigimos pasando el orderId interno por la URL (?orderId=...)
-      // Esto permite que el polling de la página de éxito valide de inmediato la base de datos real
-      setTimeout(() => {
-        router.push(`/checkout/success?orderId=${orderId}`);
-      }, 400);
-    } catch (error) {
-      console.error("Error en la captura de PayPal:", error);
-      // Red de seguridad: si algo falla, avanzamos igual para que el frente intente validar el Postgres
+      if (result.pending) {
+        toast.info("PayPal está revisando tu pago. Te avisaremos cuando se confirme.");
+      } else {
+        toast.success("¡Pago confirmado!");
+      }
       router.push(`/checkout/success?orderId=${orderId}`);
+    } catch (error) {
+      toast.error(errorMessage(error, "El pago no pudo ser procesado por PayPal."));
     }
   };
 
@@ -70,18 +58,16 @@ export function PayPalButtonComponent({ orderId, totalAmount }: PayPalButtonProp
     <div className="w-full bg-white p-6 rounded-xl border border-gray-200 shadow-sm space-y-4">
       <div className="text-center bg-amber-50 border border-amber-200 rounded-lg p-3">
         <p className="text-xs text-amber-800 font-medium">
-          🌎 Pago Internacional Seguro (Monto equivalente: <strong className="font-mono">${amountInUSD} USD</strong>)
+          🌎 Pago internacional seguro: <strong className="font-mono">${totalAmount.toFixed(2)} {currency}</strong>
         </p>
       </div>
 
-      {/* 💎 EL PROVIDER: Se encarga de inyectar el script de PayPal de forma segura e inmune a race conditions */}
-      <PayPalScriptProvider options={initialOptions}>
+      <PayPalScriptProvider options={{ clientId: CLIENT_ID, currency, intent: "capture" }}>
         <PayPalButtons
           style={{ layout: "vertical", color: "gold", shape: "rect", label: "paypal" }}
           createOrder={handleCreateOrder}
           onApprove={handleOnApprove}
-          onError={(err: any) => {
-            console.error("PayPal Smart Buttons Error:", err);
+          onError={() => {
             toast.error("Hubo un problema al abrir la ventana segura de PayPal.");
           }}
         />
