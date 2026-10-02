@@ -4,7 +4,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
-import { authService } from "@/lib/services/auth";
+import { SessionGate } from "@/lib/auth/SessionGate";
+import { useLogout } from "@/lib/auth/useLogout";
 import { useQuery } from "@tanstack/react-query";
 import { notificacionesService } from "@/lib/services/notifications";
 import { CartModal } from "@/components/organisms/CartModal";
@@ -33,10 +34,15 @@ const NAV = [
 ];
 
 export default function StudentLayout({ children }: { children: React.ReactNode }) {
+  return <SessionGate><StudentShell>{children}</StudentShell></SessionGate>;
+}
+
+function StudentShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { user, clearUser } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
+  const { logout: handleLogout } = useLogout();
 
   // Consulta el conteo de notificaciones no leídas cada 60 segundos
   const { data: notifData } = useQuery({
@@ -48,18 +54,6 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
   const unreadCount = notifData?.unread_count ?? 0;
   const badgeLabel = unreadCount > 9 ? "9+" : unreadCount > 0 ? String(unreadCount) : null;
   const badgeColor = unreadCount >= 10 ? "bg-red-600" : "bg-[#084D95]";
-
-  const handleLogout = async () => {
-    try {
-      await authService.logout();
-    } catch {
-      // proceed with local logout even if API call fails
-    }
-    clearUser();
-    document.cookie = "access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-    document.cookie = "refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-    window.location.href = "/auth/login";
-  };
 
   const initials = user?.first_name
     ? (user.first_name[0] + (user.last_name?.[0] ?? "")).toUpperCase() || "?"

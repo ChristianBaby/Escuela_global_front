@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -54,13 +54,8 @@ export function ProfileContent() {
 
   const { user, updateUser } = useAuthStore();
 
-  const { data: profile } = useQuery({
-    queryKey: ["profile-me", user?.id],
-    queryFn: () => profileService.getMe(user!.id),
-    enabled: !!user?.id,
-  });
-
-  const currentUser = profile ?? user;
+  // El layout acaba de obtener el perfil de /users/me antes de montar esta página.
+  const currentUser = user;
   const initials = currentUser
     ? `${currentUser.first_name?.[0] ?? ""}${currentUser.last_name?.[0] ?? ""}`.toUpperCase()
     : "?";

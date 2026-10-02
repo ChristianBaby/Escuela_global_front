@@ -1,10 +1,6 @@
 import axios from "axios";
 import { toast } from "sonner";
-
-function normalizeApiUrl(url: string) {
-  const cleanUrl = url.replace(/\/+$/, "");
-  return cleanUrl.endsWith("/api") ? cleanUrl : `${cleanUrl}/api`;
-}
+import { handleInvalidSession } from "@/lib/auth/sessionClient";
 
 export const api = axios.create({
   baseURL: "/api",
@@ -31,8 +27,7 @@ api.interceptors.response.use(
     const isAuthEndpoint = (error.config?.url ?? "").includes("/auth/");
     if (error.response?.status === 401 && !isAuthEndpoint) {
       if (typeof window !== "undefined") {
-        const { pathname, search } = window.location;
-        window.location.href = `/auth/login?redirect=${encodeURIComponent(pathname + search)}`;
+        handleInvalidSession();
       }
     }
 
