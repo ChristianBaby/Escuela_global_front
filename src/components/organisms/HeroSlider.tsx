@@ -190,7 +190,7 @@ export function HeroSlider({
 }: HeroSliderProps = {}) {
   const { data: sliders = [], isLoading } = useQuery({
     queryKey: ["sliders"],
-    queryFn: slidersService.list,
+    queryFn: () => slidersService.list(),
   });
 
   const activeSliders = sliders

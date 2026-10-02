@@ -66,7 +66,7 @@ export default function BannerCatalogoPage() {
 
   const { data: sliders, isLoading, isError } = useQuery({
     queryKey: ["sliders"],
-    queryFn: slidersService.list,
+    queryFn: () => slidersService.list(),
   });
 
   const catalogSliders = (sliders ?? [])
