@@ -2,8 +2,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, render, renderHook, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { NextRequest } from "next/server";
-import { proxy } from "@/proxy";
+import { config, proxy } from "@/proxy";
 import { SessionGate } from "./SessionGate";
+import { canAccess, resolvePostLoginPath } from "./roleRoutes";
 import { loginDestination, registerSessionQueryClient, clearLocalSession } from "./sessionClient";
 import { useLogout } from "./useLogout";
 import { useAuthStore } from "@/store/authStore";
@@ -75,7 +76,15 @@ describe("proxy", () => {
 
   it("protects the new student teachers route", () => {
     const request = new NextRequest("http://localhost/docentes");
-    expect(proxy(request).status).toBe(307);
+    expect(config.matcher).toContain("/docentes");
+    expect(proxy(request).headers.get("location")).toBe(
+      "http://localhost/auth/login?redirect=%2Fdocentes",
+    );
+    request.cookies.set("refresh_token", "refresh-without-role");
+    expect(proxy(request).status).toBe(200);
+    expect(canAccess("/docentes", "estudiante")).toBe(true);
+    expect(canAccess("/docentes", "soporte")).toBe(false);
+    expect(resolvePostLoginPath("/docentes", "estudiante")).toBe("/docentes");
   });
 });
 
