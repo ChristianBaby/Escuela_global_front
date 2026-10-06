@@ -7,6 +7,7 @@ import { categoriasService } from "@/lib/services/categories";
 import { useAuthStore } from "@/store/authStore";
 import { toast } from "sonner";
 import Link from "next/link";
+import { ImagePreviewModal } from "@/components/molecules";
 import {
   Plus,
   Search,
@@ -55,6 +56,7 @@ export default function SoporteCursosPage() {
   const [statusFilter, setStatusFilter] = useState("");
   const [categoriaFilter, setCategoriaFilter] = useState("");
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [previewCursoId, setPreviewCursoId] = useState<string | null>(null);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["cursos", page, search, statusFilter, categoriaFilter],
@@ -88,6 +90,7 @@ export default function SoporteCursosPage() {
   });
 
   const confirmDeleteCourse = data?.data.find((c) => c.id === confirmDeleteId);
+  const previewCurso = data?.data.find((c) => c.id === previewCursoId);
 
   return (
     <div>
@@ -188,7 +191,11 @@ export default function SoporteCursosPage() {
                     <tr key={curso.id} className="hover:bg-gray-50/60 transition-colors">
                       {/* Curso */}
                       <td className="px-5 py-3.5">
-                        <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => setPreviewCursoId(curso.id)}
+                          className="flex items-center gap-3 text-left group"
+                          title={curso.title}
+                        >
                           {curso.thumbnail_url ? (
                             <img
                               src={curso.thumbnail_url}
@@ -201,12 +208,12 @@ export default function SoporteCursosPage() {
                             </div>
                           )}
                           <div className="min-w-0">
-                            <p className="font-medium text-gray-900 truncate max-w-[220px]">{curso.title}</p>
+                            <p className="font-medium text-gray-900 line-clamp-2 max-w-[260px] group-hover:text-[#084D95] transition-colors">{curso.title}</p>
                             <p className="text-xs text-gray-400 mt-0.5">
                               {LEVEL_LABELS[curso.level] ?? curso.level}
                             </p>
                           </div>
-                        </div>
+                        </button>
                       </td>
 
                       {/* Categoría */}
@@ -342,6 +349,27 @@ export default function SoporteCursosPage() {
         )}
       </div>
 
+      {/* ── Modal vista ampliada del curso ───────────────────────────────────── */}
+      {previewCurso && (
+        <ImagePreviewModal
+          title={previewCurso.title}
+          thumbnailUrl={previewCurso.thumbnail_url}
+          onClose={() => setPreviewCursoId(null)}
+          details={
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+              <span>{previewCurso.category?.name ?? "Sin categoría"}</span>
+              <span>·</span>
+              <span>{LEVEL_LABELS[previewCurso.level] ?? previewCurso.level}</span>
+              <span>·</span>
+              <span>{previewCurso.enrolled_count ?? 0} matriculados</span>
+              <span className={`inline-flex items-center text-xs font-medium px-2.5 py-0.5 rounded-full ${STATUS_STYLES[previewCurso.status] ?? "bg-gray-100 text-gray-600"}`}>
+                {STATUS_LABELS[previewCurso.status] ?? previewCurso.status}
+              </span>
+            </div>
+          }
+        />
+      )}
+
       {/* ── Modal confirmar eliminación ──────────────────────────────────────── */}
       {confirmDeleteId && (
         <div
@@ -357,7 +385,7 @@ export default function SoporteCursosPage() {
             </div>
             <h2 className="font-semibold text-brand-primary mb-1">¿Eliminar este curso?</h2>
             {confirmDeleteCourse && (
-              <p className="text-sm text-[#084D95] font-medium mb-2 truncate">
+              <p className="text-sm text-[#084D95] font-medium mb-2 break-words">
                 {confirmDeleteCourse.title}
               </p>
             )}

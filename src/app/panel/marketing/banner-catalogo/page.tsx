@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { slidersService, type CreateSliderDto } from "@/lib/services/marketing";
 import { toast } from "sonner";
 import { ImageIcon, GripVertical } from "lucide-react";
-import { ImageUploader } from "@/components/molecules";
+import { ImageUploader, ImagePreviewModal } from "@/components/molecules";
 import {
   DndContext,
   closestCenter,
@@ -63,6 +63,7 @@ export default function BannerCatalogoPage() {
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
+  const [previewId, setPreviewId] = useState<string | null>(null);
 
   const { data: sliders, isLoading, isError } = useQuery({
     queryKey: ["sliders"],
@@ -180,6 +181,7 @@ export default function BannerCatalogoPage() {
   };
 
   const isPending = createMutation.isPending || updateMutation.isPending || uploadMutation.isPending;
+  const previewBanner = catalogSliders.find((s) => s.id === previewId);
 
   return (
     <div>
@@ -235,15 +237,25 @@ export default function BannerCatalogoPage() {
                               </button>
                             </td>
                             <td className="px-4 py-3">
-                              {s.image_url ? (
-                                <img src={s.image_url} alt="" className="w-16 h-10 object-cover rounded-lg bg-gray-100" />
-                              ) : (
-                                <div className="w-16 h-10 rounded-lg bg-gradient-to-br from-[#084D95]/20 to-[#23AFE5]/20 flex items-center justify-center">
-                                  <ImageIcon size={14} className="text-[#084D95]/50" />
-                                </div>
-                              )}
+                              <button onClick={() => setPreviewId(s.id)} className="block" title="Ver en grande">
+                                {s.image_url ? (
+                                  <img src={s.image_url} alt="" className="w-16 h-10 object-cover rounded-lg bg-gray-100" />
+                                ) : (
+                                  <div className="w-16 h-10 rounded-lg bg-gradient-to-br from-[#084D95]/20 to-[#23AFE5]/20 flex items-center justify-center">
+                                    <ImageIcon size={14} className="text-[#084D95]/50" />
+                                  </div>
+                                )}
+                              </button>
                             </td>
-                            <td className="px-4 py-3 font-medium text-gray-900">{s.title}</td>
+                            <td className="px-4 py-3 font-medium text-gray-900">
+                              <button
+                                onClick={() => setPreviewId(s.id)}
+                                className="text-left hover:text-[#084D95] transition-colors"
+                                title={s.title}
+                              >
+                                {s.title}
+                              </button>
+                            </td>
                             <td className="px-4 py-3">
                               <button
                                 onClick={() => toggleStatus(s)}
@@ -381,6 +393,24 @@ export default function BannerCatalogoPage() {
       )}
 
       {/* Confirm delete */}
+      {previewBanner && (
+        <ImagePreviewModal
+          title={previewBanner.title}
+          thumbnailUrl={previewBanner.image_url}
+          onClose={() => setPreviewId(null)}
+          details={
+            <div className="space-y-1">
+              {previewBanner.subtitle && <p>{previewBanner.subtitle}</p>}
+              <span className={`inline-block text-xs px-2 py-0.5 rounded-full ${
+                previewBanner.status === "active" ? "bg-green-50 text-green-700" : "bg-gray-100 text-gray-600"
+              }`}>
+                {previewBanner.status === "active" ? "Activo" : "Inactivo"}
+              </span>
+            </div>
+          }
+        />
+      )}
+
       {confirmDelete && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-6 w-full max-w-sm shadow-xl">

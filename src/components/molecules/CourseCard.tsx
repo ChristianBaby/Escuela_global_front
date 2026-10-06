@@ -11,6 +11,9 @@ interface CourseCardProps {
   // precio, y enlaza a su vista de estudiante en vez de la ficha pública
   // (igual que EdTeam/Udemy con los cursos que ya tienes).
   progressPercent?: number;
+  // Muestra el título completo en vez de cortarlo a 2 líneas (catálogo /cursos,
+  // donde muchos títulos comparten el mismo prefijo "XX0000 | PROGRAMA DE ...").
+  fullTitle?: boolean;
 }
 
 const levelLabel: Record<string, string> = {
@@ -19,7 +22,7 @@ const levelLabel: Record<string, string> = {
   avanzado: "Avanzado",
 };
 
-export function CourseCard({ course, progressPercent }: CourseCardProps) {
+export function CourseCard({ course, progressPercent, fullTitle }: CourseCardProps) {
   const isEnrolled = progressPercent !== undefined;
   const displayPricePen = course.discount_price_pen ?? course.price_pen;
   const displayPriceUsd = course.discount_price_usd ?? course.price_usd;
@@ -70,7 +73,7 @@ export function CourseCard({ course, progressPercent }: CourseCardProps) {
         </div>
 
         <div className="p-4 flex flex-col gap-2 flex-1">
-          <h3 className="font-semibold text-brand-primary line-clamp-2 text-sm leading-snug group-hover:text-brand-primary transition-colors">
+          <h3 className={`font-semibold text-brand-primary ${fullTitle ? "break-words" : "line-clamp-2"} text-sm leading-snug group-hover:text-brand-primary transition-colors`}>
             {course.title}
           </h3>
 

@@ -6,6 +6,7 @@ import { matriculasService, type CreateMatriculasDto } from "@/lib/services/enro
 import { cursosService } from "@/lib/services/courses";
 import { usuariosService } from "@/lib/services/users";
 import type { Course } from "@/types";
+import { ImagePreviewModal } from "@/components/molecules";
 import { toast } from "sonner";
 import {
   Search, X, BookOpen, CheckCircle2, UserCheck, Users,
@@ -93,6 +94,7 @@ export default function MatriculasPage() {
   /* step 1 – selección de cursos */
   const [cursosBusqueda,      setCursosBusqueda]      = useState("");
   const [cursosSeleccionados, setCursosSeleccionados] = useState<string[]>([]);
+  const [previewCursoId, setPreviewCursoId] = useState<string | null>(null);
 
   /* step 2 – selección de estudiantes */
   const [busqueda,          setBusqueda]          = useState("");
@@ -222,6 +224,8 @@ export default function MatriculasPage() {
   }, [estudiantesConMatriculado, estadoFiltro]);
 
   /* ── filtros de cursos ── */
+  const previewCurso = cursosData?.find((c) => c.id === previewCursoId);
+
   const cursosFiltrados = (cursosData ?? [])
     .filter((c) => normalize(c.title).includes(normalize(cursosBusqueda)))
     .sort((a, b) => a.title.localeCompare(b.title, "es", { sensitivity: "base" }));
@@ -430,15 +434,28 @@ export default function MatriculasPage() {
                     }`}
                   >
                     <div className="flex items-start gap-3">
-                      <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
-                        isSel ? "bg-[#084D95]" : "bg-gray-100"
-                      }`}>
-                        <BookOpen className={`size-4 ${isSel ? "text-white" : "text-gray-500"}`} />
-                      </div>
+                      {/* Imagen y nombre abren la vista ampliada; el resto de la tarjeta selecciona */}
+                      <span
+                        onClick={(e) => { e.stopPropagation(); setPreviewCursoId(c.id); }}
+                        className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 overflow-hidden cursor-zoom-in ${
+                          isSel ? "bg-[#084D95] ring-2 ring-[#084D95]" : "bg-gray-100"
+                        }`}
+                        title="Ver curso en grande"
+                      >
+                        {c.thumbnail_url ? (
+                          <img src={c.thumbnail_url} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <BookOpen className={`size-4 ${isSel ? "text-white" : "text-gray-500"}`} />
+                        )}
+                      </span>
                       <div className="flex-1 min-w-0">
-                        <p className={`text-sm font-medium truncate ${isSel ? "text-[#084D95]" : "text-gray-900"}`}>
+                        <span
+                          onClick={(e) => { e.stopPropagation(); setPreviewCursoId(c.id); }}
+                          className={`block text-sm font-medium line-clamp-2 cursor-zoom-in hover:underline ${isSel ? "text-[#084D95]" : "text-gray-900"}`}
+                          title={c.title}
+                        >
                           {c.title}
-                        </p>
+                        </span>
                         {c.status === "archived" && (
                           <span className="inline-block mt-1 rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 ring-1 ring-amber-200">
                             Archivado
@@ -846,6 +863,29 @@ export default function MatriculasPage() {
             )}
           </div>
         </div>
+      )}
+
+      {/* ════════════════ VISTA AMPLIADA DEL CURSO ════════════════ */}
+      {previewCurso && (
+        <ImagePreviewModal
+          title={previewCurso.title}
+          thumbnailUrl={previewCurso.thumbnail_url}
+          onClose={() => setPreviewCursoId(null)}
+          details={
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+              <span>{previewCurso.category?.name ?? "Sin categoría"}</span>
+              <span>·</span>
+              <span>S/ {previewCurso.price_pen}</span>
+              <span>·</span>
+              <span>{previewCurso.enrolled_count} matriculados</span>
+              {previewCurso.status === "archived" && (
+                <span className="rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 ring-1 ring-amber-200">
+                  Archivado
+                </span>
+              )}
+            </div>
+          }
+        />
       )}
     </div>
   );

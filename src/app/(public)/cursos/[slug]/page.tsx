@@ -495,7 +495,7 @@ export default function CourseDetailPage({
   // ── Sidebar card (reutilizado en hero desktop y content desktop) ────────────
   const SidebarCard = (
     <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-      <div className="h-44 bg-[#084D95]/10 flex items-center justify-center overflow-hidden">
+      <div className="aspect-video bg-[#084D95]/10 flex items-center justify-center overflow-hidden">
         {course.thumbnail_url ? (
           <img src={course.thumbnail_url} alt={course.title} className="w-full h-full object-cover" />
         ) : (
