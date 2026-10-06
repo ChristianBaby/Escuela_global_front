@@ -21,7 +21,7 @@ const nunitoSans = Nunito_Sans({
 
 export const metadata: Metadata = {
   title: "Escuela Global — Programas de Alta Especialización Online",
-  description: "Plataforma LMS de programas de especialización online en especializacionesglobal.net",
+  description: "Grupo Empresarial Especializaciones Global LLC — Plataforma LMS de especialización técnica aplicada.",
 };
 
 export default function RootLayout({

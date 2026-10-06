@@ -4,10 +4,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
-import { useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/authStore";
-import { useCartStore } from "@/store/cartStore";
-import { authService } from "@/lib/services/auth";
+import { SessionGate } from "@/lib/auth/SessionGate";
+import { useLogout } from "@/lib/auth/useLogout";
 import {
   LayoutDashboard,
   Users,
@@ -192,27 +191,14 @@ const NAV_SECTIONS: NavSection[] = [
 ];
 
 export default function PanelLayout({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-  const { user, clearUser } = useAuthStore();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const queryClient = useQueryClient();
+  return <SessionGate><PanelShell>{children}</PanelShell></SessionGate>;
+}
 
-  const handleLogout = async () => {
-    try {
-      await authService.logout();
-    } catch {
-      // proceed with local logout even if API call fails
-    }
-    clearUser();
-    // Sin esto, datos de la cuenta anterior quedan cacheados y se le siguen
-    // mostrando a la siguiente sesión hasta que algo los vuelva a pedir.
-    queryClient.clear();
-    // El carrito local vive en localStorage, sin relación con la sesión.
-    useCartStore.getState().clearCart();
-    document.cookie = "access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-    document.cookie = "refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-    window.location.href = "/auth/login";
-  };
+function PanelShell({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const user = useAuthStore((state) => state.user);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { logout: handleLogout } = useLogout();
 
 
   // Entre varios hrefs que matchean el pathname (ej. "/panel/marketing" y

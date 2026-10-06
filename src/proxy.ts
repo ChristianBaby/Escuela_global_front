@@ -1,91 +1,23 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { ROLE_LANDING, ROLE_ROUTES, getLandingForRole, getProtectedPrefix } from "@/lib/auth/roleRoutes";
-
-// JWT usa base64url: reemplazar - por + y _ por / antes de atob
-function decodeJwtPayload(token: string): Record<string, unknown> {
-  const base64Url = token.split(".")[1];
-  if (!base64Url) throw new Error("Token inválido");
-  const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-  const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), "=");
-  const payload = JSON.parse(atob(padded));
-  if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
-    throw new Error("Token expirado");
-  }
-  return payload;
-}
-
-// El access_token dura solo 5 minutos (ver AuthGuard en el backend). Si ya
-// venció pero el refresh_token (7 días) sigue vivo, no tiene sentido cortar
-// la navegación: el propio AuthGuard renueva el access_token de forma
-// transparente en la primera llamada a la API que haga la página destino.
-// Este middleware nunca verifica la firma (no tiene el secreto), solo decodifica
-// el payload para leer el rol — la verificación real ocurre en el backend.
-function getSessionPayload(request: NextRequest): Record<string, unknown> | null {
-  const accessToken = request.cookies.get("access_token")?.value;
-  if (accessToken) {
-    try {
-      return decodeJwtPayload(accessToken);
-    } catch {
-      // Vencido o inválido: seguimos con el refresh_token.
-    }
-  }
-
-  const refreshToken = request.cookies.get("refresh_token")?.value;
-  if (refreshToken) {
-    try {
-      return decodeJwtPayload(refreshToken);
-    } catch {
-      return null;
-    }
-  }
-
-  return null;
-}
+import { getProtectedPrefix } from "@/lib/auth/roleRoutes";
 
 export function proxy(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+  const { pathname, search } = request.nextUrl;
+  if (!getProtectedPrefix(pathname)) return NextResponse.next();
 
-  // Siempre permitir acceso al login (necesario para que el logout funcione correctamente)
-  if (pathname === "/auth/login") {
+  // Comprobación preliminar. El backend valida la sesión y los permisos.
+  if (request.cookies.has("access_token") || request.cookies.has("refresh_token")) {
     return NextResponse.next();
   }
 
-  const protectedPrefix = getProtectedPrefix(pathname);
-
-  if (!protectedPrefix) return NextResponse.next();
-
-  const payload = getSessionPayload(request);
-
-  if (!payload) {
-    const loginUrl = new URL("/auth/login", request.url);
-    loginUrl.searchParams.set("redirect", pathname + request.nextUrl.search);
-    const response = NextResponse.redirect(loginUrl);
-    response.cookies.delete("access_token");
-    return response;
-  }
-
-  const userRole = payload.role as string;
-  const allowedRoles: string[] = ROLE_ROUTES[protectedPrefix];
-
-  if (!userRole || !allowedRoles.includes(userRole)) {
-    // Staff con rol válido: en vez de un 403, mandarlo a su equivalente o su landing.
-    const isStaff = userRole in ROLE_LANDING && userRole !== "estudiante";
-    if (isStaff && protectedPrefix === "/perfil") {
-      return NextResponse.redirect(new URL("/panel/perfil", request.url));
-    }
-    if (isStaff && (protectedPrefix === "/panel" || protectedPrefix === "/notificaciones")) {
-      return NextResponse.redirect(new URL(getLandingForRole(userRole), request.url));
-    }
-    return NextResponse.redirect(new URL("/sin-acceso", request.url));
-  }
-
-  return NextResponse.next();
+  const loginUrl = new URL("/auth/login", request.url);
+  loginUrl.searchParams.set("redirect", pathname + search);
+  return NextResponse.redirect(loginUrl);
 }
 
 export const config = {
   matcher: [
-    "/auth/login",
     "/panel",
     "/panel/:path*",
     "/dashboard",
@@ -93,6 +25,7 @@ export const config = {
     "/mis-cursos",
     "/mis-cursos/:path*",
     "/mis-certificados",
+    "/docentes",
     "/curso/:path*",
     "/perfil/:path*",
     "/notificaciones/:path*",

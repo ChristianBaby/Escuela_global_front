@@ -70,7 +70,7 @@ export default function SlidersPage() {
 
   const { data: sliders, isLoading, isError } = useQuery({
     queryKey: ["sliders"],
-    queryFn: slidersService.list,
+    queryFn: () => slidersService.list(),
   });
 
   // Excluimos type "catalog" — esos se administran en Banner Catálogo, no acá
@@ -443,7 +443,7 @@ export default function SlidersPage() {
               <div className="space-y-1">
                 <label className="text-sm font-medium text-gray-700">
                   Link al asesor comercial{" "}
-                  <span className="text-xs text-gray-400 font-normal">(botón "Más Información")</span>
+                  <span className="text-xs text-gray-400 font-normal">(botón &quot;Más Información&quot;)</span>
                 </label>
                 <input
                   type="url"

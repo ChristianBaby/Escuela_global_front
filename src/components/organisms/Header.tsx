@@ -2,14 +2,14 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { usePathname } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { Logo, Badge, buttonVariants } from "@/components/atoms";
 import { CartModal } from "@/components/organisms/CartModal";
 import { useAuthStore } from "@/store/authStore";
 import { getLandingForRole } from "@/lib/auth/roleRoutes";
+import { useLogout } from "@/lib/auth/useLogout";
 import { useCartStore } from "@/store/cartStore";
-import { authService } from "@/lib/services/auth";
 import { cartService } from "@/lib/services/cart";
 import { getGuestSessionToken } from "@/lib/session";
 import { extractCartItems } from "@/lib/cart-sync";
@@ -90,10 +90,9 @@ export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
-  const { isAuthenticated, user, clearUser } = useAuthStore();
-  const router = useRouter();
+  const { isAuthenticated, user } = useAuthStore();
   const pathname = usePathname();
-  const queryClient = useQueryClient();
+  const { logout: handleLogout } = useLogout();
   const cartCount = useCartCount();
 
   const isNavActive = (href: string) => {
@@ -116,24 +115,6 @@ export function Header() {
       document.body.style.overflow = "";
     };
   }, [mobileOpen]);
-
-  const handleLogout = async () => {
-    try {
-      await authService.logout();
-    } catch {}
-    clearUser();
-    document.cookie = "access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-    document.cookie = "refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-    // Sin esto, datos de la cuenta anterior (matrículas, carrito autenticado,
-    // etc.) quedan cacheados y se le siguen mostrando a la siguiente sesión
-    // (invitado u otra cuenta) hasta que algo los vuelva a pedir.
-    queryClient.clear();
-    // El carrito local vive en localStorage, sin relación con la sesión — si
-    // no se limpia aquí, sus cursos le siguen apareciendo a cualquiera que
-    // entre después sin sesión en este mismo navegador.
-    useCartStore.getState().clearCart();
-    router.push("/auth/login");
-  };
 
   return (
     <header className="sticky top-0 z-50 bg-white transition-shadow">

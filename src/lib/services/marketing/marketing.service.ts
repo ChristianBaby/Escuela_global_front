@@ -1,5 +1,16 @@
 import { api } from "@/lib/http/api";
-import type { EventType, Promotion, Slider, UpcomingLaunch, StaffMember, Software, ScrollPopup, Alliance } from "@/types";
+import type {
+  EventType,
+  Promotion,
+  Slider,
+  UpcomingLaunch,
+  StaffMember,
+  Software,
+  ScrollPopup,
+  Alliance,
+} from "@/types";
+
+// ── Promociones ─────────────────────────────────────────────────────────────
 
 export interface CreatePromocionDto {
   title: string;
@@ -10,26 +21,6 @@ export interface CreatePromocionDto {
   status: "active" | "inactive";
   starts_at?: string;
   ends_at?: string;
-}
-
-export interface CreateEventTypeDto {
-  name: string;
-  display_order?: number;
-}
-
-export interface CreateSliderDto {
-  title: string;
-  subtitle?: string;
-  type: "courses" | "banner" | "catalog";
-  event_type_id?: string | null;
-  image_url?: string;
-  destination_url?: string;
-  contact_url?: string;
-  position_on_page: "top" | "middle" | "bottom";
-  display_order?: number;
-  status: "active" | "inactive";
-  show_content?: boolean;
-  course_ids?: string[];
 }
 
 function buildFormData(data: CreatePromocionDto): FormData {
@@ -66,6 +57,13 @@ export const promocionesService = {
     api.patch("/promociones/reorder", { ids }).then((r) => r.data),
 };
 
+// ── Tipos de Eventos ────────────────────────────────────────────────────────
+
+export interface CreateEventTypeDto {
+  name: string;
+  display_order?: number;
+}
+
 export const eventTypesService = {
   list: () =>
     api.get<EventType[]>("/event-types").then((r) => r.data),
@@ -78,6 +76,49 @@ export const eventTypesService = {
 
   delete: (id: string) =>
     api.delete(`/event-types/${id}`).then((r) => r.data),
+};
+
+// ── Sliders / Banners (Restaurado) ──────────────────────────────────────────
+
+export interface CreateSliderDto {
+  title: string;
+  subtitle?: string;
+  type: "courses" | "banner" | "catalog";
+  event_type_id?: string | null;
+  image_url?: string;
+  destination_url?: string;
+  contact_url?: string;
+  position_on_page: "top" | "middle" | "bottom";
+  display_order?: number;
+  status: "active" | "inactive";
+  show_content?: boolean;
+  course_ids?: string[];
+}
+
+export const slidersService = {
+  list: (params?: { position?: string; vigente?: boolean }) =>
+    api.get<Slider[]>("/sliders", { params }).then((r) => r.data),
+
+  create: (data: CreateSliderDto) =>
+    api.post<Slider>("/sliders", data).then((r) => r.data),
+
+  update: (id: string, data: Partial<CreateSliderDto>) =>
+    api.patch<Slider>(`/sliders/${id}`, data).then((r) => r.data),
+
+  delete: (id: string) =>
+    api.delete(`/sliders/${id}`).then((r) => r.data),
+
+  uploadImage: (sliderId: string, file: File) => {
+    const formData = new FormData();
+    formData.append("image", file);
+    return api
+      .post<{ success: boolean; image_url: string }>(
+        `/sliders/${sliderId}/image`,
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      )
+      .then((r) => r.data);
+  },
 };
 
 // ── Notificaciones personalizadas ───────────────────────────────────────────
@@ -172,6 +213,9 @@ export const lanzamientosService = {
 // ── Nuestros Docentes ───────────────────────────────────────────────────────
 
 export interface CreateStaffMemberDto {
+  full_name?: string;
+  title?: string;
+  description?: string;
   image?: File;
   display_order?: number;
   status: "active" | "inactive";
@@ -179,9 +223,14 @@ export interface CreateStaffMemberDto {
 
 function buildStaffFormData(data: Partial<CreateStaffMemberDto>): FormData {
   const formData = new FormData();
+
   if (data.image) formData.append("image", data.image);
+  if (data.full_name !== undefined) formData.append("full_name", data.full_name);
+  if (data.title !== undefined) formData.append("title", data.title);
+  if (data.description !== undefined) formData.append("description", data.description);
   if (data.display_order !== undefined) formData.append("display_order", String(data.display_order));
   if (data.status !== undefined) formData.append("status", data.status);
+
   return formData;
 }
 
@@ -201,32 +250,6 @@ export const docentesService = {
 
   delete: (id: string) =>
     api.delete(`/docentes/${id}`).then((r) => r.data),
-};
-
-export const slidersService = {
-  list: () =>
-    api.get<Slider[]>("/sliders").then((r) => r.data),
-
-  create: (data: CreateSliderDto) =>
-    api.post<Slider>("/sliders", data).then((r) => r.data),
-
-  update: (id: string, data: Partial<CreateSliderDto>) =>
-    api.patch<Slider>(`/sliders/${id}`, data).then((r) => r.data),
-
-  delete: (id: string) =>
-    api.delete(`/sliders/${id}`).then((r) => r.data),
-
-  uploadImage: (sliderId: string, file: File) => {
-    const formData = new FormData();
-    formData.append("image", file);
-    return api
-      .post<{ success: boolean; image_url: string }>(
-        `/sliders/${sliderId}/image`,
-        formData,
-        { headers: { "Content-Type": "multipart/form-data" } }
-      )
-      .then((r) => r.data);
-  },
 };
 
 // ── Domina los siguientes softwares ─────────────────────────────────────────

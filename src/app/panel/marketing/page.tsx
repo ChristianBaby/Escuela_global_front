@@ -34,7 +34,7 @@ export default function MarketingDashboardPage() {
 
   const { data: sliders = [], isLoading: loadingSliders } = useQuery<Slider[]>({
     queryKey: ["sliders"],
-    queryFn: slidersService.list,
+    queryFn: () => slidersService.list(),
   });
 
   const activePromos = promociones.filter((p) => p.status === "active");

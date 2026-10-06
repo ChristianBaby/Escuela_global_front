@@ -1,4 +1,5 @@
 import { api } from "@/lib/http/api";
+import type { User } from "@/types";
 import type {
 	CheckEmailResponse,
 	ForgotPasswordDto,
@@ -11,6 +12,9 @@ import type {
 } from "./auth.types";
 
 export const authService = {
+	me: (signal?: AbortSignal) =>
+		api.get<User>("/users/me", { signal }).then((r) => r.data),
+
 	login: (data: LoginDto) =>
 		api.post<LoginResponse>("/auth/login", data).then((r) => r.data),
 

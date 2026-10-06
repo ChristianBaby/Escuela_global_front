@@ -5,7 +5,7 @@ export type UserStatus = "active" | "suspended" | "deleted";
 export type CourseLevel = "principiante" | "intermedio" | "avanzado";
 export type CourseStatus = "draft" | "published" | "archived";
 export type Currency = "USD" | "PEN";
-export type MaterialType = "PDF" | "Excel" | "Word" | "Otro";
+export type MaterialType = "PDF" | "Excel" | "Word" | "Otro" | "Video";
 export type EnrollmentType = "online" | "manual";
 export type OfflinePaymentMethod = "transferencia" | "efectivo" | "cortesia" | "otro";
 export type PaymentMethod = "stripe" | "paypal" | "mercado_pago" | "niubiz" | "culqi";
@@ -348,9 +348,13 @@ export interface UpcomingLaunch {
 
 export interface StaffMember {
   id: string;
+  full_name?: string | null;      // 👈 Agregar
+  title?: string | null;          // 👈 Agregar
+  description?: string | null;    // 👈 Agregar
   image_url: string;
+  image_public_id?: string | null;
   display_order: number;
-  status: PromotionStatus;
+  status: "active" | "inactive";
   created_at: string;
 }
 

@@ -7,9 +7,10 @@ import { toast } from "sonner";
 import { studentService } from "@/lib/services/student";
 import {
   ChevronLeft, ChevronRight, CheckCircle2, PlayCircle, Circle,
-  FileText, ExternalLink, ChevronDown, Star, X, Award, Loader2,
+  FileText, ExternalLink, ChevronDown, Star, X, Award, Loader2, Eye, EyeOff,
 } from "lucide-react";
 import Link from "next/link";
+import { DrivePreview } from "@/components/organisms";
 import type { CourseContent } from "@/types";
 
 // ── Tipos YouTube IFrame API ──────────────────────────────────────────────────
@@ -105,6 +106,16 @@ export default function CourseViewerPage() {
   const [showAutoAdvance, setShowAutoAdvance] = useState(false);
   const [autoAdvanceCount, setAutoAdvanceCount] = useState(5);
   const [openModules, setOpenModules] = useState<Set<string>>(new Set());
+  const [previewOpenIds, setPreviewOpenIds] = useState<Set<string>>(new Set());
+
+  function toggleMaterialPreview(materialId: string) {
+    setPreviewOpenIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(materialId)) next.delete(materialId);
+      else next.add(materialId);
+      return next;
+    });
+  }
 
   // Inicializar estado cuando llegan los datos
   useEffect(() => {
@@ -302,20 +313,43 @@ export default function CourseViewerPage() {
                 {(currentSession.materials?.length ?? 0) > 0 && (
                   <div className="mt-6">
                     <h3 className="text-sm font-semibold text-gray-700 mb-3">Material de la sesión</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {currentSession.materials!.map((mat) => (
-                        <a
-                          key={mat.id}
-                          href={mat.drive_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg text-sm hover:border-[#084D95] hover:text-[#084D95] transition-colors"
-                        >
-                          <span>{MATERIAL_ICON[mat.type] ?? "📎"}</span>
-                          <span>{mat.name}</span>
-                          <ExternalLink size={12} className="text-gray-400" />
-                        </a>
-                      ))}
+                    <div className="flex flex-col gap-3">
+                      {currentSession.materials!.map((mat) => {
+                        const isOpen = previewOpenIds.has(mat.id);
+                        return (
+                          <div key={mat.id}>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <a
+                                href={mat.drive_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg text-sm hover:border-[#084D95] hover:text-[#084D95] transition-colors"
+                              >
+                                <span>{MATERIAL_ICON[mat.type] ?? "📎"}</span>
+                                <span>{mat.name}</span>
+                                <ExternalLink size={12} className="text-gray-400" />
+                              </a>
+                              <button
+                                type="button"
+                                onClick={() => toggleMaterialPreview(mat.id)}
+                                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm border border-gray-200 text-gray-600 hover:border-[#084D95] hover:text-[#084D95] transition-colors"
+                              >
+                                {isOpen ? <EyeOff size={14} /> : <Eye size={14} />}
+                                {isOpen ? "Ocultar vista previa" : "Vista previa"}
+                              </button>
+                            </div>
+                            {isOpen && (
+                              <div className="mt-2 max-w-2xl">
+                                <DrivePreview
+                                  driveUrl={mat.drive_url}
+                                  title={mat.name}
+                                  aspect={mat.type === "Video" ? "video" : "document"}
+                                />
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 )}

@@ -16,5 +16,6 @@ export { CartModal } from "./CartModal";
 export { LoginForm } from "./LoginForm";
 export { RegisterForm } from "./RegisterForm";
 export { AuthGateModal } from "./AuthGateModal";
+export { DrivePreview } from "./DrivePreview";
 export type { AuthGateMode } from "./AuthGateModal";
 export type { FiltersState } from "./CourseFilters";
