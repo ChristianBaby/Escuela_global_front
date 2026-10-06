@@ -6,7 +6,11 @@ import { lanzamientosService, type CreateUpcomingLaunchDto } from "@/lib/service
 import { toast } from "sonner";
 import { ImageIcon } from "lucide-react";
 import type { UpcomingLaunch } from "@/types";
-import { ImageUploader, ImagePreviewModal } from "@/components/molecules";
+import { ImageUploader, ImagePreviewModal, ImageHoverBubble } from "@/components/molecules";
+
+// Fila resaltada al pasar el cursor: fondo celeste de marca + barra azul a la izquierda
+const ROW_HOVER =
+  "hover:bg-brand-secondary/10 hover:[&>td:first-child]:shadow-[inset_3px_0_0_var(--color-brand-primary)] transition-colors";
 
 // "2026-09-22" (solo fecha, sin hora) lo interpreta JS como medianoche UTC —
 // al mostrarlo con toLocaleDateString en una zona horaria detrás de UTC (ej.
@@ -137,21 +141,22 @@ export default function LanzamientosPage() {
                 <tr><td colSpan={5} className="text-center py-8 text-gray-400">Sin lanzamientos</td></tr>
               ) : (
                 lanzamientos?.map((l) => (
-                  <tr key={l.id} className="hover:bg-gray-50">
+                  <tr key={l.id} className={ROW_HOVER}>
                     <td className="px-4 py-3">
                       <button
                         onClick={() => setPreviewId(l.id)}
                         className="flex items-center gap-3 text-left group"
-                        title={l.title}
                       >
                         {l.image_url ? (
-                          <img src={l.image_url} alt="" className="w-20 h-12 rounded-lg object-cover bg-gray-100 flex-shrink-0" />
+                          <ImageHoverBubble src={l.image_url}>
+                            <img src={l.image_url} alt="" className="w-20 h-12 rounded-lg object-cover bg-gray-100 flex-shrink-0" />
+                          </ImageHoverBubble>
                         ) : (
                           <div className="w-20 h-12 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
                             <ImageIcon size={16} className="text-gray-400" />
                           </div>
                         )}
-                        <span className="font-medium text-gray-900 group-hover:text-[#084D95] transition-colors">{l.title}</span>
+                        <span className="font-medium text-gray-900 group-hover:text-[#084D95] transition-colors" title={l.title}>{l.title}</span>
                       </button>
                     </td>
                     <td className="px-4 py-3 text-gray-500 text-xs">{l.category_label}</td>

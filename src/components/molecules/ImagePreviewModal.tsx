@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { BookOpen, X } from "lucide-react";
 
 interface ImagePreviewModalProps {
@@ -8,15 +8,20 @@ interface ImagePreviewModalProps {
   thumbnailUrl?: string | null;
   /** Info extra bajo el título (categoría, precio, estado...) */
   details?: ReactNode;
+  /** Aumento sobre el tamaño real de la imagen (1 = tal cual). Ej. 1.5 en el listado de cursos */
+  scale?: number;
   onClose: () => void;
 }
 
 // Vista ampliada de un ítem de un listado (curso, lanzamiento...): imagen +
 // nombre completo. En las tablas el nombre se corta y la miniatura es chica, así
 // que se abre al hacer clic en el nombre o en la miniatura.
-// La imagen se muestra tal cual, en su tamaño real: nunca se estira (así no se
-// ve borrosa) ni se recorta; solo se achica si no entra en la pantalla.
-export function ImagePreviewModal({ title, thumbnailUrl, details, onClose }: ImagePreviewModalProps) {
+// La imagen se muestra tal cual, en su tamaño real (o con `scale` si se pide un
+// poco más grande, sin estirarla tanto que se vea borrosa). Nunca se recorta; si
+// no entra en la pantalla se achica.
+export function ImagePreviewModal({ title, thumbnailUrl, details, scale = 1, onClose }: ImagePreviewModalProps) {
+  const [naturalWidth, setNaturalWidth] = useState<number | null>(null);
+
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -45,7 +50,13 @@ export function ImagePreviewModal({ title, thumbnailUrl, details, onClose }: Ima
           <X size={16} />
         </button>
         {thumbnailUrl ? (
-          <img src={thumbnailUrl} alt={title} className="block mx-auto max-w-full max-h-[75vh] bg-gray-50" />
+          <img
+            src={thumbnailUrl}
+            alt={title}
+            onLoad={(e) => setNaturalWidth(e.currentTarget.naturalWidth)}
+            className="block mx-auto max-w-full max-h-[75vh] h-auto object-contain bg-gray-50"
+            style={naturalWidth && scale !== 1 ? { width: naturalWidth * scale } : undefined}
+          />
         ) : (
           <div className="w-full aspect-video bg-gray-100 flex items-center justify-center">
             <BookOpen size={40} className="text-gray-300" />

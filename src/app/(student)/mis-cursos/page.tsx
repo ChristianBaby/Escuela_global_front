@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import type { Enrollment } from "@/types";
+import { fuzzyMatch, type SearchMatch } from "@/lib/search";
 
 type Tab = "progreso" | "completados" | "sin-iniciar";
 
@@ -72,12 +73,18 @@ function MisCursosContent() {
     "sin-iniciar": sinIniciar,
   };
 
+  // Búsqueda tolerante: palabra por palabra, sin tildes y con errores de tipeo;
+  // los más parecidos primero
   const filtered = useMemo(() => {
-    const q = search.toLowerCase().trim();
-    if (!q) return tabData[tab];
-    return tabData[tab].filter((e) =>
-      e.course?.title.toLowerCase().includes(q)
-    );
+    const matches = new Map<string, SearchMatch>();
+    if (!search.trim()) return tabData[tab];
+    for (const e of tabData[tab]) {
+      matches.set(e.id, fuzzyMatch(search, e.course?.title ?? ""));
+    }
+    const filtered = tabData[tab]
+      .filter((e) => (matches.get(e.id)?.score ?? 0) > 0)
+      .sort((a, b) => (matches.get(b.id)?.score ?? 0) - (matches.get(a.id)?.score ?? 0));
+    return filtered;
   }, [tab, search, enrollments]);
 
   const tabList: { key: Tab; label: string; count: number }[] = [

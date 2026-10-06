@@ -6,3 +6,4 @@ export { SearchBar } from "./SearchBar";
 export { WhatsAppButton } from "./WhatsAppButton";
 export { ImageUploader } from "./ImageUploader";
 export { ImagePreviewModal } from "./ImagePreviewModal";
+export { ImageHoverBubble } from "./ImageHoverBubble";

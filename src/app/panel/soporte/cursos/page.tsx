@@ -7,7 +7,7 @@ import { categoriasService } from "@/lib/services/categories";
 import { useAuthStore } from "@/store/authStore";
 import { toast } from "sonner";
 import Link from "next/link";
-import { ImagePreviewModal } from "@/components/molecules";
+import { ImagePreviewModal, ImageHoverBubble } from "@/components/molecules";
 import {
   Plus,
   Search,
@@ -27,6 +27,8 @@ import {
   CheckCircle2,
   XCircle,
 } from "lucide-react";
+import { HighlightMatches } from "@/components/atoms";
+import { fuzzyMatch } from "@/lib/search";
 
 function downloadBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
@@ -50,6 +52,10 @@ const STATUS_STYLES: Record<string, string> = {
   published: "bg-green-50 text-green-700 ring-1 ring-green-200",
   archived: "bg-amber-50 text-amber-700 ring-1 ring-amber-200",
 };
+
+// Fila resaltada al pasar el cursor: fondo celeste de marca + barra azul a la izquierda
+const ROW_HOVER =
+  "hover:bg-brand-secondary/10 hover:[&>td:first-child]:shadow-[inset_3px_0_0_var(--color-brand-primary)] transition-colors";
 
 const LEVEL_LABELS: Record<string, string> = {
   principiante: "Principiante",
@@ -294,27 +300,33 @@ export default function SoporteCursosPage() {
                   </tr>
                 ) : (
                   data?.data.map((curso) => (
-                    <tr key={curso.id} className="hover:bg-gray-50/60 transition-colors">
+                    <tr
+                      key={curso.id}
+                      className={ROW_HOVER}
+                      // Globito con el nombre completo al pasar el cursor por cualquier parte de la fila
+                      title={curso.title}
+                    >
                       {/* Curso */}
                       <td className="px-5 py-3.5">
                         <button
                           onClick={() => setPreviewCursoId(curso.id)}
                           className="flex items-center gap-3 text-left group"
-                          title={curso.title}
                         >
                           {curso.thumbnail_url ? (
-                            <img
-                              src={curso.thumbnail_url}
-                              alt=""
-                              className="w-11 h-11 rounded-lg object-cover bg-gray-100 shrink-0"
-                            />
+                            <ImageHoverBubble src={curso.thumbnail_url}>
+                              <img
+                                src={curso.thumbnail_url}
+                                alt=""
+                                className="w-11 h-11 rounded-lg object-cover bg-gray-100 shrink-0"
+                              />
+                            </ImageHoverBubble>
                           ) : (
                             <div className="w-11 h-11 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
                               <BookOpen size={18} className="text-gray-400" />
                             </div>
                           )}
                           <div className="min-w-0">
-                            <p className="font-medium text-gray-900 line-clamp-2 max-w-[260px] group-hover:text-[#084D95] transition-colors">{curso.title}</p>
+                            <p className="font-medium text-gray-900 line-clamp-2 max-w-[260px] group-hover:text-[#084D95] transition-colors" title={curso.title}><HighlightMatches text={curso.title} matchedWords={fuzzyMatch(search, curso.title).matchedWords} /></p>
                             <p className="text-xs text-gray-400 mt-0.5">
                               {LEVEL_LABELS[curso.level] ?? curso.level}
                             </p>
@@ -460,6 +472,7 @@ export default function SoporteCursosPage() {
         <ImagePreviewModal
           title={previewCurso.title}
           thumbnailUrl={previewCurso.thumbnail_url}
+          scale={1.5}
           onClose={() => setPreviewCursoId(null)}
           details={
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1">

@@ -5,7 +5,11 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { slidersService, eventTypesService, type CreateSliderDto } from "@/lib/services/marketing";
 import { toast } from "sonner";
 import { X, ImageIcon, Plus, Check, GripVertical } from "lucide-react";
-import { ImageUploader, ImagePreviewModal } from "@/components/molecules";
+import { ImageUploader, ImagePreviewModal, ImageHoverBubble } from "@/components/molecules";
+
+// Fila resaltada al pasar el cursor: fondo celeste de marca + barra azul a la izquierda
+const ROW_HOVER =
+  "hover:bg-brand-secondary/10 hover:[&>td:first-child]:shadow-[inset_3px_0_0_var(--color-brand-primary)] transition-colors";
 import {
   DndContext,
   closestCenter,
@@ -36,7 +40,7 @@ function SortableRow({
     background: isDragging ? "white" : undefined,
   };
   return (
-    <tr ref={setNodeRef} style={style} className="hover:bg-gray-50">
+    <tr ref={setNodeRef} style={style} className={ROW_HOVER}>
       {children({ attributes, listeners })}
     </tr>
   );
@@ -267,9 +271,11 @@ export default function SlidersPage() {
                               </button>
                             </td>
                             <td className="px-4 py-3">
-                              <button onClick={() => setPreviewId(s.id)} className="block" title="Ver en grande">
+                              <button onClick={() => setPreviewId(s.id)} className="block">
                                 {s.image_url ? (
-                                  <img src={s.image_url} alt="" className="w-16 h-10 object-cover rounded-lg bg-gray-100" />
+                                  <ImageHoverBubble src={s.image_url}>
+                                    <img src={s.image_url} alt="" className="w-16 h-10 object-cover rounded-lg bg-gray-100" />
+                                  </ImageHoverBubble>
                                 ) : (
                                   <div className="w-16 h-10 rounded-lg bg-gradient-to-br from-[#084D95]/20 to-[#23AFE5]/20 flex items-center justify-center">
                                     <ImageIcon size={14} className="text-[#084D95]/50" />

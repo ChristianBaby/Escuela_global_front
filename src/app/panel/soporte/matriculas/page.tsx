@@ -4,13 +4,16 @@ import { useState, useRef, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { matriculasService, type CreateMatriculasDto } from "@/lib/services/enrollments";
 import { cursosService } from "@/lib/services/courses";
+import { categoriasService } from "@/lib/services/categories";
 import { usuariosService } from "@/lib/services/users";
 import type { Course } from "@/types";
-import { ImagePreviewModal } from "@/components/molecules";
+import { ImagePreviewModal, ImageHoverBubble } from "@/components/molecules";
+import { HighlightMatches } from "@/components/atoms";
+import { fuzzyMatch } from "@/lib/search";
 import { toast } from "sonner";
 import {
   Search, X, BookOpen, CheckCircle2, UserCheck, Users,
-  ArrowRight, ArrowLeft, Info, PlusCircle,
+  ArrowRight, ArrowLeft, Info, PlusCircle, Flame,
 } from "lucide-react";
 
 /* ─── tipos ──────────────────────────────────────────────────────────── */
@@ -39,6 +42,14 @@ const ESTADO_TABS: { value: EstadoFiltro; label: string }[] = [
   { value: "matriculados",   label: "Matriculados"   },
 ];
 
+type CursoEstadoFiltro = "todos" | "published" | "archived";
+
+const CURSO_ESTADO_TABS: { value: CursoEstadoFiltro; label: string }[] = [
+  { value: "todos",     label: "Todos"      },
+  { value: "published", label: "Publicados" },
+  { value: "archived",  label: "Archivados" },
+];
+
 /* ─── helpers ────────────────────────────────────────────────────────── */
 const AVATAR_COLORS = [
   "bg-blue-500", "bg-emerald-500", "bg-violet-500",
@@ -56,11 +67,6 @@ function Avatar({ first_name, last_name }: { first_name: string; last_name: stri
       {initials}
     </div>
   );
-}
-
-/* Quita tildes y diacríticos para búsqueda tolerante */
-function normalize(str: string) {
-  return str.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 }
 
 function StepPill({ step, label, state }: { step: number; label: string; state: "idle" | "active" | "done" }) {
@@ -94,6 +100,11 @@ export default function MatriculasPage() {
   /* step 1 – selección de cursos */
   const [cursosBusqueda,      setCursosBusqueda]      = useState("");
   const [cursosSeleccionados, setCursosSeleccionados] = useState<string[]>([]);
+  const [cursosEstado,        setCursosEstado]        = useState<CursoEstadoFiltro>("todos");
+  const [cursosCategoria,     setCursosCategoria]     = useState("");
+  const [cursosPrecio,        setCursosPrecio]        = useState<"todos" | "gratis" | "pago">("todos");
+  const [cursosOrden,         setCursosOrden]         = useState<"nombre" | "matriculados" | "recientes">("nombre");
+  const [cursosDemanda,       setCursosDemanda]       = useState<"todas" | "alta" | "buena" | "sin">("todas");
   const [previewCursoId, setPreviewCursoId] = useState<string | null>(null);
 
   /* step 2 – selección de estudiantes */
@@ -136,6 +147,11 @@ export default function MatriculasPage() {
   }, []);
 
   /* ── datos ── */
+  const { data: categorias } = useQuery({
+    queryKey: ["categorias"],
+    queryFn: categoriasService.list,
+  });
+
   const { data: cursosData, isLoading: loadingCursos, isError: errorCursos } = useQuery({
     queryKey: ["cursos", "matriculas", "with-archived"],
     queryFn: async () => {
@@ -226,9 +242,66 @@ export default function MatriculasPage() {
   /* ── filtros de cursos ── */
   const previewCurso = cursosData?.find((c) => c.id === previewCursoId);
 
-  const cursosFiltrados = (cursosData ?? [])
-    .filter((c) => normalize(c.title).includes(normalize(cursosBusqueda)))
-    .sort((a, b) => a.title.localeCompare(b.title, "es", { sensitivity: "base" }));
+  // Umbrales de demanda relativos a los cursos cargados (se ajustan solos al crecer
+  // la plataforma): alta = top 10% por matriculados, buena = top 25%.
+  const matriculadosOrdenados = (cursosData ?? [])
+    .map((c) => c.enrolled_count ?? 0)
+    .sort((a, b) => a - b);
+  const percentil = (p: number) =>
+    matriculadosOrdenados.length
+      ? matriculadosOrdenados[Math.floor(p * (matriculadosOrdenados.length - 1))]
+      : 0;
+  const umbralAltaDemanda  = Math.max(1, percentil(0.9));
+  const umbralBuenaDemanda = Math.max(1, percentil(0.75));
+
+  // Búsqueda tolerante: palabra por palabra, sin tildes y con errores de tipeo
+  const cursosMatches = new Map((cursosData ?? []).map((c) => [c.id, fuzzyMatch(cursosBusqueda, c.title)]));
+
+  const cursosPorBusqueda = (cursosData ?? [])
+    .filter((c) => (cursosMatches.get(c.id)?.score ?? 0) > 0)
+    .filter((c) => {
+      const n = c.enrolled_count ?? 0;
+      if (cursosDemanda === "alta")  return n >= umbralAltaDemanda;
+      if (cursosDemanda === "buena") return n >= umbralBuenaDemanda;
+      if (cursosDemanda === "sin")   return n === 0;
+      return true;
+    })
+    .filter((c) => !cursosCategoria || c.category_id === cursosCategoria)
+    .filter((c) =>
+      cursosPrecio === "todos" ? true
+        : cursosPrecio === "gratis" ? Number(c.price_pen) === 0
+        : Number(c.price_pen) > 0
+    )
+    .sort((a, b) =>
+      // Con búsqueda, primero los más parecidos; a igualdad, el orden elegido
+      (cursosBusqueda.trim()
+        ? (cursosMatches.get(b.id)?.score ?? 0) - (cursosMatches.get(a.id)?.score ?? 0)
+        : 0) ||
+      (cursosOrden === "matriculados" ? (b.enrolled_count ?? 0) - (a.enrolled_count ?? 0)
+        : cursosOrden === "recientes" ? new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        : a.title.localeCompare(b.title, "es", { sensitivity: "base" }))
+    );
+
+  const hayFiltrosCursos =
+    !!cursosBusqueda || !!cursosCategoria || cursosPrecio !== "todos" || cursosEstado !== "todos" || cursosDemanda !== "todas";
+
+  const limpiarFiltrosCursos = () => {
+    setCursosBusqueda("");
+    setCursosCategoria("");
+    setCursosPrecio("todos");
+    setCursosEstado("todos");
+    setCursosDemanda("todas");
+  };
+
+  const cursosCuentas: Record<CursoEstadoFiltro, number> = {
+    todos:     cursosPorBusqueda.length,
+    published: cursosPorBusqueda.filter((c) => c.status === "published").length,
+    archived:  cursosPorBusqueda.filter((c) => c.status === "archived").length,
+  };
+
+  const cursosFiltrados = cursosEstado === "todos"
+    ? cursosPorBusqueda
+    : cursosPorBusqueda.filter((c) => c.status === cursosEstado);
 
   /* ── select-all: opera solo sobre los visibles y no matriculados ── */
   const noMatriculadosVisibles = estudiantesFiltrados.filter(e => !e.matriculado);
@@ -382,108 +455,260 @@ export default function MatriculasPage() {
       {/* ════════════════ STEP 1 — CURSOS ════════════════ */}
       {!justFinished && step === 1 && (
         <div className="space-y-4">
-          <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-            <div className="flex items-center gap-2 mb-3">
-              <BookOpen className="size-4 text-[#084D95]" />
-              <h2 className="font-semibold text-gray-800 text-sm">Selecciona los cursos</h2>
-              {cursosData && (
-                <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
-                  {cursosData.length} disponibles · {cursosData.filter((c) => c.status === "archived").length} archivados
-                </span>
-              )}
-              {cursosSeleccionados.length > 0 && (
-                <span className="text-xs bg-[#084D95] text-white px-2 py-0.5 rounded-full font-medium ml-auto">
-                  {cursosSeleccionados.length} seleccionado(s)
-                </span>
-              )}
-            </div>
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
 
-            {/* Buscador */}
-            <div className="relative mb-3">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Buscar curso por nombre..."
-                value={cursosBusqueda}
-                onChange={(e) => setCursosBusqueda(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg pl-9 pr-8 h-10 text-sm outline-none focus:ring-2 focus:ring-[#084D95]/30 focus:border-[#084D95]"
-              />
-              {cursosBusqueda && (
-                <button
-                  onClick={() => setCursosBusqueda("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  <X className="size-4" />
-                </button>
-              )}
-            </div>
-
-            {/* Grid de cursos con checkbox */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-72 overflow-y-auto pr-1">
-              {cursosFiltrados.map((c) => {
-                const isSel = cursosSeleccionados.includes(c.id);
-                return (
+            {/* Cabecera: título + buscador */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 px-5 py-4 border-b border-gray-100">
+              <div className="flex items-center gap-2">
+                <BookOpen className="size-4 text-[#084D95]" />
+                <h2 className="font-semibold text-gray-800 text-sm">Selecciona los cursos</h2>
+              </div>
+              <div className="relative w-full sm:w-80 sm:ml-auto">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Buscar curso por nombre..."
+                  value={cursosBusqueda}
+                  onChange={(e) => setCursosBusqueda(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg pl-9 pr-8 h-9 text-sm outline-none focus:ring-2 focus:ring-[#084D95]/30 focus:border-[#084D95]"
+                />
+                {cursosBusqueda && (
                   <button
-                    key={c.id}
-                    type="button"
-                    onClick={() => toggleCurso(c.id)}
-                    className={`text-left p-3 rounded-xl border-2 transition-all ${
-                      isSel
-                        ? "border-[#084D95] bg-blue-50"
-                        : "border-gray-200 hover:border-[#084D95]/40 hover:bg-gray-50"
-                    }`}
+                    onClick={() => setCursosBusqueda("")}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                   >
-                    <div className="flex items-start gap-3">
-                      {/* Imagen y nombre abren la vista ampliada; el resto de la tarjeta selecciona */}
-                      <span
-                        onClick={(e) => { e.stopPropagation(); setPreviewCursoId(c.id); }}
-                        className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 overflow-hidden cursor-zoom-in ${
-                          isSel ? "bg-[#084D95] ring-2 ring-[#084D95]" : "bg-gray-100"
-                        }`}
-                        title="Ver curso en grande"
-                      >
-                        {c.thumbnail_url ? (
-                          <img src={c.thumbnail_url} alt="" className="w-full h-full object-cover" />
-                        ) : (
-                          <BookOpen className={`size-4 ${isSel ? "text-white" : "text-gray-500"}`} />
-                        )}
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <span
-                          onClick={(e) => { e.stopPropagation(); setPreviewCursoId(c.id); }}
-                          className={`block text-sm font-medium line-clamp-2 cursor-zoom-in hover:underline ${isSel ? "text-[#084D95]" : "text-gray-900"}`}
-                          title={c.title}
-                        >
-                          {c.title}
-                        </span>
-                        {c.status === "archived" && (
-                          <span className="inline-block mt-1 rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 ring-1 ring-amber-200">
-                            Archivado
-                          </span>
-                        )}
-                        <p className="text-xs text-gray-400 mt-0.5">
-                          S/ {c.price_pen} · {c.enrolled_count} matriculados
-                        </p>
-                      </div>
-                      {isSel && <CheckCircle2 className="size-4 text-[#084D95] shrink-0 mt-0.5" />}
-                    </div>
+                    <X className="size-3.5" />
                   </button>
-                );
-              })}
+                )}
+              </div>
+            </div>
 
-              {loadingCursos && (
-                <div className="col-span-3 text-center py-6 text-gray-400 text-sm">Cargando cursos...</div>
-              )}
+            {/* Tabs: Todos / Publicados / Archivados + filtros */}
+            <div className="flex flex-wrap items-center gap-1 px-5 py-3 border-b border-gray-100">
+              {CURSO_ESTADO_TABS.map((tab) => (
+                <button
+                  key={tab.value}
+                  onClick={() => setCursosEstado(tab.value)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                    cursosEstado === tab.value
+                      ? "bg-[#084D95] text-white"
+                      : "text-gray-500 hover:bg-gray-100"
+                  }`}
+                >
+                  {tab.label}
+                  <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                    cursosEstado === tab.value
+                      ? "bg-white/25 text-white"
+                      : "bg-gray-100 text-gray-500"
+                  }`}>
+                    {cursosCuentas[tab.value]}
+                  </span>
+                </button>
+              ))}
 
-              {errorCursos && (
-                <div className="col-span-3 text-center py-6 text-red-600 text-sm">No se pudieron cargar los cursos.</div>
-              )}
+              <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto lg:ml-auto mt-2 lg:mt-0">
+                <select
+                  value={cursosCategoria}
+                  onChange={(e) => setCursosCategoria(e.target.value)}
+                  className="border border-gray-200 rounded-lg px-2.5 h-8 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#084D95]/20 focus:border-[#084D95] bg-white"
+                >
+                  <option value="">Todas las categorías</option>
+                  {categorias?.map((cat) => (
+                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  ))}
+                </select>
+                <select
+                  value={cursosPrecio}
+                  onChange={(e) => setCursosPrecio(e.target.value as typeof cursosPrecio)}
+                  className="border border-gray-200 rounded-lg px-2.5 h-8 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#084D95]/20 focus:border-[#084D95] bg-white"
+                >
+                  <option value="todos">Todos los precios</option>
+                  <option value="gratis">Gratis (S/ 0)</option>
+                  <option value="pago">De pago</option>
+                </select>
+                <select
+                  value={cursosDemanda}
+                  onChange={(e) => setCursosDemanda(e.target.value as typeof cursosDemanda)}
+                  className={`border rounded-lg px-2.5 h-8 text-xs focus:outline-none focus:ring-2 focus:ring-[#084D95]/20 focus:border-[#084D95] ${
+                    cursosDemanda === "todas"
+                      ? "border-gray-200 text-gray-700 bg-white"
+                      : "border-orange-200 text-orange-700 bg-orange-50"
+                  }`}
+                  title="Filtrar por cantidad de matriculados"
+                >
+                  <option value="todas">Toda la demanda</option>
+                  <option value="alta">Alta demanda ({umbralAltaDemanda}+ matriculados)</option>
+                  <option value="buena">Buena demanda ({umbralBuenaDemanda}+ matriculados)</option>
+                  <option value="sin">Sin matriculados</option>
+                </select>
+                <select
+                  value={cursosOrden}
+                  onChange={(e) => setCursosOrden(e.target.value as typeof cursosOrden)}
+                  className="border border-gray-200 rounded-lg px-2.5 h-8 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#084D95]/20 focus:border-[#084D95] bg-white"
+                  title="Ordenar"
+                >
+                  <option value="nombre">Nombre A–Z</option>
+                  <option value="matriculados">Más matriculados</option>
+                  <option value="recientes">Más recientes</option>
+                </select>
+                {hayFiltrosCursos && (
+                  <button
+                    onClick={limpiarFiltrosCursos}
+                    className="text-xs text-gray-500 hover:text-gray-700 underline"
+                  >
+                    Limpiar filtros
+                  </button>
+                )}
+              </div>
+            </div>
 
-              {!loadingCursos && !errorCursos && cursosFiltrados.length === 0 && (
-                <div className="col-span-3 text-center py-6 text-gray-400 text-sm">
-                  No se encontraron cursos con &ldquo;{cursosBusqueda}&rdquo;
-                </div>
-              )}
+            {/* Cursos elegidos — siempre visibles aunque se cambie la búsqueda o el filtro */}
+            {cursosSeleccionados.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2 px-5 py-2.5 bg-blue-50 border-b border-blue-100">
+                <span className="text-xs font-semibold text-[#084D95]">
+                  {cursosSeleccionados.length} seleccionado(s):
+                </span>
+                {cursosSeleccionados.map((id) => {
+                  const c = cursosData?.find((x) => x.id === id);
+                  if (!c) return null;
+                  return (
+                    <span
+                      key={id}
+                      className="inline-flex items-center gap-1 max-w-[260px] text-xs bg-white text-[#084D95] border border-blue-200 pl-2.5 pr-1 py-0.5 rounded-full font-medium"
+                      title={c.title}
+                    >
+                      <span className="truncate">{c.title}</span>
+                      <button
+                        onClick={() => toggleCurso(id)}
+                        className="p-0.5 rounded-full hover:bg-blue-100 shrink-0"
+                        title="Quitar"
+                      >
+                        <X className="size-3" />
+                      </button>
+                    </span>
+                  );
+                })}
+                <button
+                  onClick={() => setCursosSeleccionados([])}
+                  className="text-xs text-gray-500 hover:text-gray-700 underline ml-auto"
+                >
+                  Quitar todos
+                </button>
+              </div>
+            )}
+
+            {/* Tabla */}
+            <div className="max-h-[28rem] overflow-y-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
+                  <tr>
+                    <th className="w-12 px-4 py-3"></th>
+                    <th className="text-left px-3 py-3 text-gray-500 font-medium text-xs uppercase tracking-wide">Curso</th>
+                    <th className="text-left px-3 py-3 text-gray-500 font-medium text-xs uppercase tracking-wide hidden md:table-cell">Categoría</th>
+                    <th className="text-left px-3 py-3 text-gray-500 font-medium text-xs uppercase tracking-wide hidden sm:table-cell">Precio</th>
+                    <th className="text-left px-3 py-3 text-gray-500 font-medium text-xs uppercase tracking-wide hidden sm:table-cell">Matriculados</th>
+                    <th className="text-left px-3 py-3 text-gray-500 font-medium text-xs uppercase tracking-wide">Estado</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {loadingCursos && (
+                    <tr>
+                      <td colSpan={6} className="text-center py-8 text-gray-400 text-sm">Cargando cursos...</td>
+                    </tr>
+                  )}
+
+                  {errorCursos && (
+                    <tr>
+                      <td colSpan={6} className="text-center py-8 text-red-600 text-sm">No se pudieron cargar los cursos.</td>
+                    </tr>
+                  )}
+
+                  {!loadingCursos && !errorCursos && cursosFiltrados.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="text-center py-8 text-gray-400 text-sm">
+                        {cursosBusqueda
+                          ? <>No se encontraron cursos con &ldquo;{cursosBusqueda}&rdquo;</>
+                          : "No hay cursos con estos filtros"}
+                      </td>
+                    </tr>
+                  )}
+
+                  {cursosFiltrados.map((c) => {
+                    const isSel = cursosSeleccionados.includes(c.id);
+                    return (
+                      <tr
+                        key={c.id}
+                        onClick={() => toggleCurso(c.id)}
+                        className={`cursor-pointer transition-colors ${
+                          isSel
+                            ? "bg-blue-50/70 [&>td:first-child]:shadow-[inset_3px_0_0_var(--color-brand-primary)]"
+                            : "hover:bg-brand-secondary/10 hover:[&>td:first-child]:shadow-[inset_3px_0_0_var(--color-brand-primary)]"
+                        }`}
+                      >
+                        <td className="w-12 px-4 py-2.5">
+                          <input
+                            type="checkbox"
+                            checked={isSel}
+                            onChange={() => toggleCurso(c.id)}
+                            onClick={(e) => e.stopPropagation()}
+                            className="rounded border-gray-300 cursor-pointer accent-[#084D95]"
+                          />
+                        </td>
+                        <td className="px-3 py-2.5">
+                          <div className="flex items-center gap-3">
+                            {/* Imagen y nombre abren la vista ampliada; el resto de la fila selecciona */}
+                            <ImageHoverBubble src={c.thumbnail_url}>
+                              <span
+                                onClick={(e) => { e.stopPropagation(); setPreviewCursoId(c.id); }}
+                                className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 overflow-hidden cursor-zoom-in bg-gray-100"
+                              >
+                                {c.thumbnail_url ? (
+                                  <img src={c.thumbnail_url} alt="" className="w-full h-full object-cover" />
+                                ) : (
+                                  <BookOpen className="size-4 text-gray-400" />
+                                )}
+                              </span>
+                            </ImageHoverBubble>
+                            <span
+                              onClick={(e) => { e.stopPropagation(); setPreviewCursoId(c.id); }}
+                              className={`break-words font-medium cursor-zoom-in hover:underline ${isSel ? "text-[#084D95]" : "text-gray-900"}`}
+                              title={c.title}
+                            >
+                              <HighlightMatches text={c.title} matchedWords={cursosMatches.get(c.id)?.matchedWords} />
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-3 py-2.5 text-xs text-gray-500 hidden md:table-cell">{c.category?.name ?? "—"}</td>
+                        <td className="px-3 py-2.5 text-xs text-gray-600 whitespace-nowrap hidden sm:table-cell">S/ {c.price_pen}</td>
+                        <td className="px-3 py-2.5 text-xs text-gray-600 hidden sm:table-cell">
+                          <div className="flex items-center gap-1.5 whitespace-nowrap">
+                            {c.enrolled_count}
+                            {(c.enrolled_count ?? 0) >= umbralAltaDemanda && (
+                              <span
+                                className="inline-flex items-center gap-0.5 rounded-full bg-orange-50 px-1.5 py-0.5 text-[10px] font-medium text-orange-700 ring-1 ring-orange-200"
+                                title={`Top 10% de cursos más demandados (${umbralAltaDemanda}+ matriculados)`}
+                              >
+                                <Flame className="size-3" /> Alta demanda
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-3 py-2.5">
+                          {c.status === "archived" ? (
+                            <span className="inline-block rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700 ring-1 ring-amber-200">
+                              Archivado
+                            </span>
+                          ) : (
+                            <span className="inline-block rounded-full bg-green-50 px-2 py-0.5 text-[11px] font-medium text-green-700 ring-1 ring-green-200">
+                              Publicado
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           </div>
 
@@ -595,7 +820,7 @@ export default function MatriculasPage() {
                         >
                           <Avatar first_name={e.first_name} last_name={e.last_name} />
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-900 truncate">{e.first_name} {e.last_name}</p>
+                            <p className="text-sm font-medium text-gray-900 truncate"><HighlightMatches text={`${e.first_name} ${e.last_name}`} matchedWords={fuzzyMatch(debouncedBusqueda, `${e.first_name} ${e.last_name}`).matchedWords} /></p>
                             <p className="text-xs text-gray-400 truncate">{e.email}</p>
                           </div>
                           {e.matriculado
@@ -732,7 +957,7 @@ export default function MatriculasPage() {
                           <div className="flex items-center gap-3">
                             <Avatar first_name={estudiante.first_name} last_name={estudiante.last_name} />
                             <div>
-                              <p className="font-medium text-gray-900">{estudiante.first_name} {estudiante.last_name}</p>
+                              <p className="font-medium text-gray-900"><HighlightMatches text={`${estudiante.first_name} ${estudiante.last_name}`} matchedWords={fuzzyMatch(debouncedBusqueda, `${estudiante.first_name} ${estudiante.last_name}`).matchedWords} /></p>
                               <p className="text-xs text-gray-400 sm:hidden">{estudiante.email}</p>
                             </div>
                           </div>
