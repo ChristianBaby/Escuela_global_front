@@ -4,8 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
-import { SessionGate } from "@/lib/auth/SessionGate";
-import { useLogout } from "@/lib/auth/useLogout";
+import { authService } from "@/lib/services/auth";
 import { useQuery } from "@tanstack/react-query";
 import { notificacionesService } from "@/lib/services/notifications";
 import { CartModal } from "@/components/organisms/CartModal";
@@ -36,16 +35,12 @@ const NAV = [
 ];
 
 export default function StudentLayout({ children }: { children: React.ReactNode }) {
-  return <SessionGate><StudentShell>{children}</StudentShell></SessionGate>;
-}
-
-function StudentShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const user = useAuthStore((state) => state.user);
+  const { user, clearUser } = useAuthStore();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
-  const { logout: handleLogout } = useLogout();
+  const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
 
   // Consulta el conteo de notificaciones no leídas cada 60 segundos
   const { data: notifData } = useQuery({
@@ -57,6 +52,41 @@ function StudentShell({ children }: { children: React.ReactNode }) {
   const unreadCount = notifData?.unread_count ?? 0;
   const badgeLabel = unreadCount > 9 ? "9+" : unreadCount > 0 ? String(unreadCount) : null;
   const badgeColor = unreadCount >= 10 ? "bg-red-600" : "bg-[#084D95]";
+
+  // 🚀 Mostrar PopUp para cambiar contraseña si el usuario aún no lo ha cerrado/cambiado
+  useEffect(() => {
+    if (!user?.id) return;
+    const dismissed = localStorage.getItem(`pwd_prompt_dismissed_${user.id}`);
+    if (!dismissed) {
+      // Pequeño retardo para dar una transición suave al cargar la vista
+      const timer = setTimeout(() => setShowPasswordPrompt(true), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [user?.id]);
+
+  const handleDismissPrompt = (dontRemind = true) => {
+    if (user?.id && dontRemind) {
+      localStorage.setItem(`pwd_prompt_dismissed_${user.id}`, "true");
+    }
+    setShowPasswordPrompt(false);
+  };
+
+  const handleGoToChangePassword = () => {
+    handleDismissPrompt(true);
+    router.push("/perfil?tab=security");
+  };
+
+  const handleLogout = async () => {
+    try {
+      await authService.logout();
+    } catch {
+      // proceed with local logout even if API call fails
+    }
+    clearUser();
+    document.cookie = "access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    document.cookie = "refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    window.location.href = "/auth/login";
+  };
 
   const initials = user?.first_name
     ? (user.first_name[0] + (user.last_name?.[0] ?? "")).toUpperCase() || "?"
@@ -208,72 +238,45 @@ function StudentShell({ children }: { children: React.ReactNode }) {
 
       <CartModal open={cartOpen} onOpenChange={setCartOpen} />
 
-      {/* 🚀 MODAL POPUP: BANNER CON X EN ROJO Y BOTONES INFERIORES */}
+      {/* 🚀 MODAL POPUP: RECORDATORIO DE CAMBIO DE CONTRASEÑA */}
       {showPasswordPrompt && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-          <div className="relative w-full max-w-2xl sm:max-w-3xl bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100 flex flex-col">
-            
-            {/* 1. Botón "X" en ROJO vibrante */}
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl p-6 relative border border-gray-100">
             <button
-              type="button"
-              onClick={handleDismissPrompt}
-              className="absolute top-3 right-3 sm:top-4 sm:right-4 z-20 w-8 h-8 sm:w-9 sm:h-9 bg-red-600 hover:bg-red-700 active:scale-95 text-white rounded-full flex items-center justify-center shadow-lg transition-all cursor-pointer"
-              title="Cerrar"
-              aria-label="Cerrar modal"
+              onClick={() => handleDismissPrompt(true)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
             >
-              <X size={18} className="stroke-[2.5]" />
+              <X size={20} />
             </button>
 
-            {/* 2. Contenedor del Banner */}
-            <div className="relative w-full bg-slate-50 flex items-center justify-center">
-              {/* Hotspot transparente por si hacen clic directo sobre el botón azul de la imagen */}
+            <div className="w-12 h-12 rounded-xl bg-blue-50 text-[#084D95] flex items-center justify-center mb-4">
+              <ShieldCheck size={28} />
+            </div>
+
+            <h3 className="text-lg font-bold text-gray-900 mb-2">
+              ¡Protege tu cuenta!
+            </h3>
+            <p className="text-sm text-gray-600 mb-6 leading-relaxed">
+              Por motivos de seguridad, te sugerimos actualizar tu contraseña por una personalizada y fácil de recordar para ti. Puedes hacerlo en cualquier momento desde tu perfil.
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-2.5 justify-end">
+              <button
+                type="button"
+                onClick={() => handleDismissPrompt(true)}
+                className="w-full sm:w-auto px-4 py-2.5 rounded-lg text-xs font-semibold text-gray-600 hover:bg-gray-100 transition-colors"
+              >
+                Recordar más tarde
+              </button>
               <button
                 type="button"
                 onClick={handleGoToChangePassword}
-                className="absolute bottom-[27%] right-[8%] sm:right-[9%] w-[46%] sm:w-[44%] h-[13%] sm:h-[12%] rounded-full cursor-pointer hover:bg-white/10 active:scale-98 transition-all z-10"
-                title="Ir a cambiar contraseña"
-                aria-label="Ir a mi perfil para cambiar contraseña"
-              />
-
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/ResetPaswordGlo.png"
-                alt="Estimado estudiante puedes cambiar la contraseña en mi Perfil"
-                className="w-full h-auto object-contain select-none"
-                onError={(e) => {
-                  const target = e.currentTarget;
-                  if (!target.src.includes("/docentes/")) {
-                    target.src = "/docentes/ResetPaswordGlo.png";
-                  }
-                }}
-              />
+                className="w-full sm:w-auto px-5 py-2.5 rounded-lg text-xs font-semibold text-white bg-[#084D95] hover:bg-[#084D95]/90 transition-colors flex items-center justify-center gap-1.5 shadow-sm"
+              >
+                <KeyRound size={15} />
+                Cambiar contraseña ahora
+              </button>
             </div>
-
-            {/* 3. Botones y acciones debajo de la imagen */}
-            <div className="px-6 py-4 bg-white border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3">
-              <p className="text-xs text-gray-500 text-center sm:text-left">
-                Puedes actualizar tu clave ahora o hacerlo en cualquier momento desde los ajustes de tu cuenta.
-              </p>
-
-              <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
-                <button
-                  type="button"
-                  onClick={handleDismissPrompt}
-                  className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-100 border border-gray-200 transition-colors"
-                >
-                  Recordar más tarde
-                </button>
-                <button
-                  type="button"
-                  onClick={handleGoToChangePassword}
-                  className="flex-1 sm:flex-initial px-5 py-2.5 rounded-xl text-xs font-semibold text-white bg-[#084D95] hover:bg-[#084D95]/90 active:scale-98 transition-all flex items-center justify-center gap-1.5 shadow-sm"
-                >
-                  <KeyRound size={15} />
-                  Ir a mi perfil
-                </button>
-              </div>
-            </div>
-
           </div>
         </div>
       )}
