@@ -1,16 +1,24 @@
 "use client";
 
 import { useState, useMemo, useEffect, Suspense } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { useSearchParams } from "next/navigation";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRouter, useSearchParams } from "next/navigation";
+import { toast } from "sonner";
 import { studentService } from "@/lib/services/student";
+import { cursosService } from "@/lib/services/courses";
+import { cartService } from "@/lib/services/cart";
+import { useCartStore } from "@/store/cartStore";
 import {
   BookOpen, Search, PlayCircle,
-  Star, Award, ExternalLink,
+  Star, Award, ExternalLink, RefreshCw, Loader2,
 } from "lucide-react";
 import Link from "next/link";
 import type { Enrollment } from "@/types";
 import { fuzzyMatch, type SearchMatch } from "@/lib/search";
+
+// El botón "Renovar" aparece al vencer o cuando faltan pocos días; se puede
+// renovar antes y los meses se suman a lo que queda (ver backend).
+const RENEWAL_WINDOW_DAYS = 30;
 
 type Tab = "progreso" | "completados" | "sin-iniciar";
 
@@ -182,6 +190,12 @@ function EnrollmentRow({ enrollment }: { enrollment: Enrollment }) {
   const level = course.level ?? "";
   const isExpired = !!enrollment.access_expires_at && new Date(enrollment.access_expires_at) < new Date();
   const isSuspended = !!enrollment.suspended_at;
+  const daysLeft = enrollment.access_expires_at
+    ? Math.ceil((new Date(enrollment.access_expires_at).getTime() - new Date().getTime()) / 86400000)
+    : null;
+  // Una suspensión manual no se levanta pagando la renovación (se reactiva
+  // desde soporte), así que ahí no se ofrece renovar.
+  const canRenew = !isSuspended && daysLeft !== null && daysLeft <= RENEWAL_WINDOW_DAYS;
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-5 flex gap-5 hover:shadow-sm transition-shadow">
@@ -282,8 +296,54 @@ function EnrollmentRow({ enrollment }: { enrollment: Enrollment }) {
             Certificado
           </Link>
         )}
+        {canRenew && <RenewButton courseId={enrollment.course_id} expired={isExpired} />}
       </div>
     </div>
+  );
+}
+
+// Renovar = volver a comprar el curso: al confirmarse el pago, el backend suma
+// los meses de vigencia a la misma matrícula (progreso y certificados intactos).
+function RenewButton({ courseId, expired }: { courseId: string; expired: boolean }) {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const { addItem, hasItem } = useCartStore();
+  const [loading, setLoading] = useState(false);
+
+  async function handleClick() {
+    setLoading(true);
+    try {
+      // La matrícula trae un resumen del curso; el carrito necesita el curso
+      // completo (precios) para mostrarlo.
+      const course = await cursosService.get(courseId);
+      // El backend no deduplica /cart/add por curso: no se repite si ya estaba.
+      if (!hasItem(courseId)) {
+        await cartService.add(courseId);
+        queryClient.invalidateQueries({ queryKey: ["cart"] });
+      }
+      addItem(course);
+      router.push("/checkout");
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      toast.error(msg ?? "No se pudo iniciar la renovación");
+      setLoading(false);
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      disabled={loading}
+      className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-60 ${
+        expired
+          ? "bg-[#23AFE5] text-white hover:bg-[#23AFE5]/90"
+          : "text-[#084D95] border border-[#084D95]/40 hover:bg-[#084D95]/5"
+      }`}
+    >
+      {loading ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+      Renovar acceso
+    </button>
   );
 }
 

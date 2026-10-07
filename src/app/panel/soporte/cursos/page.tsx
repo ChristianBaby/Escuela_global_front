@@ -81,16 +81,18 @@ export default function SoporteCursosPage() {
   const [importResult, setImportResult] = useState<ImportCoursesResult | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Filtros activos: los usan tanto el listado como la exportación, así lo
+  // exportado coincide siempre con lo que se ve en pantalla.
+  const activeFilters = {
+    search: search || undefined,
+    status: statusFilter || undefined,
+    categoria_id: categoriaFilter || undefined,
+  };
+  const hasActiveFilters = Boolean(search || statusFilter || categoriaFilter);
+
   const { data, isLoading, isError } = useQuery({
     queryKey: ["cursos", page, search, statusFilter, categoriaFilter],
-    queryFn: () =>
-      cursosService.list({
-        page,
-        limit: 12,
-        search: search || undefined,
-        status: statusFilter || undefined,
-        categoria_id: categoriaFilter || undefined,
-      }),
+    queryFn: () => cursosService.list({ page, limit: 12, ...activeFilters }),
   });
 
   const { data: categorias } = useQuery({
@@ -134,10 +136,10 @@ export default function SoporteCursosPage() {
     setExporting(format);
     try {
       if (format === "excel") {
-        const blob = await cursosService.exportCoursesExcel();
+        const blob = await cursosService.exportCoursesExcel(activeFilters);
         downloadBlob(blob, "cursos-export.xlsx");
       } else {
-        const data = await cursosService.exportCoursesJson();
+        const data = await cursosService.exportCoursesJson(activeFilters);
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
         downloadBlob(blob, "cursos-export.json");
       }
@@ -175,9 +177,14 @@ export default function SoporteCursosPage() {
             </button>
             {exportMenuOpen && (
               <div
-                className="absolute right-0 mt-1 w-36 bg-white border border-gray-200 rounded-lg shadow-lg z-10 overflow-hidden"
+                className="absolute right-0 mt-1 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-10 overflow-hidden"
                 onMouseLeave={() => setExportMenuOpen(false)}
               >
+                <p className="px-3.5 py-2 text-xs text-gray-500 border-b border-gray-100">
+                  {hasActiveFilters
+                    ? `Con los filtros aplicados${data ? ` (${data.total} cursos)` : ""}`
+                    : `Todo el catálogo${data ? ` (${data.total} cursos)` : ""}`}
+                </p>
                 <button
                   onClick={() => handleExport("excel")}
                   className="w-full text-left px-3.5 py-2 text-sm text-gray-700 hover:bg-gray-50"

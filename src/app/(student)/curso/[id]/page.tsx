@@ -10,7 +10,7 @@ import {
   FileText, ExternalLink, ChevronDown, Star, X, Award, Loader2, Eye, EyeOff,
 } from "lucide-react";
 import Link from "next/link";
-import { DrivePreview } from "@/components/organisms";
+import { MaterialPreview } from "@/components/organisms";
 import type { CourseContent } from "@/types";
 
 // ── Tipos YouTube IFrame API ──────────────────────────────────────────────────
@@ -52,7 +52,7 @@ function loadYouTubeAPI(onReady: () => void) {
 }
 
 const MATERIAL_ICON: Record<string, string> = {
-  PDF: "📄", Excel: "📊", Word: "📝", Otro: "📎",
+  PDF: "📄", Excel: "📊", Word: "📝", Video: "🎬", Otro: "📎",
 };
 
 type AccessBlockReason = "sin_matricula" | "vencido" | "suspendido" | null;
@@ -269,11 +269,24 @@ export default function CourseViewerPage() {
               </p>
             </div>
           ) : currentSession && (
-            <YouTubePlayer
-              key={currentSession.id}
-              videoId={currentSession.youtube_video_id}
-              onEnded={handleVideoEnded}
-            />
+            currentSession.video_provider === "drive" && currentSession.drive_url ? (
+              // Drive no expone eventos de reproducción: sin auto-avance al
+              // terminar; se avanza con "Sesión siguiente".
+              <div className="bg-black">
+                <MaterialPreview
+                  key={currentSession.id}
+                  url={currentSession.drive_url}
+                  title={currentSession.title}
+                  isVideo
+                />
+              </div>
+            ) : currentSession.youtube_video_id ? (
+              <YouTubePlayer
+                key={currentSession.id}
+                videoId={currentSession.youtube_video_id}
+                onEnded={handleVideoEnded}
+              />
+            ) : null
           )}
 
           {/* Auto-avance overlay */}
@@ -318,32 +331,42 @@ export default function CourseViewerPage() {
                         const isOpen = previewOpenIds.has(mat.id);
                         return (
                           <div key={mat.id}>
-                            <div className="flex items-center gap-2 flex-wrap">
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => toggleMaterialPreview(mat.id)}
+                                aria-expanded={isOpen}
+                                className={`flex items-center gap-2 px-3 py-2 border rounded-lg text-sm transition-colors ${
+                                  isOpen
+                                    ? "border-[#084D95] text-[#084D95] bg-blue-50/60"
+                                    : "border-gray-200 hover:border-[#084D95] hover:text-[#084D95]"
+                                }`}
+                              >
+                                <span>{MATERIAL_ICON[mat.type] ?? "📎"}</span>
+                                <span>{mat.name}</span>
+                                {isOpen ? (
+                                  <EyeOff size={14} className="text-gray-400" />
+                                ) : (
+                                  <Eye size={14} className="text-gray-400" />
+                                )}
+                              </button>
                               <a
                                 href={mat.drive_url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg text-sm hover:border-[#084D95] hover:text-[#084D95] transition-colors"
+                                title="Abrir en una pestaña nueva"
+                                aria-label={`Abrir ${mat.name} en una pestaña nueva`}
+                                className="p-2 rounded-lg text-gray-400 hover:text-[#084D95] hover:bg-gray-100 transition-colors"
                               >
-                                <span>{MATERIAL_ICON[mat.type] ?? "📎"}</span>
-                                <span>{mat.name}</span>
-                                <ExternalLink size={12} className="text-gray-400" />
+                                <ExternalLink size={14} />
                               </a>
-                              <button
-                                type="button"
-                                onClick={() => toggleMaterialPreview(mat.id)}
-                                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm border border-gray-200 text-gray-600 hover:border-[#084D95] hover:text-[#084D95] transition-colors"
-                              >
-                                {isOpen ? <EyeOff size={14} /> : <Eye size={14} />}
-                                {isOpen ? "Ocultar vista previa" : "Vista previa"}
-                              </button>
                             </div>
                             {isOpen && (
-                              <div className="mt-2 max-w-2xl">
-                                <DrivePreview
-                                  driveUrl={mat.drive_url}
+                              <div className="mt-2 max-w-3xl">
+                                <MaterialPreview
+                                  url={mat.drive_url}
                                   title={mat.name}
-                                  aspect={mat.type === "Video" ? "video" : "document"}
+                                  isVideo={mat.type === "Video"}
                                 />
                               </div>
                             )}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -18,9 +18,14 @@ import {
   X,
   Loader2,
   ExternalLink,
+  Eye,
+  AlertTriangle,
 } from "lucide-react";
 import { cursosService } from "@/lib/services/courses";
-import type { MaterialItem } from "@/lib/services/courses/courses.service";
+import type { CreateSessionDto, MaterialItem } from "@/lib/services/courses/courses.service";
+import type { VideoProvider } from "@/types";
+import { MaterialPreview } from "@/components/organisms";
+import { driveCheckQueryKey, driveLinkWarning } from "@/components/organisms/MaterialPreview";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -100,33 +105,89 @@ function ModuleForm({ initialTitle = "", initialDesc = "", onSubmit, onCancel, l
 interface SessionFormData {
   title: string;
   desc: string;
-  youtube: string;
+  provider: VideoProvider;
+  videoUrl: string;
   duration: string;
 }
 
 interface SessionFormProps {
   initialTitle?: string;
   initialDesc?: string;
+  initialProvider?: VideoProvider;
   initialYouTube?: string;
+  initialDrive?: string;
   initialDuration?: string;
   onSubmit: (data: SessionFormData) => void;
   onCancel: () => void;
   loading: boolean;
 }
 
+const VIDEO_PROVIDER_OPTIONS: { value: VideoProvider; label: string }[] = [
+  { value: "youtube", label: "YouTube" },
+  { value: "drive", label: "Google Drive" },
+];
+
 function SessionForm({
   initialTitle = "",
   initialDesc = "",
+  initialProvider = "youtube",
   initialYouTube = "",
+  initialDrive = "",
   initialDuration = "",
   onSubmit,
   onCancel,
   loading,
 }: SessionFormProps) {
+  const queryClient = useQueryClient();
   const [title, setTitle] = useState(initialTitle);
   const [desc, setDesc] = useState(initialDesc);
+  const [provider, setProvider] = useState<VideoProvider>(initialProvider);
   const [youtube, setYoutube] = useState(initialYouTube);
+  const [drive, setDrive] = useState(initialDrive);
   const [duration, setDuration] = useState(initialDuration);
+  // Aviso de Drive pendiente de confirmar: el siguiente "Guardar" guarda igual.
+  const [driveWarning, setDriveWarning] = useState<string | null>(null);
+  const [checking, setChecking] = useState(false);
+
+  const videoUrl = provider === "drive" ? drive : youtube;
+
+  function changeProvider(next: VideoProvider) {
+    setProvider(next);
+    setDriveWarning(null);
+  }
+
+  async function handleSubmit() {
+    const data = { title, desc, provider, videoUrl: videoUrl.trim(), duration };
+    if (provider !== "drive" || driveWarning) {
+      onSubmit(data);
+      return;
+    }
+
+    setChecking(true);
+    try {
+      const inspection = await queryClient.fetchQuery({
+        queryKey: driveCheckQueryKey(data.videoUrl),
+        queryFn: () => cursosService.checkDriveLink(data.videoUrl),
+        staleTime: 5 * 60 * 1000,
+      });
+      // El video principal tiene que ser un archivo: el backend rechaza carpetas
+      // y documentos, así que eso no se puede "guardar de todos modos".
+      if (inspection.provider === "google" && inspection.kind && inspection.kind !== "file") {
+        toast.error("El enlace debe ser de un archivo de video de Drive, no de una carpeta ni de un documento.");
+        return;
+      }
+      const warning = driveLinkWarning(inspection);
+      if (warning) {
+        setDriveWarning(warning);
+        return;
+      }
+    } catch {
+      // Si la verificación falla (red, timeout) no se bloquea el guardado.
+    } finally {
+      setChecking(false);
+    }
+    onSubmit(data);
+  }
 
   return (
     <div className="border border-[#084D95]/30 bg-blue-50/30 rounded-lg p-4 space-y-3">
@@ -141,15 +202,56 @@ function SessionForm({
           />
         </div>
         <div className="space-y-1.5 md:col-span-2">
-          <Label className="text-xs">URL de YouTube *</Label>
-          <Input
-            value={youtube}
-            onChange={(e) => setYoutube(e.target.value)}
-            placeholder="https://www.youtube.com/watch?v=..."
-          />
-          <p className="text-xs text-gray-400">
-            La duración se detecta automáticamente desde YouTube.
-          </p>
+          <Label className="text-xs">Fuente del video *</Label>
+          <div className="flex gap-2" role="radiogroup" aria-label="Fuente del video">
+            {VIDEO_PROVIDER_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                role="radio"
+                aria-checked={provider === opt.value}
+                onClick={() => changeProvider(opt.value)}
+                className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${
+                  provider === opt.value
+                    ? "bg-[#084D95] border-[#084D95] text-white"
+                    : "border-gray-300 text-gray-600 hover:bg-gray-50"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="space-y-1.5 md:col-span-2">
+          {provider === "drive" ? (
+            <>
+              <Label className="text-xs">Enlace del video en Google Drive *</Label>
+              <Input
+                value={drive}
+                onChange={(e) => {
+                  setDrive(e.target.value);
+                  setDriveWarning(null);
+                }}
+                placeholder="https://drive.google.com/file/d/.../view"
+              />
+              <p className="text-xs text-gray-400">
+                Debe ser el enlace de un archivo de video (no una carpeta), compartido como
+                &quot;Cualquier persona con el enlace&quot;. Si no se detecta la duración, ingrésala abajo.
+              </p>
+            </>
+          ) : (
+            <>
+              <Label className="text-xs">URL de YouTube *</Label>
+              <Input
+                value={youtube}
+                onChange={(e) => setYoutube(e.target.value)}
+                placeholder="https://www.youtube.com/watch?v=..."
+              />
+              <p className="text-xs text-gray-400">
+                La duración se detecta automáticamente desde YouTube.
+              </p>
+            </>
+          )}
         </div>
         <div className="space-y-1.5">
           <Label className="text-xs">
@@ -176,6 +278,12 @@ function SessionForm({
           />
         </div>
       </div>
+      {driveWarning && (
+        <div className="flex items-start gap-1.5 rounded-md border border-amber-200 bg-amber-50 p-2 text-xs text-amber-800">
+          <AlertTriangle size={13} className="shrink-0 mt-0.5" />
+          <span>{driveWarning}</span>
+        </div>
+      )}
       <div className="flex justify-end gap-2">
         <button
           type="button"
@@ -186,16 +294,28 @@ function SessionForm({
         </button>
         <button
           type="button"
-          onClick={() => onSubmit({ title, desc, youtube, duration })}
-          disabled={!title.trim() || !youtube.trim() || loading}
-          className="px-3 py-1.5 text-xs bg-[#084D95] text-white rounded-lg hover:bg-[#084D95]/90 disabled:opacity-50 flex items-center gap-1"
+          onClick={handleSubmit}
+          disabled={!title.trim() || !videoUrl.trim() || loading || checking}
+          className={`px-3 py-1.5 text-xs text-white rounded-lg disabled:opacity-50 flex items-center gap-1 ${
+            driveWarning ? "bg-amber-600 hover:bg-amber-700" : "bg-[#084D95] hover:bg-[#084D95]/90"
+          }`}
         >
-          {loading && <Loader2 size={12} className="animate-spin" />}
-          Guardar
+          {(loading || checking) && <Loader2 size={12} className="animate-spin" />}
+          {checking ? "Verificando enlace..." : driveWarning ? "Guardar de todos modos" : "Guardar"}
         </button>
       </div>
     </div>
   );
+}
+
+function toSessionPayload({ title, desc, provider, videoUrl, duration }: SessionFormData): CreateSessionDto {
+  return {
+    title: title.trim(),
+    description: desc.trim() || undefined,
+    video_provider: provider,
+    ...(provider === "drive" ? { drive_url: videoUrl } : { youtube_url: videoUrl }),
+    duration_minutes: duration ? parseFloat(duration) : undefined,
+  };
 }
 
 // ── Componente principal ───────────────────────────────────────────────────────
@@ -221,6 +341,20 @@ export default function ContenidoPage() {
   const [materialName, setMaterialName] = useState<Record<string, string>>({});
   const [materialUrl, setMaterialUrl] = useState<Record<string, string>>({});
   const [materialType, setMaterialType] = useState<Record<string, MaterialType>>({});
+  const [previewMaterial, setPreviewMaterial] = useState<MaterialItem | null>(null);
+  // Aviso pendiente de confirmar por sesión: si existe, el siguiente "Guardar"
+  // guarda igual (el usuario ya vio el problema del enlace).
+  const [materialWarning, setMaterialWarning] = useState<Record<string, string>>({});
+  const [checkingMaterialFor, setCheckingMaterialFor] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!previewMaterial) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setPreviewMaterial(null);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [previewMaterial]);
 
   // ── Queries ────────────────────────────────────────────────────────────────
 
@@ -277,13 +411,8 @@ export default function ContenidoPage() {
   // ── Mutations: Sesiones ────────────────────────────────────────────────────
 
   const createSessionMutation = useMutation({
-    mutationFn: ({ title, desc, youtube, duration }: SessionFormData) =>
-      cursosService.createSession(selectedModuleId!, {
-        title,
-        description: desc || undefined,
-        youtube_url: youtube,
-        duration_minutes: duration ? parseFloat(duration) : undefined,
-      }),
+    mutationFn: (data: SessionFormData) =>
+      cursosService.createSession(selectedModuleId!, toSessionPayload(data)),
     onSuccess: () => {
       toast.success("Sesión creada");
       queryClient.invalidateQueries({ queryKey: ["sessions", selectedModuleId] });
@@ -297,19 +426,18 @@ export default function ContenidoPage() {
   });
 
   const updateSessionMutation = useMutation({
-    mutationFn: ({ sessionId, title, desc, youtube, duration }: SessionFormData & { sessionId: string }) =>
-      cursosService.updateSession(sessionId, {
-        title,
-        description: desc || undefined,
-        youtube_url: youtube,
-        duration_minutes: duration ? parseFloat(duration) : undefined,
-      }),
+    mutationFn: ({ sessionId, ...data }: SessionFormData & { sessionId: string }) =>
+      cursosService.updateSession(sessionId, toSessionPayload(data)),
     onSuccess: () => {
       toast.success("Sesión actualizada");
       queryClient.invalidateQueries({ queryKey: ["sessions", selectedModuleId] });
+      queryClient.invalidateQueries({ queryKey: ["modules", courseId] });
       setEditingSessionId(null);
     },
-    onError: () => toast.error("No se pudo actualizar la sesión"),
+    onError: (err: unknown) => {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      toast.error(msg ?? "No se pudo actualizar la sesión");
+    },
   });
 
   const deleteSessionMutation = useMutation({
@@ -339,10 +467,47 @@ export default function ContenidoPage() {
       setMaterialName((prev) => ({ ...prev, [sessionId]: "" }));
       setMaterialUrl((prev) => ({ ...prev, [sessionId]: "" }));
       setMaterialType((prev) => ({ ...prev, [sessionId]: "PDF" }));
+      clearMaterialWarning(sessionId);
       queryClient.invalidateQueries({ queryKey: ["sessions", selectedModuleId] });
     },
     onError: () => toast.error("No se pudo agregar el material"),
   });
+
+  function clearMaterialWarning(sessionId: string) {
+    setMaterialWarning((prev) => {
+      if (!(sessionId in prev)) return prev;
+      const next = { ...prev };
+      delete next[sessionId];
+      return next;
+    });
+  }
+
+  async function handleSaveMaterial(sessionId: string) {
+    if (materialWarning[sessionId]) {
+      createMaterialMutation.mutate(sessionId);
+      return;
+    }
+
+    const url = materialUrl[sessionId]?.trim() ?? "";
+    setCheckingMaterialFor(sessionId);
+    try {
+      const inspection = await queryClient.fetchQuery({
+        queryKey: driveCheckQueryKey(url),
+        queryFn: () => cursosService.checkDriveLink(url),
+        staleTime: 5 * 60 * 1000,
+      });
+      const warning = driveLinkWarning(inspection);
+      if (warning) {
+        setMaterialWarning((prev) => ({ ...prev, [sessionId]: warning }));
+        return;
+      }
+    } catch {
+      // Si la verificación falla (red, timeout) no se bloquea el guardado.
+    } finally {
+      setCheckingMaterialFor(null);
+    }
+    createMaterialMutation.mutate(sessionId);
+  }
 
   const deleteMaterialMutation = useMutation({
     mutationFn: ({ materialId, sessionId }: { materialId: string; sessionId: string }) =>
@@ -540,10 +705,10 @@ export default function ContenidoPage() {
                   <div className="p-3 border-b border-gray-100">
                     <SessionForm
                       key="new-session"
-                      onSubmit={({ title, desc, youtube, duration }) => {
-                        if (!title.trim()) { toast.error("El título es obligatorio"); return; }
-                        if (!youtube.trim()) { toast.error("La URL de YouTube es obligatoria"); return; }
-                        createSessionMutation.mutate({ title: title.trim(), desc: desc.trim(), youtube: youtube.trim(), duration });
+                      onSubmit={(data) => {
+                        if (!data.title.trim()) { toast.error("El título es obligatorio"); return; }
+                        if (!data.videoUrl) { toast.error("El enlace del video es obligatorio"); return; }
+                        createSessionMutation.mutate(data);
                       }}
                       onCancel={() => setShowAddSession(false)}
                       loading={createSessionMutation.isPending}
@@ -570,12 +735,14 @@ export default function ContenidoPage() {
                             key={`edit-${sess.id}`}
                             initialTitle={editingSession?.title ?? ""}
                             initialDesc={editingSession?.description ?? ""}
+                            initialProvider={editingSession?.video_provider ?? "youtube"}
                             initialYouTube={editingSession?.youtube_url ?? ""}
+                            initialDrive={editingSession?.drive_url ?? ""}
                             initialDuration={editingSession?.duration_minutes?.toString() ?? ""}
-                            onSubmit={({ title, desc, youtube, duration }) => {
-                              if (!title.trim()) { toast.error("El título es obligatorio"); return; }
-                              if (!youtube.trim()) { toast.error("La URL de YouTube es obligatoria"); return; }
-                              updateSessionMutation.mutate({ sessionId: sess.id, title: title.trim(), desc: desc.trim(), youtube: youtube.trim(), duration });
+                            onSubmit={(data) => {
+                              if (!data.title.trim()) { toast.error("El título es obligatorio"); return; }
+                              if (!data.videoUrl) { toast.error("El enlace del video es obligatorio"); return; }
+                              updateSessionMutation.mutate({ sessionId: sess.id, ...data });
                             }}
                             onCancel={() => setEditingSessionId(null)}
                             loading={updateSessionMutation.isPending}
@@ -591,16 +758,16 @@ export default function ContenidoPage() {
                                 <p className="text-sm font-medium text-gray-900">{sess.title}</p>
                                 <div className="flex items-center gap-3 mt-1">
                                   <span className="text-xs text-gray-400">{sess.duration_minutes} min</span>
-                                  {sess.youtube_url && (
+                                  {(sess.video_provider === "drive" ? sess.drive_url : sess.youtube_url) && (
                                     <a
-                                      href={sess.youtube_url}
+                                      href={(sess.video_provider === "drive" ? sess.drive_url : sess.youtube_url)!}
                                       target="_blank"
                                       rel="noopener noreferrer"
                                       className="text-xs text-[#084D95] hover:underline flex items-center gap-0.5"
                                       onClick={(e) => e.stopPropagation()}
                                     >
                                       <ExternalLink size={11} />
-                                      YouTube
+                                      {sess.video_provider === "drive" ? "Drive" : "YouTube"}
                                     </a>
                                   )}
                                   <span className="text-xs text-gray-400 flex items-center gap-0.5">
@@ -688,29 +855,52 @@ export default function ContenidoPage() {
                                       <Label className="text-xs">URL de Google Drive *</Label>
                                       <Input
                                         value={materialUrl[sess.id] ?? ""}
-                                        onChange={(e) => setMaterialUrl((prev) => ({ ...prev, [sess.id]: e.target.value }))}
-                                        placeholder="https://drive.google.com/..."
+                                        onChange={(e) => {
+                                          setMaterialUrl((prev) => ({ ...prev, [sess.id]: e.target.value }));
+                                          clearMaterialWarning(sess.id);
+                                        }}
+                                        placeholder="https://drive.google.com/file/d/..."
                                         className="text-xs h-8"
                                       />
                                     </div>
+                                    {materialWarning[sess.id] && (
+                                      <div className="flex items-start gap-1.5 rounded-md border border-amber-200 bg-amber-50 p-2 text-xs text-amber-800">
+                                        <AlertTriangle size={13} className="shrink-0 mt-0.5" />
+                                        <span>{materialWarning[sess.id]}</span>
+                                      </div>
+                                    )}
                                     <div className="flex justify-end gap-2">
                                       <button
-                                        onClick={() => setShowAddMaterial((prev) => ({ ...prev, [sess.id]: false }))}
+                                        onClick={() => {
+                                          setShowAddMaterial((prev) => ({ ...prev, [sess.id]: false }));
+                                          clearMaterialWarning(sess.id);
+                                        }}
                                         className="text-xs px-2 py-1 border border-gray-300 rounded hover:bg-gray-50"
                                       >
                                         Cancelar
                                       </button>
                                       <button
-                                        onClick={() => createMaterialMutation.mutate(sess.id)}
+                                        onClick={() => handleSaveMaterial(sess.id)}
                                         disabled={
                                           !materialName[sess.id]?.trim() ||
                                           !materialUrl[sess.id]?.trim() ||
-                                          createMaterialMutation.isPending
+                                          createMaterialMutation.isPending ||
+                                          checkingMaterialFor === sess.id
                                         }
-                                        className="text-xs px-2 py-1 bg-[#084D95] text-white rounded hover:bg-[#084D95]/90 disabled:opacity-50 flex items-center gap-1"
+                                        className={`text-xs px-2 py-1 text-white rounded disabled:opacity-50 flex items-center gap-1 ${
+                                          materialWarning[sess.id]
+                                            ? "bg-amber-600 hover:bg-amber-700"
+                                            : "bg-[#084D95] hover:bg-[#084D95]/90"
+                                        }`}
                                       >
-                                        {createMaterialMutation.isPending && <Loader2 size={10} className="animate-spin" />}
-                                        Guardar
+                                        {(createMaterialMutation.isPending || checkingMaterialFor === sess.id) && (
+                                          <Loader2 size={10} className="animate-spin" />
+                                        )}
+                                        {checkingMaterialFor === sess.id
+                                          ? "Verificando enlace..."
+                                          : materialWarning[sess.id]
+                                            ? "Guardar de todos modos"
+                                            : "Guardar"}
                                       </button>
                                     </div>
                                   </div>
@@ -726,12 +916,22 @@ export default function ContenidoPage() {
                                         <span className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded shrink-0">
                                           {mat.type}
                                         </span>
-                                        <span className="text-xs text-gray-700 flex-1 truncate">{mat.name}</span>
+                                        <button
+                                          type="button"
+                                          onClick={() => setPreviewMaterial(mat)}
+                                          className="flex-1 min-w-0 flex items-center gap-1.5 text-left text-xs text-gray-700 hover:text-[#084D95] transition-colors"
+                                          title="Ver vista previa"
+                                        >
+                                          <span className="truncate">{mat.name}</span>
+                                          <Eye size={12} className="shrink-0 text-gray-400" />
+                                        </button>
                                         <a
                                           href={mat.drive_url}
                                           target="_blank"
                                           rel="noopener noreferrer"
                                           className="text-[#084D95] hover:text-[#084D95]/70"
+                                          title="Abrir en una pestaña nueva"
+                                          aria-label={`Abrir ${mat.name} en una pestaña nueva`}
                                         >
                                           <ExternalLink size={12} />
                                         </a>
@@ -759,6 +959,45 @@ export default function ContenidoPage() {
           )}
         </div>
       </div>
+
+      {/* ── Modal de vista previa de material ─────────────────────────────── */}
+      {previewMaterial && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          onClick={() => setPreviewMaterial(null)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Vista previa: ${previewMaterial.name}`}
+            className="bg-white rounded-xl shadow-xl w-full max-w-5xl max-h-[95vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between gap-3 px-5 py-3 border-b border-gray-200">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded shrink-0">
+                  {previewMaterial.type}
+                </span>
+                <h2 className="text-sm font-semibold text-gray-900 truncate">{previewMaterial.name}</h2>
+              </div>
+              <button
+                onClick={() => setPreviewMaterial(null)}
+                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+                aria-label="Cerrar vista previa"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div className="p-5 overflow-y-auto">
+              <MaterialPreview
+                url={previewMaterial.drive_url}
+                title={previewMaterial.name}
+                isVideo={previewMaterial.type === "Video"}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
