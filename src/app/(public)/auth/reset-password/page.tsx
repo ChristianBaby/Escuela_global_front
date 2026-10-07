@@ -5,13 +5,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { AlertCircle, Eye, EyeOff, KeyRound } from "lucide-react";
+import { AlertCircle, Eye, EyeOff, KeyRound, Sparkles, Copy, Check } from "lucide-react";
 import { Suspense, useState, type InputHTMLAttributes } from "react";
 import { AuthLayout } from "@/components/templates";
 import { TurnstileWidget } from "@/components/molecules";
 import { Button } from "@/components/atoms";
 import { cn } from "@/lib/utils";
 import { authService } from "@/lib/services/auth";
+import { toast } from "sonner";
 
 const resetPasswordSchema = z
   .object({
@@ -25,6 +26,20 @@ const resetPasswordSchema = z
 
 type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
 
+function generateSecurePassword(length = 14): string {
+  const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%&*+?";
+  let pwd = "";
+  // Garantizar al menos un número, mayúscula, minúscula y símbolo
+  pwd += "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[Math.floor(Math.random() * 26)];
+  pwd += "abcdefghijklmnopqrstuvwxyz"[Math.floor(Math.random() * 26)];
+  pwd += "0123456789"[Math.floor(Math.random() * 10)];
+  pwd += "!@#$%&*+?"[Math.floor(Math.random() * 9)];
+  for (let i = pwd.length; i < length; i++) {
+    pwd += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return pwd.split("").sort(() => 0.5 - Math.random()).join("");
+}
+
 function ResetPasswordContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -33,15 +48,40 @@ function ResetPasswordContent() {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [turnstileKey, setTurnstileKey] = useState(0);
+  const [copied, setCopied] = useState(false);
 
   const {
     register,
     handleSubmit,
+    setValue,
+    watch,
     setError,
     formState: { errors, isSubmitting },
   } = useForm<ResetPasswordFormData>({
     resolver: zodResolver(resetPasswordSchema),
   });
+
+  const currentPassword = watch("password");
+
+  const handleGeneratePassword = () => {
+    const generated = generateSecurePassword();
+    setValue("password", generated, { shouldValidate: true });
+    setValue("password_confirmation", generated, { shouldValidate: true });
+    setShowPassword(true);
+    setShowConfirmation(true);
+    toast.success("Contraseña aleatoria generada");
+  };
+
+  const handleCopyPassword = async () => {
+    if (!currentPassword) {
+      toast.error("No hay ninguna contraseña generada para copiar");
+      return;
+    }
+    await navigator.clipboard.writeText(currentPassword);
+    setCopied(true);
+    toast.success("Contraseña copiada al portapapeles");
+    setTimeout(() => setCopied(false), 2500);
+  };
 
   const onSubmit = async (data: ResetPasswordFormData) => {
     if (!token) {
@@ -51,6 +91,7 @@ function ResetPasswordContent() {
 
     try {
       await authService.resetPassword({ token, password: data.password, turnstileToken: turnstileToken ?? "" });
+      toast.success("Contraseña restablecida exitosamente");
       router.push("/auth/login");
     } catch (err: unknown) {
       const message =
@@ -71,6 +112,37 @@ function ResetPasswordContent() {
           <p>El enlace no es válido o está incompleto.</p>
         </div>
       )}
+
+      {/* Barra de utilidades: Generar y Copiar */}
+      <div className="mb-4 flex items-center justify-between rounded-lg border border-blue-100 bg-blue-50/70 p-2.5">
+        <button
+          type="button"
+          onClick={handleGeneratePassword}
+          className="flex items-center gap-1.5 text-xs font-semibold text-[#084D95] hover:underline"
+        >
+          <Sparkles className="size-3.5 text-amber-500" /> Generar aleatoria
+        </button>
+
+        {currentPassword && (
+          <button
+            type="button"
+            onClick={handleCopyPassword}
+            className="flex items-center gap-1 text-xs font-medium text-gray-600 hover:text-gray-900"
+          >
+            {copied ? (
+              <>
+                <Check className="size-3.5 text-green-600" />
+                <span className="text-green-600 font-semibold">¡Copiada!</span>
+              </>
+            ) : (
+              <>
+                <Copy className="size-3.5" />
+                <span>Copiar contraseña</span>
+              </>
+            )}
+          </button>
+        )}
+      </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
         {errors.root?.message && (

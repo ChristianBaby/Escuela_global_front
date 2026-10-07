@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -8,7 +9,7 @@ import { z } from "zod";
 import { profileService, type UpdateProfileDto, type ChangePasswordDto } from "@/lib/services/profile";
 import { useAuthStore } from "@/store/authStore";
 import { toast } from "sonner";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Sparkles, Copy, Check } from "lucide-react";
 
 const ROLE_LABELS: Record<string, string> = {
   admin: "Administrador",
@@ -46,11 +47,33 @@ const passwordSchema = z
 type ProfileFormValues = z.infer<typeof profileSchema>;
 type PasswordFormValues = z.infer<typeof passwordSchema>;
 
+function generateSecurePassword(length = 14): string {
+  const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%&*+?";
+  let pwd = "";
+  pwd += "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[Math.floor(Math.random() * 26)];
+  pwd += "abcdefghijklmnopqrstuvwxyz"[Math.floor(Math.random() * 26)];
+  pwd += "0123456789"[Math.floor(Math.random() * 10)];
+  pwd += "!@#$%&*+?"[Math.floor(Math.random() * 9)];
+  for (let i = pwd.length; i < length; i++) {
+    pwd += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return pwd.split("").sort(() => 0.5 - Math.random()).join("");
+}
+
 export function ProfileContent() {
+  const searchParams = useSearchParams();
   const [tab, setTab] = useState<"personal" | "security">("personal");
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  // Si viene con ?tab=security desde el PopUp, abre directamente la pestaña
+  useEffect(() => {
+    if (searchParams.get("tab") === "security") {
+      setTab("security");
+    }
+  }, [searchParams]);
 
   const { user, updateUser } = useAuthStore();
 
@@ -83,11 +106,35 @@ export function ProfileContent() {
   const {
     register: registerPassword,
     handleSubmit: handlePasswordSubmit,
+    setValue: setPasswordValue,
+    watch: watchPassword,
     formState: { errors: passwordErrors },
     reset: resetPassword,
   } = useForm<PasswordFormValues>({
     resolver: zodResolver(passwordSchema),
   });
+
+  const newPasswordValue = watchPassword("new_password");
+
+  const handleGeneratePassword = () => {
+    const generated = generateSecurePassword();
+    setPasswordValue("new_password", generated, { shouldValidate: true });
+    setPasswordValue("confirm_password", generated, { shouldValidate: true });
+    setShowNew(true);
+    setShowConfirm(true);
+    toast.success("Contraseña aleatoria generada");
+  };
+
+  const handleCopyPassword = async () => {
+    if (!newPasswordValue) {
+      toast.error("No hay una nueva contraseña generada");
+      return;
+    }
+    await navigator.clipboard.writeText(newPasswordValue);
+    setCopied(true);
+    toast.success("Contraseña copiada al portapapeles");
+    setTimeout(() => setCopied(false), 2500);
+  };
 
   const updateMutation = useMutation({
     mutationFn: (data: UpdateProfileDto) => profileService.update(user!.id, data),
@@ -271,12 +318,24 @@ export function ProfileContent() {
       {/* Tab: Seguridad */}
       {tab === "security" && (
         <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <div className="mb-5">
-            <h2 className="text-sm font-semibold text-brand-primary">Cambiar contraseña</h2>
-            <p className="text-xs text-gray-500 mt-0.5">
-              Utiliza al menos 8 caracteres combinando letras y números.
-            </p>
+          <div className="mb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <h2 className="text-sm font-semibold text-brand-primary">Cambiar contraseña</h2>
+              <p className="text-xs text-gray-500 mt-0.5">
+                Utiliza al menos 8 caracteres combinando letras y números.
+              </p>
+            </div>
+
+            {/* Generador de contraseña aleatoria */}
+            <button
+              type="button"
+              onClick={handleGeneratePassword}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#084D95] bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg border border-blue-200 transition-colors w-fit"
+            >
+              <Sparkles className="size-3.5 text-amber-500" /> Generar aleatoria
+            </button>
           </div>
+
           <form onSubmit={handlePasswordSubmit(onPasswordSubmit)} className="space-y-4">
             {/* Contraseña actual */}
             <div className="space-y-1.5">
@@ -302,7 +361,27 @@ export function ProfileContent() {
 
             {/* Nueva contraseña */}
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-gray-700">Nueva contraseña</label>
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium text-gray-700">Nueva contraseña</label>
+                {newPasswordValue && (
+                  <button
+                    type="button"
+                    onClick={handleCopyPassword}
+                    className="flex items-center gap-1 text-xs text-[#084D95] hover:underline"
+                  >
+                    {copied ? (
+                      <>
+                        <Check className="size-3 text-green-600" />
+                        <span className="text-green-600 font-semibold">¡Copiada!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="size-3" /> Copiar
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
               <div className="relative">
                 <input
                   {...registerPassword("new_password")}
