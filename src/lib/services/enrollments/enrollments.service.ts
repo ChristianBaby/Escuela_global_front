@@ -37,6 +37,16 @@ export const matriculasService = {
   reactivateEnrollment: (enrollmentId: string) =>
     api.patch<EnrollmentActionResponse>(`/enrollments/${enrollmentId}/reactivar`).then((r) => r.data),
 
+  // Suma meses a lo que le queda (o desde hoy si ya venció). Sin `months` usa
+  // la vigencia del curso.
+  extendAccess: (enrollmentId: string, months?: number) =>
+    api
+      .patch<EnrollmentActionResponse & { access_expires_at: string }>(
+        `/enrollments/${enrollmentId}/extender-acceso`,
+        months !== undefined ? { months } : {}
+      )
+      .then((r) => r.data),
+
   buscarEstudiante: (query: string) =>
     api.get<{ id: string; first_name: string; last_name: string; email: string }[]>(
       "/users/buscar",

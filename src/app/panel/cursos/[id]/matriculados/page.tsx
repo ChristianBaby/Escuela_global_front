@@ -105,6 +105,28 @@ export default function MatriculadosCursoPage() {
     },
   });
 
+  const [extendTarget, setExtendTarget] = useState<MatriculadoCurso | null>(null);
+  const [extendMonths, setExtendMonths] = useState("");
+
+  const extendMutation = useMutation({
+    mutationFn: ({ id, months }: { id: string; months: number }) =>
+      matriculasService.extendAccess(id, months),
+    onSuccess: (res) => {
+      toast.success(`Acceso extendido hasta el ${new Date(res.access_expires_at).toLocaleDateString("es-PE")}`);
+      queryClient.invalidateQueries({ queryKey: ["admin-matriculados", courseId] });
+      setExtendTarget(null);
+    },
+    onError: (err: unknown) => {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      toast.error(msg ?? "No se pudo extender el acceso");
+    },
+  });
+
+  function openExtend(m: MatriculadoCurso) {
+    setExtendTarget(m);
+    setExtendMonths(String(curso?.access_duration_months ?? 12));
+  }
+
   const stats = data?.stats;
 
   return (
@@ -235,6 +257,16 @@ export default function MatriculadosCursoPage() {
                     </td>
                     <td className="px-4 py-3 text-gray-600">
                       {new Date(m.enrolled_at).toLocaleDateString("es-PE")}
+                      {m.access_expires_at && (
+                        <p
+                          className={`text-xs ${
+                            new Date(m.access_expires_at) < new Date() ? "text-red-600 font-medium" : "text-gray-400"
+                          }`}
+                        >
+                          {new Date(m.access_expires_at) < new Date() ? "Venció" : "Vence"}:{" "}
+                          {new Date(m.access_expires_at).toLocaleDateString("es-PE")}
+                        </p>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
@@ -295,6 +327,14 @@ export default function MatriculadosCursoPage() {
                             Suspender
                           </button>
                         )}
+                        {m.access_expires_at && (
+                          <button
+                            onClick={() => openExtend(m)}
+                            className="text-[#084D95] hover:underline text-xs"
+                          >
+                            Extender acceso
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -329,6 +369,74 @@ export default function MatriculadosCursoPage() {
           </div>
         )}
       </div>
+
+      {/* Modal: extender acceso */}
+      {extendTarget && (
+        <div
+          className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4"
+          onClick={() => setExtendTarget(null)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="bg-white rounded-xl p-6 w-full max-w-sm shadow-xl space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div>
+              <h2 className="font-semibold text-brand-primary">Extender acceso</h2>
+              <p className="text-sm text-gray-500 mt-1">
+                {extendTarget.user.first_name} {extendTarget.user.last_name}
+                {extendTarget.access_expires_at && (
+                  <> · {new Date(extendTarget.access_expires_at) < new Date() ? "venció" : "vence"} el{" "}
+                    {new Date(extendTarget.access_expires_at).toLocaleDateString("es-PE")}</>
+                )}
+              </p>
+            </div>
+            <div className="space-y-1">
+              <label htmlFor="extend-months" className="text-sm font-medium text-gray-700">
+                Meses a agregar
+              </label>
+              <input
+                id="extend-months"
+                type="number"
+                min={1}
+                max={60}
+                step={1}
+                value={extendMonths}
+                onChange={(e) => setExtendMonths(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#084D95]/30"
+              />
+              <p className="text-xs text-gray-400">
+                Se suman a lo que le queda; si ya venció, se cuentan desde hoy. El progreso y los
+                certificados no cambian. No levanta una suspensión.
+              </p>
+            </div>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setExtendTarget(null)}
+                className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() =>
+                  extendMutation.mutate({ id: extendTarget.enrollment_id, months: Number(extendMonths) })
+                }
+                disabled={
+                  extendMutation.isPending ||
+                  !Number.isInteger(Number(extendMonths)) ||
+                  Number(extendMonths) < 1 ||
+                  Number(extendMonths) > 60
+                }
+                className="px-4 py-2 text-sm bg-[#084D95] text-white rounded-lg hover:bg-[#084D95]/90 disabled:opacity-50 transition-colors flex items-center gap-2"
+              >
+                {extendMutation.isPending && <Loader2 size={13} className="animate-spin" />}
+                Extender
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

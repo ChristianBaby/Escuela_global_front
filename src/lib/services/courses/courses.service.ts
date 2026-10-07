@@ -1,5 +1,5 @@
 import { api } from "@/lib/http/api";
-import type { Course, PaginatedResponse, Review } from "@/types";
+import type { Course, PaginatedResponse, Review, VideoProvider } from "@/types";
 
 export interface CursoParams {
   page?: number;
@@ -89,8 +89,10 @@ export interface SessionListItem {
   id: string;
   title: string;
   description?: string;
-  youtube_url: string;
-  youtube_video_id: string;
+  video_provider: VideoProvider;
+  youtube_url?: string | null;
+  youtube_video_id?: string | null;
+  drive_url?: string | null;
   duration_minutes: number;
   display_order: number;
   materials_count: number;
@@ -99,11 +101,21 @@ export interface SessionListItem {
 export interface CreateSessionDto {
   title: string;
   description?: string;
-  youtube_url: string;
+  video_provider: VideoProvider;
+  /** Requerido si video_provider = "youtube". */
+  youtube_url?: string;
+  /** Requerido si video_provider = "drive". */
+  drive_url?: string;
   duration_minutes?: number;
 }
 
 // ── Materiales
+
+export interface DriveLinkInspection {
+  provider: "google" | "other";
+  kind: "file" | "folder" | "document" | null;
+  access: "public" | "private" | "not_found" | "unknown";
+}
 
 export interface MaterialItem {
   id: string;
@@ -218,15 +230,22 @@ export const cursosService = {
   deleteMaterial: (materialId: string) =>
     api.delete<{ success: boolean }>(`/materials/${materialId}`).then((r) => r.data),
 
+  checkDriveLink: (url: string) =>
+    api
+      .get<DriveLinkInspection>("/materials/drive-check", { params: { url } })
+      .then((r) => r.data),
+
   // ── Import/Export masivo ──────────────────────────────────────────────────
 
-  exportCoursesExcel: () =>
+  // Reciben los mismos filtros que `list`; se exportan todos los cursos que los
+  // cumplen (sin paginar).
+  exportCoursesExcel: (params?: CursoParams) =>
     api
-      .get("/courses/bulk/export/excel", { responseType: "blob" })
+      .get("/courses/bulk/export/excel", { params, responseType: "blob" })
       .then((r) => r.data as Blob),
 
-  exportCoursesJson: () =>
-    api.get("/courses/bulk/export/json").then((r) => r.data),
+  exportCoursesJson: (params?: CursoParams) =>
+    api.get("/courses/bulk/export/json", { params }).then((r) => r.data),
 
   importCoursesExcel: (file: File) => {
     const fd = new FormData();

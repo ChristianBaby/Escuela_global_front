@@ -4,7 +4,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
-import { authService } from "@/lib/services/auth";
+import { SessionGate } from "@/lib/auth/SessionGate";
+import { useLogout } from "@/lib/auth/useLogout";
 import { useQuery } from "@tanstack/react-query";
 import { notificacionesService } from "@/lib/services/notifications";
 import { CartModal } from "@/components/organisms/CartModal";
@@ -35,12 +36,15 @@ const NAV = [
 ];
 
 export default function StudentLayout({ children }: { children: React.ReactNode }) {
+  return <SessionGate><StudentShell>{children}</StudentShell></SessionGate>;
+}
+
+function StudentShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, clearUser } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
-  const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
 
   // Consulta el conteo de notificaciones no leídas cada 60 segundos
   const { data: notifData } = useQuery({
@@ -52,32 +56,6 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
   const unreadCount = notifData?.unread_count ?? 0;
   const badgeLabel = unreadCount > 9 ? "9+" : unreadCount > 0 ? String(unreadCount) : null;
   const badgeColor = unreadCount >= 10 ? "bg-red-600" : "bg-[#084D95]";
-
-  // 🚀 Mostrar PopUp para cambiar contraseña si el usuario aún no lo ha cerrado/cambiado
-  useEffect(() => {
-    if (!user?.id) return;
-    const dismissed = localStorage.getItem(`pwd_prompt_dismissed_${user.id}`);
-    
-    // Si aún no lo ha cambiado definitivamente, lo muestra tras 1 segundo
-    if (!dismissed) {
-      const timer = setTimeout(() => setShowPasswordPrompt(true), 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [user?.id]);
-
-  // Cerrar temporalmente (SIN guardar en localStorage -> volverá a salir en la próxima sesión)
-  const handleDismissPrompt = () => {
-    setShowPasswordPrompt(false);
-  };
-
-  // Solo se guarda definitivamente si entra a cambiar la contraseña
-  const handleGoToChangePassword = () => {
-    if (user?.id) {
-      localStorage.setItem(`pwd_prompt_dismissed_${user.id}`, "true");
-    }
-    setShowPasswordPrompt(false);
-    router.push("/perfil?tab=security");
-  };
 
   const handleLogout = async () => {
     try {

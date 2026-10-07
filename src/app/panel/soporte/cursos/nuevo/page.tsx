@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { ImagePreviewModal } from "@/components/molecules";
 
 function toSlug(text: string) {
   return text
@@ -41,6 +42,7 @@ export default function NuevoCursoPage() {
   const [level, setLevel] = useState<"principiante" | "intermedio" | "avanzado">("principiante");
   const [thumbnail, setThumbnail] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState("");
+  const [showThumbnailPreview, setShowThumbnailPreview] = useState(false);
   const [softwareInput, setSoftwareInput] = useState("");
   const [softwareTools, setSoftwareTools] = useState<string[]>([]);
 
@@ -375,14 +377,21 @@ export default function NuevoCursoPage() {
 
             {/* Thumbnail */}
             <div className="space-y-1.5">
-              <Label>Thumbnail del curso (máx. 2 MB · JPG/PNG)</Label>
+              <Label>Thumbnail del curso (300 × 169 px · máx. 2 MB · JPG/PNG)</Label>
               <div className="flex items-start gap-4">
                 {thumbnailPreview ? (
-                  <img
-                    src={thumbnailPreview}
-                    alt="Preview"
-                    className="w-36 h-24 object-cover rounded-lg border border-gray-200 shrink-0"
-                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowThumbnailPreview(true)}
+                    className="shrink-0"
+                    title="Ver en grande"
+                  >
+                    <img
+                      src={thumbnailPreview}
+                      alt="Preview"
+                      className="w-36 h-24 object-cover rounded-lg border border-gray-200 shrink-0"
+                    />
+                  </button>
                 ) : (
                   <button
                     type="button"
@@ -423,6 +432,13 @@ export default function NuevoCursoPage() {
                   />
                 </div>
               </div>
+              {showThumbnailPreview && thumbnailPreview && (
+                <ImagePreviewModal
+                  title={title || "Thumbnail del curso"}
+                  thumbnailUrl={thumbnailPreview}
+                  onClose={() => setShowThumbnailPreview(false)}
+                />
+              )}
             </div>
 
             {/* Softwares */}

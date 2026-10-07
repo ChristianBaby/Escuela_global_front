@@ -1,11 +1,16 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { lanzamientosService, type CreateUpcomingLaunchDto } from "@/lib/services/marketing";
 import { toast } from "sonner";
 import { ImageIcon } from "lucide-react";
 import type { UpcomingLaunch } from "@/types";
+import { ImageUploader, ImagePreviewModal, ImageHoverBubble } from "@/components/molecules";
+
+// Fila resaltada al pasar el cursor: fondo celeste de marca + barra azul a la izquierda
+const ROW_HOVER =
+  "hover:bg-brand-secondary/10 hover:[&>td:first-child]:shadow-[inset_3px_0_0_var(--color-brand-primary)] transition-colors";
 
 // "2026-09-22" (solo fecha, sin hora) lo interpreta JS como medianoche UTC —
 // al mostrarlo con toLocaleDateString en una zona horaria detrás de UTC (ej.
@@ -32,7 +37,7 @@ export default function LanzamientosPage() {
   const [form, setForm] = useState<CreateUpcomingLaunchDto>(empty);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>("");
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [previewId, setPreviewId] = useState<string | null>(null);
 
   const { data: lanzamientos, isLoading, isError } = useQuery({
     queryKey: ["lanzamientos"],
@@ -64,7 +69,6 @@ export default function LanzamientosPage() {
     setEditing(null);
     setForm(empty);
     setPreviewUrl("");
-    if (fileInputRef.current) fileInputRef.current.value = "";
     setShowModal(true);
   };
 
@@ -79,7 +83,6 @@ export default function LanzamientosPage() {
       status: l.status,
     });
     setPreviewUrl(l.image_url ?? "");
-    if (fileInputRef.current) fileInputRef.current.value = "";
     setShowModal(true);
   };
 
@@ -90,24 +93,19 @@ export default function LanzamientosPage() {
     setPreviewUrl("");
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      toast.error("Selecciona un archivo de imagen");
-      return;
-    }
-    setForm({ ...form, image: file });
-    setPreviewUrl(URL.createObjectURL(file));
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    // Antes lo validaba el required del <input type="file">; el ImageUploader no lo tiene
+    if (!editing && !form.image) {
+      toast.error("Sube la imagen del flyer");
+      return;
+    }
     if (editing) updateMutation.mutate({ id: editing.id, data: form });
     else createMutation.mutate(form);
   };
 
   const isPending = createMutation.isPending || updateMutation.isPending;
+  const previewLaunch = lanzamientos?.find((l) => l.id === previewId);
 
   return (
     <div>
@@ -143,18 +141,23 @@ export default function LanzamientosPage() {
                 <tr><td colSpan={5} className="text-center py-8 text-gray-400">Sin lanzamientos</td></tr>
               ) : (
                 lanzamientos?.map((l) => (
-                  <tr key={l.id} className="hover:bg-gray-50">
+                  <tr key={l.id} className={ROW_HOVER}>
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => setPreviewId(l.id)}
+                        className="flex items-center gap-3 text-left group"
+                      >
                         {l.image_url ? (
-                          <img src={l.image_url} alt="" className="w-20 h-12 rounded-lg object-cover bg-gray-100 flex-shrink-0" />
+                          <ImageHoverBubble src={l.image_url}>
+                            <img src={l.image_url} alt="" className="w-20 h-12 rounded-lg object-cover bg-gray-100 flex-shrink-0" />
+                          </ImageHoverBubble>
                         ) : (
                           <div className="w-20 h-12 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
                             <ImageIcon size={16} className="text-gray-400" />
                           </div>
                         )}
-                        <span className="font-medium text-gray-900">{l.title}</span>
-                      </div>
+                        <span className="font-medium text-gray-900 group-hover:text-[#084D95] transition-colors" title={l.title}>{l.title}</span>
+                      </button>
                     </td>
                     <td className="px-4 py-3 text-gray-500 text-xs">{l.category_label}</td>
                     <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">
@@ -215,18 +218,18 @@ export default function LanzamientosPage() {
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-700">Imagen (flyer) {editing ? "" : "*"}</label>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  required={!editing}
-                  onChange={handleFileChange}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#084D95]/30 file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-[#084D95] file:text-white file:cursor-pointer"
-                />
-                <p className="text-xs text-gray-400">Sube la imagen del flyer ya diseñada — se muestra tal cual, sin efectos.</p>
-              </div>
+              <ImageUploader
+                label={`Imagen (flyer) ${editing ? "" : "*"}`}
+                hint="Tamaño recomendado: 447 × 447 px (cuadrada, 1:1). Sube la imagen del flyer ya diseñada — se muestra tal cual, sin efectos."
+                value=""
+                preview={previewUrl}
+                onChange={() => {}}
+                onFileSelect={(file) => {
+                  setForm({ ...form, image: file ?? undefined });
+                  setPreviewUrl(file ? URL.createObjectURL(file) : "");
+                }}
+                aspectRatio="1/1"
+              />
 
               <div className="space-y-1">
                 <label className="text-sm font-medium text-gray-700">Fecha de inicio *</label>
@@ -262,17 +265,6 @@ export default function LanzamientosPage() {
                 </select>
               </div>
 
-              {previewUrl && (
-                <div className="rounded-lg overflow-hidden border border-gray-200">
-                  <img
-                    src={previewUrl}
-                    alt="Vista previa"
-                    className="w-full h-32 object-cover"
-                    onError={(e) => (e.currentTarget.style.display = "none")}
-                  />
-                </div>
-              )}
-
               <div className="flex justify-end gap-3 pt-2">
                 <button type="button" onClick={closeModal} className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">
                   Cancelar
@@ -284,6 +276,26 @@ export default function LanzamientosPage() {
             </form>
           </div>
         </div>
+      )}
+
+      {previewLaunch && (
+        <ImagePreviewModal
+          title={previewLaunch.title}
+          thumbnailUrl={previewLaunch.image_url}
+          onClose={() => setPreviewId(null)}
+          details={
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+              <span>{previewLaunch.category_label}</span>
+              <span>·</span>
+              <span>Inicio: {previewLaunch.start_date ? formatLocalDate(previewLaunch.start_date) : "—"}</span>
+              <span className={`text-xs px-2 py-0.5 rounded-full ${
+                previewLaunch.status === "active" ? "bg-green-50 text-green-700" : "bg-gray-100 text-gray-600"
+              }`}>
+                {previewLaunch.status === "active" ? "Activo" : "Inactivo"}
+              </span>
+            </div>
+          }
+        />
       )}
 
       {confirmDelete && (

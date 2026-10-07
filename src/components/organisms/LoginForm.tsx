@@ -70,11 +70,7 @@ export function LoginForm({ onSuccess, onRegisterClick, syncCartOnSuccess = true
         remember_me: data.remember_me,
         turnstileToken: turnstileToken ?? "",
       });
-      if (result.access_token) {
-        const maxAge = data.remember_me ? 60 * 60 * 24 * 30 : "";
-        const expires = maxAge ? `; max-age=${maxAge}` : "";
-        document.cookie = `access_token=${result.access_token}; path=/; SameSite=Lax${expires}`;
-      }
+      // El backend fija ambas cookies httpOnly; el frontend no escribe tokens.
       setUser(result.user);
       if (syncCartOnSuccess) {
         await syncCartAfterAuth(getGuestSessionToken());

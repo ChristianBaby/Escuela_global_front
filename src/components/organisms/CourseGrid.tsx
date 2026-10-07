@@ -46,7 +46,7 @@ export function CourseGrid({
   return (
     <div className={`grid ${gridCols} gap-3 sm:gap-5`}>
       {courses.map((course) => (
-        <CourseCard key={course.id} course={course} progressPercent={enrollmentProgress?.[course.id]} />
+        <CourseCard key={course.id} course={course} progressPercent={enrollmentProgress?.[course.id]} fullTitle />
       ))}
     </div>
   );

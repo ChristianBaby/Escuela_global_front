@@ -99,13 +99,17 @@ export interface Module {
   created_at: string;
 }
 
+export type VideoProvider = "youtube" | "drive";
+
 export interface Session {
   id: string;
   module_id: string;
   title: string;
   description?: string;
-  youtube_url: string;
-  youtube_video_id: string;
+  video_provider: VideoProvider;
+  youtube_url: string | null;
+  youtube_video_id: string | null;
+  drive_url: string | null;
   duration_minutes: number;
   display_order: number;
   materials?: Material[];

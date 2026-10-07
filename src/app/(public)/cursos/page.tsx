@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef, useLayoutEffect, Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { SlidersHorizontal, Search, X, ChevronLeft, ChevronRight, ArrowUpDown } from "lucide-react";
 import { PublicLayout } from "@/components/templates";
 import { CourseGrid, HeroSlider } from "@/components/organisms";
@@ -85,8 +85,10 @@ function CursosContent() {
   const [searchInput, setSearchInput] = useState(search);
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  // Sincroniza el input con la URL (atrás/adelante, limpiar filtros) sin pisar lo que
+  // se está escribiendo: "deep " (con espacio al final) ya corresponde a ?buscar=deep
   useEffect(() => {
-    setSearchInput(search);
+    setSearchInput((prev) => (prev.trim() === search ? prev : search));
   }, [search]);
 
   // Offsets medidos en vivo (no adivinados) para que el buscador/filtros/orden y
@@ -135,6 +137,18 @@ function CursosContent() {
     [router],
   );
 
+  // Búsqueda en vivo: 350 ms después de dejar de escribir se actualizan los cursos,
+  // sin esperar Enter. replace (no push) para no llenar el historial con cada letra.
+  useEffect(() => {
+    if (searchInput.trim() === search) return;
+    const timer = setTimeout(() => {
+      const params = filtersToParams(filters, sort, searchInput, 1);
+      router.replace(`/cursos${params.toString() ? `?${params}` : ""}`, { scroll: false });
+    }, 350);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- solo reacciona a lo que se escribe
+  }, [searchInput]);
+
   function handleFiltersChange(f: FiltersState) {
     pushUrl(f, sort, search, 1);
     setMobileOpen(false);
@@ -178,6 +192,9 @@ function CursosContent() {
     queryKey: ["cursos-catalogo", apiParams],
     queryFn: () => cursosService.listCatalog(apiParams),
     staleTime: 30_000,
+    // Mientras llegan los resultados de la nueva búsqueda se mantienen los anteriores
+    // (las tarjetas cambian directo, sin parpadear con el esqueleto de carga)
+    placeholderData: keepPreviousData,
   });
 
   const { data: categories = [] } = useQuery({

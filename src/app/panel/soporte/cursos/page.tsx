@@ -7,6 +7,7 @@ import { categoriasService } from "@/lib/services/categories";
 import { useAuthStore } from "@/store/authStore";
 import { toast } from "sonner";
 import Link from "next/link";
+import { ImagePreviewModal, ImageHoverBubble } from "@/components/molecules";
 import {
   Plus,
   Search,
@@ -26,6 +27,8 @@ import {
   CheckCircle2,
   XCircle,
 } from "lucide-react";
+import { HighlightMatches } from "@/components/atoms";
+import { fuzzyMatch } from "@/lib/search";
 
 function downloadBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
@@ -50,6 +53,10 @@ const STATUS_STYLES: Record<string, string> = {
   archived: "bg-amber-50 text-amber-700 ring-1 ring-amber-200",
 };
 
+// Fila resaltada al pasar el cursor: fondo celeste de marca + barra azul a la izquierda
+const ROW_HOVER =
+  "hover:bg-brand-secondary/10 hover:[&>td:first-child]:shadow-[inset_3px_0_0_var(--color-brand-primary)] transition-colors";
+
 const LEVEL_LABELS: Record<string, string> = {
   principiante: "Principiante",
   intermedio: "Intermedio",
@@ -68,21 +75,24 @@ export default function SoporteCursosPage() {
   const [statusFilter, setStatusFilter] = useState("");
   const [categoriaFilter, setCategoriaFilter] = useState("");
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [previewCursoId, setPreviewCursoId] = useState<string | null>(null);
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const [exporting, setExporting] = useState<"excel" | "json" | null>(null);
   const [importResult, setImportResult] = useState<ImportCoursesResult | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Filtros activos: los usan tanto el listado como la exportación, así lo
+  // exportado coincide siempre con lo que se ve en pantalla.
+  const activeFilters = {
+    search: search || undefined,
+    status: statusFilter || undefined,
+    categoria_id: categoriaFilter || undefined,
+  };
+  const hasActiveFilters = Boolean(search || statusFilter || categoriaFilter);
+
   const { data, isLoading, isError } = useQuery({
     queryKey: ["cursos", page, search, statusFilter, categoriaFilter],
-    queryFn: () =>
-      cursosService.list({
-        page,
-        limit: 12,
-        search: search || undefined,
-        status: statusFilter || undefined,
-        categoria_id: categoriaFilter || undefined,
-      }),
+    queryFn: () => cursosService.list({ page, limit: 12, ...activeFilters }),
   });
 
   const { data: categorias } = useQuery({
@@ -105,6 +115,7 @@ export default function SoporteCursosPage() {
   });
 
   const confirmDeleteCourse = data?.data.find((c) => c.id === confirmDeleteId);
+  const previewCurso = data?.data.find((c) => c.id === previewCursoId);
 
   const importMutation = useMutation({
     mutationFn: cursosService.importCoursesExcel,
@@ -125,10 +136,10 @@ export default function SoporteCursosPage() {
     setExporting(format);
     try {
       if (format === "excel") {
-        const blob = await cursosService.exportCoursesExcel();
+        const blob = await cursosService.exportCoursesExcel(activeFilters);
         downloadBlob(blob, "cursos-export.xlsx");
       } else {
-        const data = await cursosService.exportCoursesJson();
+        const data = await cursosService.exportCoursesJson(activeFilters);
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
         downloadBlob(blob, "cursos-export.json");
       }
@@ -166,9 +177,14 @@ export default function SoporteCursosPage() {
             </button>
             {exportMenuOpen && (
               <div
-                className="absolute right-0 mt-1 w-36 bg-white border border-gray-200 rounded-lg shadow-lg z-10 overflow-hidden"
+                className="absolute right-0 mt-1 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-10 overflow-hidden"
                 onMouseLeave={() => setExportMenuOpen(false)}
               >
+                <p className="px-3.5 py-2 text-xs text-gray-500 border-b border-gray-100">
+                  {hasActiveFilters
+                    ? `Con los filtros aplicados${data ? ` (${data.total} cursos)` : ""}`
+                    : `Todo el catálogo${data ? ` (${data.total} cursos)` : ""}`}
+                </p>
                 <button
                   onClick={() => handleExport("excel")}
                   className="w-full text-left px-3.5 py-2 text-sm text-gray-700 hover:bg-gray-50"
@@ -291,28 +307,38 @@ export default function SoporteCursosPage() {
                   </tr>
                 ) : (
                   data?.data.map((curso) => (
-                    <tr key={curso.id} className="hover:bg-gray-50/60 transition-colors">
+                    <tr
+                      key={curso.id}
+                      className={ROW_HOVER}
+                      // Globito con el nombre completo al pasar el cursor por cualquier parte de la fila
+                      title={curso.title}
+                    >
                       {/* Curso */}
                       <td className="px-5 py-3.5">
-                        <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => setPreviewCursoId(curso.id)}
+                          className="flex items-center gap-3 text-left group"
+                        >
                           {curso.thumbnail_url ? (
-                            <img
-                              src={curso.thumbnail_url}
-                              alt=""
-                              className="w-11 h-11 rounded-lg object-cover bg-gray-100 shrink-0"
-                            />
+                            <ImageHoverBubble src={curso.thumbnail_url}>
+                              <img
+                                src={curso.thumbnail_url}
+                                alt=""
+                                className="w-11 h-11 rounded-lg object-cover bg-gray-100 shrink-0"
+                              />
+                            </ImageHoverBubble>
                           ) : (
                             <div className="w-11 h-11 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
                               <BookOpen size={18} className="text-gray-400" />
                             </div>
                           )}
                           <div className="min-w-0">
-                            <p className="font-medium text-gray-900 truncate max-w-[220px]">{curso.title}</p>
+                            <p className="font-medium text-gray-900 line-clamp-2 max-w-[260px] group-hover:text-[#084D95] transition-colors" title={curso.title}><HighlightMatches text={curso.title} matchedWords={fuzzyMatch(search, curso.title).matchedWords} /></p>
                             <p className="text-xs text-gray-400 mt-0.5">
                               {LEVEL_LABELS[curso.level] ?? curso.level}
                             </p>
                           </div>
-                        </div>
+                        </button>
                       </td>
 
                       {/* Categoría */}
@@ -448,6 +474,28 @@ export default function SoporteCursosPage() {
         )}
       </div>
 
+      {/* ── Modal vista ampliada del curso ───────────────────────────────────── */}
+      {previewCurso && (
+        <ImagePreviewModal
+          title={previewCurso.title}
+          thumbnailUrl={previewCurso.thumbnail_url}
+          scale={1.5}
+          onClose={() => setPreviewCursoId(null)}
+          details={
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+              <span>{previewCurso.category?.name ?? "Sin categoría"}</span>
+              <span>·</span>
+              <span>{LEVEL_LABELS[previewCurso.level] ?? previewCurso.level}</span>
+              <span>·</span>
+              <span>{previewCurso.enrolled_count ?? 0} matriculados</span>
+              <span className={`inline-flex items-center text-xs font-medium px-2.5 py-0.5 rounded-full ${STATUS_STYLES[previewCurso.status] ?? "bg-gray-100 text-gray-600"}`}>
+                {STATUS_LABELS[previewCurso.status] ?? previewCurso.status}
+              </span>
+            </div>
+          }
+        />
+      )}
+
       {/* ── Modal confirmar eliminación ──────────────────────────────────────── */}
       {confirmDeleteId && (
         <div
@@ -463,7 +511,7 @@ export default function SoporteCursosPage() {
             </div>
             <h2 className="font-semibold text-brand-primary mb-1">¿Eliminar este curso?</h2>
             {confirmDeleteCourse && (
-              <p className="text-sm text-[#084D95] font-medium mb-2 truncate">
+              <p className="text-sm text-[#084D95] font-medium mb-2 break-words">
                 {confirmDeleteCourse.title}
               </p>
             )}

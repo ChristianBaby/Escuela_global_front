@@ -12,3 +12,4 @@ export * from "../ui/separator";
 export * from "../ui/textarea";
 export { Logo } from "./Logo";
 export { StarRating } from "./StarRating";
+export { HighlightMatches } from "./HighlightMatches";
